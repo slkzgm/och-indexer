@@ -1,0 +1,196 @@
+type Blacksmith_Upgraded {
+  id: ID!
+  implementation: String!
+}
+
+type Blacksmith_WeaponRepaired {
+  id: ID!
+  weaponId: BigInt!
+  amount: BigInt!
+}
+
+type Blacksmith_WeaponSharpened {
+  id: ID!
+  weaponId: BigInt!
+  amount: BigInt!
+}
+
+type DragmaUnderlings_Claimed {
+  id: ID!
+  user: String!
+  heroId: BigInt!
+  amount: BigInt!
+}
+
+type DragmaUnderlings_Staked {
+  id: ID!
+  user: String!
+  heroId: BigInt!
+}
+
+type DragmaUnderlings_Unstaked {
+  id: ID!
+  user: String!
+  heroId: BigInt!
+}
+
+type DragmaUnderlings_Upgraded {
+  id: ID!
+  implementation: String!
+}
+
+type DragmaUnderlings_WeaponDurabilityUpdated {
+  id: ID!
+  user: String!
+  weaponId: BigInt!
+  oldDurability: BigInt!
+  newDurability: BigInt!
+}
+
+type DragmaUnderlings_WeaponSharpnessUpdated {
+  id: ID!
+  user: String!
+  weaponId: BigInt!
+  oldSharpness: BigInt!
+  newSharpness: BigInt!
+}
+
+type GachaMachine_WeaponGenerated {
+  id: ID!
+  user: String!
+  weaponId: BigInt!
+  metadata: BigInt!
+  requestId: BigInt!
+}
+
+type GachaMachine_WeaponRequested {
+  id: ID!
+  user: String!
+  tokenId: BigInt!
+  qty: BigInt!
+  requestId: BigInt!
+}
+
+type Gym_ChaosUpgraded {
+  id: ID!
+  owner: String!
+  heroId: BigInt!
+  season: BigInt!
+  oldLevel: BigInt!
+  newLevel: BigInt!
+  chances: [BigInt!]!
+}
+
+type Gym_NormalUpgraded {
+  id: ID!
+  owner: String!
+  heroId: BigInt!
+  season: BigInt!
+  oldLevel: BigInt!
+  newLevel: BigInt!
+}
+
+type Gym_UnknownUpgraded {
+  id: ID!
+  owner: String!
+  heroId: BigInt!
+  season: BigInt!
+  oldLevel: BigInt!
+  newLevel: BigInt!
+  chances: [BigInt!]!
+}
+
+type Gym_UpgradeRequested {
+  id: ID!
+  season: BigInt!
+  owner: String!
+  heroId: BigInt!
+  levelUp: BigInt!
+  cost: BigInt!
+}
+
+type Gym_Upgraded {
+  id: ID!
+  implementation: String!
+}
+
+type HeroArmory_Equipped {
+  id: ID!
+  heroId: BigInt!
+  weaponId: BigInt!
+}
+
+type HeroArmory_Unequipped {
+  id: ID!
+  heroId: BigInt!
+  weaponId: BigInt!
+}
+
+type HeroGachaMachine_WeaponGenerated {
+  id: ID!
+  user: String!
+  weaponId: BigInt!
+  metadata: BigInt!
+  requestId: BigInt!
+}
+
+type HeroGachaMachine_WeaponRequested {
+  id: ID!
+  user: String!
+  slot: BigInt!
+  qty: BigInt!
+  amount: BigInt!
+  requestId: BigInt!
+}
+
+type Weapon721_ConsecutiveTransfer {
+  id: ID!
+  fromTokenId: BigInt!
+  toTokenId: BigInt!
+  from: String!
+  to: String!
+}
+
+type Weapon721_Transfer {
+  id: ID!
+  from: String!
+  to: String!
+  tokenId: BigInt!
+}
+
+type Weapon721_WeaponGenerated {
+  id: ID!
+  to: String!
+  qty: BigInt!
+}
+
+type Weapon721_WeaponMetadataGenerated {
+  id: ID!
+  event_id: BigInt!
+  metadata: BigInt!
+}
+
+type WeaponRemixer_LegendaryMixRequested {
+  id: ID!
+  weaponIds: [BigInt!]!
+  cost: BigInt!
+  rarity: BigInt!
+  requestId: BigInt!
+}
+
+type WeaponRemixer_WeaponGenerated {
+  id: ID!
+  user: String!
+  weaponId: BigInt!
+  metadata: BigInt!
+  requestId: BigInt!
+}
+
+type WeaponRemixer_WeaponMixRequested {
+  id: ID!
+  weaponIds: [BigInt!]!
+  cost: BigInt!
+  rarity: BigInt!
+  requestId: BigInt!
+}
+
