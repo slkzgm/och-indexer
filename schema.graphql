@@ -194,3 +194,52 @@ type WeaponRemixer_WeaponMixRequested {
   requestId: BigInt!
 }
 
+enum TrainingType {
+  NORMAL
+  CHAOS
+  UNKNOWN
+}
+
+enum StakingType {
+  DRAGMA_UNDERLINGS
+}
+
+type Player {
+  id: ID! # wallet address
+  trainingSpend: BigInt!
+  claimedAmount: BigInt!
+}
+
+type Hero {
+  id: ID! # token id
+  player: Player!
+  level: Int!
+  trainingSpend: BigInt!
+  claimedAmount: BigInt!
+  lastTrained: BigInt!
+  stakedSince: BigInt
+  lastClaimed: BigInt
+  stakingType: StakingType
+}
+
+type Training {
+  id: ID!
+  hero: Hero!
+  player: Player!
+  trainingType: TrainingType!
+  timestamp: BigInt!
+  result: Int! # -5 to +5
+  fromLevel: Int!
+  toLevel: Int!
+  cost: BigInt!
+  season: BigInt!
+  chances: [BigInt!] # Optional field for UNKNOWN and CHAOS trainings
+}
+
+type Staking {
+  id: ID!
+  hero: Hero!
+  player: Player!
+  stakedSince: BigInt!
+  stakingType: StakingType!
+}
