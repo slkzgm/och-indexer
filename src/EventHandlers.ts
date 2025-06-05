@@ -7,13 +7,6 @@ import {
   Blacksmith_Upgraded,
   Blacksmith_WeaponRepaired,
   Blacksmith_WeaponSharpened,
-  DragmaUnderlings,
-  DragmaUnderlings_Claimed,
-  DragmaUnderlings_Staked,
-  DragmaUnderlings_Unstaked,
-  DragmaUnderlings_Upgraded,
-  DragmaUnderlings_WeaponDurabilityUpdated,
-  DragmaUnderlings_WeaponSharpnessUpdated,
   GachaMachine,
   GachaMachine_WeaponGenerated,
   GachaMachine_WeaponRequested,
@@ -34,6 +27,7 @@ import {
   WeaponRemixer_WeaponMixRequested,
 } from "generated";
 import "./handlers/GymHandler";
+import "./handlers/DragmaUnderlingsHandler";
 
 Blacksmith.Upgraded.handler(async ({ event, context }) => {
   const entity: Blacksmith_Upgraded = {
@@ -62,70 +56,6 @@ Blacksmith.WeaponSharpened.handler(async ({ event, context }) => {
   };
 
   context.Blacksmith_WeaponSharpened.set(entity);
-});
-
-DragmaUnderlings.Claimed.handler(async ({ event, context }) => {
-  const entity: DragmaUnderlings_Claimed = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    heroId: event.params.heroId,
-    amount: event.params.amount,
-  };
-
-  context.DragmaUnderlings_Claimed.set(entity);
-});
-
-DragmaUnderlings.Staked.handler(async ({ event, context }) => {
-  const entity: DragmaUnderlings_Staked = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    heroId: event.params.heroId,
-  };
-
-  context.DragmaUnderlings_Staked.set(entity);
-});
-
-DragmaUnderlings.Unstaked.handler(async ({ event, context }) => {
-  const entity: DragmaUnderlings_Unstaked = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    heroId: event.params.heroId,
-  };
-
-  context.DragmaUnderlings_Unstaked.set(entity);
-});
-
-DragmaUnderlings.Upgraded.handler(async ({ event, context }) => {
-  const entity: DragmaUnderlings_Upgraded = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    implementation: event.params.implementation,
-  };
-
-  context.DragmaUnderlings_Upgraded.set(entity);
-});
-
-DragmaUnderlings.WeaponDurabilityUpdated.handler(async ({ event, context }) => {
-  const entity: DragmaUnderlings_WeaponDurabilityUpdated = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    weaponId: event.params.weaponId,
-    oldDurability: event.params.oldDurability,
-    newDurability: event.params.newDurability,
-  };
-
-  context.DragmaUnderlings_WeaponDurabilityUpdated.set(entity);
-});
-
-DragmaUnderlings.WeaponSharpnessUpdated.handler(async ({ event, context }) => {
-  const entity: DragmaUnderlings_WeaponSharpnessUpdated = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    weaponId: event.params.weaponId,
-    oldSharpness: event.params.oldSharpness,
-    newSharpness: event.params.newSharpness,
-  };
-
-  context.DragmaUnderlings_WeaponSharpnessUpdated.set(entity);
 });
 
 GachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
