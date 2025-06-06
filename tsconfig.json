@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "generated": ["generated"],
+      "generated/*": ["generated/*"]
+    },
     "target": "es2020", //required for use with BigInt types
     "lib": [
       "es2020"
@@ -16,6 +21,7 @@
   },
   "include": [
     "src",
-    "test"
+    "test",
+    "generated"
   ]
 }

@@ -1,3 +1,18 @@
+type Hero721_ConsecutiveTransfer {
+  id: ID!
+  fromTokenId: BigInt!
+  toTokenId: BigInt!
+  from: String!
+  to: String!
+}
+
+type Hero721_Transfer {
+  id: ID!
+  from: String!
+  to: String!
+  tokenId: BigInt!
+}
+
 type Blacksmith_Upgraded {
   id: ID!
   implementation: String!
@@ -208,6 +223,10 @@ type Player {
   id: ID! # wallet address
   trainingSpend: BigInt!
   claimedAmount: BigInt!
+  repairSpend: BigInt!
+  repairedTimes: Int!
+  sharpenSpend: BigInt!
+  sharpenedTimes: Int!
 }
 
 type Hero {
@@ -219,7 +238,12 @@ type Hero {
   lastTrained: BigInt!
   stakedSince: BigInt
   lastClaimed: BigInt
+  trainedTimes: Int!
   stakingType: StakingType
+  weapon: Weapon
+  damage: BigInt!
+  bonusRewardPerDay: BigInt!
+  dailyReward: BigInt!
 }
 
 type Training {
@@ -242,4 +266,24 @@ type Staking {
   player: Player!
   stakedSince: BigInt!
   stakingType: StakingType!
+  weapon: Weapon!
+  damage: BigInt!
+  bonusRewardPerDay: BigInt!
+  dailyReward: BigInt!
+}
+
+type Weapon {
+  id: ID!
+  weaponType: BigInt!
+  rarity: BigInt!
+  durability: BigInt!
+  maxDurability: BigInt!
+  sharpness: BigInt!
+  maxSharpness: BigInt!
+  player: Player!
+  hero: Hero!
+  repairSpend: BigInt!
+  repairedTimes: Int!
+  sharpenSpend: BigInt!
+  sharpenedTimes: Int!
 }

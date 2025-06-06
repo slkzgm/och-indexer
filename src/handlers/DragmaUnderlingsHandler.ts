@@ -8,8 +8,10 @@ import {
     DragmaUnderlings_Upgraded,
     DragmaUnderlings_WeaponDurabilityUpdated,
     DragmaUnderlings_WeaponSharpnessUpdated,
-} from "generated";
-import type { Hero_t, Player_t } from "generated/src/db/Entities.gen";
+} from "../../generated";
+import { computeRewards } from "../utils/ComputationHelper";
+import type { Hero_t, Player_t, Weapon_t, Staking_t } from "../../generated/src/db/Entities.gen";
+import { createDefaultHero, createDefaultPlayer } from "../utils/EntityHelper";
 
 /**
  * Handler for DragmaUnderlings.Staked events.
@@ -17,7 +19,7 @@ import type { Hero_t, Player_t } from "generated/src/db/Entities.gen";
  * - Sets hero.stakingType = "DRAGMA_UNDERLINGS"
  * - Persists the raw DragmaUnderlings_Staked event.
  */
-DragmaUnderlings.Staked.handler(async ({ event, context }) => {
+DragmaUnderlings.Staked.handler(async ({ event, context }: any) => {
     const user = event.params.user;
     const heroIdBI = event.params.heroId;
     const heroIdStr = heroIdBI.toString();
@@ -40,14 +42,8 @@ DragmaUnderlings.Staked.handler(async ({ event, context }) => {
     } else {
         // Create minimal Hero record if none exists
         heroToSave = {
-            id: heroIdStr,
-            player_id: user,
-            level: 0,
-            trainingSpend: BigInt(0),
-            lastTrained: BigInt(0),
-            claimedAmount: BigInt(0),
+            ...createDefaultHero(heroIdStr, user),
             stakedSince: timestampBI,
-            lastClaimed: undefined,
             stakingType: "DRAGMA_UNDERLINGS",
         };
     }
@@ -60,6 +56,28 @@ DragmaUnderlings.Staked.handler(async ({ event, context }) => {
         heroId: heroIdBI,
     };
     await context.DragmaUnderlings_Staked.set(stakedEvent);
+
+    // Persist Staking record using hero entity's dailyReward
+    const heroForStake = await context.Hero.get(heroIdStr);
+    if (!heroForStake) {
+        throw new Error(`Hero ${heroIdStr} not found for staking`);
+    }
+    if (!heroForStake.weapon_id) {
+        throw new Error(`Hero ${heroIdStr} has no weapon to stake`);
+    }
+    const stakingId = `${chainIdBI}_${blockNumBI}_${logIndexBI}`;
+    const stakingEntity: Staking_t = {
+        id: stakingId,
+        hero_id: heroIdStr,
+        player_id: user,
+        stakedSince: timestampBI,
+        stakingType: "DRAGMA_UNDERLINGS",
+        weapon_id: heroForStake.weapon_id,
+        dailyReward: heroForStake.dailyReward,
+        damage: heroForStake.damage,
+        bonusRewardPerDay: heroForStake.bonusRewardPerDay,
+    };
+    await context.Staking.set(stakingEntity);
 });
 
 /**
@@ -67,7 +85,7 @@ DragmaUnderlings.Staked.handler(async ({ event, context }) => {
  * - Clears hero.stakedSince and hero.stakingType
  * - Persists the raw DragmaUnderlings_Unstaked event.
  */
-DragmaUnderlings.Unstaked.handler(async ({ event, context }) => {
+DragmaUnderlings.Unstaked.handler(async ({ event, context }: any) => {
     const user = event.params.user;
     const heroIdBI = event.params.heroId;
     const heroIdStr = heroIdBI.toString();
@@ -102,7 +120,7 @@ DragmaUnderlings.Unstaked.handler(async ({ event, context }) => {
  * - Increments player.claimedAmount by amount
  * - Persists the raw DragmaUnderlings_Claimed event.
  */
-DragmaUnderlings.Claimed.handler(async ({ event, context }) => {
+DragmaUnderlings.Claimed.handler(async ({ event, context }: any) => {
     const user = event.params.user;
     const heroIdBI = event.params.heroId;
     const amountBI = event.params.amount;
@@ -123,36 +141,25 @@ DragmaUnderlings.Claimed.handler(async ({ event, context }) => {
         await context.Hero.set(updatedHero);
     } else {
         // Create minimal Hero if not exists
+        const defaultHero = createDefaultHero(heroIdStr, user);
         const newHero: Hero_t = {
-            id: heroIdStr,
-            player_id: user,
-            level: 0,
-            trainingSpend: BigInt(0),
-            lastTrained: BigInt(0),
+            ...defaultHero,
             claimedAmount: amountBI,
-            stakedSince: undefined,
             lastClaimed: timestampBI,
-            stakingType: undefined,
         };
         await context.Hero.set(newHero);
     }
 
     // Load and update Player
     let player: Player_t | undefined = await context.Player.get(user);
-    if (player) {
-        const updatedPlayer: Player_t = {
-            ...player,
-            claimedAmount: player.claimedAmount + amountBI,
-        };
-        await context.Player.set(updatedPlayer);
-    } else {
-        const newPlayer: Player_t = {
-            id: user,
-            trainingSpend: BigInt(0),
-            claimedAmount: amountBI,
-        };
-        await context.Player.set(newPlayer);
+    if (!player) {
+        player = createDefaultPlayer(user);
     }
+    const updatedPlayer: Player_t = {
+        ...player,
+        claimedAmount: player.claimedAmount + amountBI,
+    };
+    await context.Player.set(updatedPlayer);
 
     // Persist raw event
     const claimedEvent: DragmaUnderlings_Claimed = {
@@ -168,7 +175,7 @@ DragmaUnderlings.Claimed.handler(async ({ event, context }) => {
  * Handler for DragmaUnderlings.Upgraded events.
  * - Persists the raw DragmaUnderlings_Upgraded event.
  */
-DragmaUnderlings.Upgraded.handler(async ({ event, context }) => {
+DragmaUnderlings.Upgraded.handler(async ({ event, context }: any) => {
     const chainIdBI = BigInt(event.chainId);
     const blockNumBI = BigInt(event.block.number);
     const logIndexBI = BigInt(event.logIndex);
@@ -184,11 +191,12 @@ DragmaUnderlings.Upgraded.handler(async ({ event, context }) => {
  * Handler for DragmaUnderlings.WeaponDurabilityUpdated events.
  * - Persists the raw DragmaUnderlings_WeaponDurabilityUpdated event.
  */
-DragmaUnderlings.WeaponDurabilityUpdated.handler(async ({ event, context }) => {
+DragmaUnderlings.WeaponDurabilityUpdated.handler(async ({ event, context }: any) => {
     const chainIdBI = BigInt(event.chainId);
     const blockNumBI = BigInt(event.block.number);
     const logIndexBI = BigInt(event.logIndex);
 
+    // Persist raw event
     const durabilityEvent: DragmaUnderlings_WeaponDurabilityUpdated = {
         id: `${chainIdBI}_${blockNumBI}_${logIndexBI}`,
         user: event.params.user,
@@ -197,17 +205,49 @@ DragmaUnderlings.WeaponDurabilityUpdated.handler(async ({ event, context }) => {
         newDurability: event.params.newDurability,
     };
     await context.DragmaUnderlings_WeaponDurabilityUpdated.set(durabilityEvent);
+
+    // Update Weapon entity durability
+    const weaponIdStr = event.params.weaponId.toString();
+    const existingWeapon: Weapon_t | undefined = await context.Weapon.get(weaponIdStr);
+    if (!existingWeapon) {
+        throw new Error(`Weapon with id ${weaponIdStr} not found`);
+    }
+    const updatedWeapon: Weapon_t = {
+        ...existingWeapon,
+        durability: event.params.newDurability,
+    };
+    await context.Weapon.set(updatedWeapon);
+
+    // Update Hero entity rewards
+    const heroIdStr = existingWeapon.hero_id;
+    const hero: Hero_t | undefined = await context.Hero.get(heroIdStr);
+    if (!hero) {
+        throw new Error(`Hero with id ${heroIdStr} not found`);
+    }
+    const { bonusHeroPerDay: bonusRewardPerDay, dailyReward } = computeRewards(
+        BigInt(hero.level),
+        hero.damage,
+        updatedWeapon.sharpness,
+        updatedWeapon.maxSharpness
+    );
+    const updatedHero: Hero_t = {
+        ...hero,
+        bonusRewardPerDay,
+        dailyReward,
+    };
+    await context.Hero.set(updatedHero);
 });
 
 /**
  * Handler for DragmaUnderlings.WeaponSharpnessUpdated events.
  * - Persists the raw DragmaUnderlings_WeaponSharpnessUpdated event.
  */
-DragmaUnderlings.WeaponSharpnessUpdated.handler(async ({ event, context }) => {
+DragmaUnderlings.WeaponSharpnessUpdated.handler(async ({ event, context }: any) => {
     const chainIdBI = BigInt(event.chainId);
     const blockNumBI = BigInt(event.block.number);
     const logIndexBI = BigInt(event.logIndex);
 
+    // Persist raw event
     const sharpnessEvent: DragmaUnderlings_WeaponSharpnessUpdated = {
         id: `${chainIdBI}_${blockNumBI}_${logIndexBI}`,
         user: event.params.user,
@@ -216,4 +256,35 @@ DragmaUnderlings.WeaponSharpnessUpdated.handler(async ({ event, context }) => {
         newSharpness: event.params.newSharpness,
     };
     await context.DragmaUnderlings_WeaponSharpnessUpdated.set(sharpnessEvent);
+
+    // Update Weapon entity sharpness
+    const weaponIdStr = event.params.weaponId.toString();
+    const existingWeapon: Weapon_t | undefined = await context.Weapon.get(weaponIdStr);
+    if (!existingWeapon) {
+        throw new Error(`Weapon with id ${weaponIdStr} not found`);
+    }
+    const updatedWeapon: Weapon_t = {
+        ...existingWeapon,
+        sharpness: event.params.newSharpness,
+    };
+    await context.Weapon.set(updatedWeapon);
+
+    // Update Hero entity rewards
+    const heroIdStr = existingWeapon.hero_id;
+    const hero: Hero_t | undefined = await context.Hero.get(heroIdStr);
+    if (!hero) {
+        throw new Error(`Hero with id ${heroIdStr} not found`);
+    }
+    const { bonusHeroPerDay: bonusRewardPerDay, dailyReward } = computeRewards(
+        BigInt(hero.level),
+        hero.damage,
+        updatedWeapon.sharpness,
+        updatedWeapon.maxSharpness
+    );
+    const updatedHero: Hero_t = {
+        ...hero,
+        bonusRewardPerDay,
+        dailyReward,
+    };
+    await context.Hero.set(updatedHero);
 });

@@ -4,24 +4,11 @@ import type {
     Hero_t,
     Player_t,
     Training_t,
-} from "generated/src/db/Entities.gen";
-import type { TrainingType_t as TrainingTypeEnum } from "generated/src/db/Enums.gen";
-import { TrainingType } from "generated";
+} from "../../generated/src/db/Entities.gen";
+import type { TrainingType_t as TrainingTypeEnum } from "../../generated/src/db/Enums.gen";
+import { computeRewards, computeDamage, computeUpgradeCost } from "./ComputationHelper";
+import { createDefaultPlayer, createDefaultHero } from "./EntityHelper";
 
-/**
- * Computes the exact upgrade cost based on the on-chain formula:
- *   cost = (level * 10000e18) / (69 + level)
- *
- * All operations use BigInt to avoid precision loss.
- */
-function computeUpgradeCost(currentLevel: number): bigint {
-    const lvl = BigInt(currentLevel);
-    // 10000e18 = 10^4 * 10^18 = 10^22
-    const SCALE = BigInt("10000000000000000000000");
-    const numerator = lvl * SCALE;
-    const denominator = BigInt(69 + currentLevel);
-    return numerator / denominator;
-}
 
 /**
  * Processes a training event by:
@@ -61,11 +48,7 @@ export async function processTraining(
     // --- Ensure Player exists ---
     let player = await context.Player.get(owner);
     if (!player) {
-        const newPlayer: Player_t = {
-            id: owner,
-            trainingSpend: BigInt(0),
-            claimedAmount: BigInt(0),
-        };
+        const newPlayer = createDefaultPlayer(owner);
         await context.Player.set(newPlayer);
         player = newPlayer;
     }
@@ -73,19 +56,9 @@ export async function processTraining(
     // --- Ensure Hero exists ---
     let hero = await context.Hero.get(heroIdStr);
     if (!hero) {
-        const newHero: Hero_t = {
-            id: heroIdStr,
-            player_id: owner,
-            level: newLevelNum,
-            trainingSpend: BigInt(0),
-            lastTrained: timestampBI,
-            claimedAmount: BigInt(0),
-            stakedSince: undefined,
-            lastClaimed: undefined,
-            stakingType: undefined,
-        };
-        await context.Hero.set(newHero);
-        hero = newHero;
+        const defaultHero = createDefaultHero(heroIdStr, owner);
+        await context.Hero.set(defaultHero);
+        hero = defaultHero;
     }
 
     // Hero and player are non-null from this point
@@ -95,25 +68,41 @@ export async function processTraining(
     // --- Calculate cost ---
     const costBI = computeUpgradeCost(oldLevelNum);
 
-    // --- Update Hero: increment `trainingSpend`, set new level & lastTrained ---
-    const updatedHero: Hero_t = {
-        id: currentHero.id,
-        player_id: currentHero.player_id,
+    // --- Update Hero: increment `trainingSpend`, set new level ---
+    // Only recalculate damage and rewards if the hero actually leveled up and has a weapon
+    let newDamage = currentHero.damage;
+    let newBonusRewardPerDay = currentHero.bonusRewardPerDay;
+    let newDailyReward = currentHero.dailyReward;
+    if (newLevelNum !== oldLevelNum && currentHero.weapon_id) {
+        const weapon = await context.Weapon.get(currentHero.weapon_id);
+        if (weapon) {
+            newDamage = computeDamage(BigInt(newLevelNum), weapon.rarity);
+            const { bonusHeroPerDay, dailyReward } = computeRewards(
+                BigInt(newLevelNum),
+                newDamage,
+                weapon.sharpness,
+                weapon.maxSharpness
+            );
+            newBonusRewardPerDay = bonusHeroPerDay;
+            newDailyReward = dailyReward;
+        }
+    }
+    const updatedHero = {
+        ...currentHero,
         level: newLevelNum,
         trainingSpend: currentHero.trainingSpend + costBI,
         lastTrained: timestampBI,
-        claimedAmount: currentHero.claimedAmount,
-        stakedSince: currentHero.stakedSince,
-        lastClaimed: currentHero.lastClaimed,
-        stakingType: currentHero.stakingType,
-    };
+        damage: newDamage,
+        bonusRewardPerDay: newBonusRewardPerDay,
+        dailyReward: newDailyReward,
+        trainedTimes: (currentHero as any).trainedTimes + 1,
+    } as any;
     await context.Hero.set(updatedHero);
 
     // --- Update Player: increment `trainingSpend` ---
     const updatedPlayer: Player_t = {
-        id: currentPlayer.id,
+        ...currentPlayer,
         trainingSpend: currentPlayer.trainingSpend + costBI,
-        claimedAmount: currentPlayer.claimedAmount,
     };
     await context.Player.set(updatedPlayer);
 

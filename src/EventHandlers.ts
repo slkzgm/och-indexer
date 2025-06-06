@@ -10,24 +10,19 @@ import {
   GachaMachine,
   GachaMachine_WeaponGenerated,
   GachaMachine_WeaponRequested,
-  HeroArmory,
-  HeroArmory_Equipped,
-  HeroArmory_Unequipped,
   HeroGachaMachine,
   HeroGachaMachine_WeaponGenerated,
   HeroGachaMachine_WeaponRequested,
-  Weapon721,
-  Weapon721_ConsecutiveTransfer,
-  Weapon721_Transfer,
-  Weapon721_WeaponGenerated,
-  Weapon721_WeaponMetadataGenerated,
   WeaponRemixer,
   WeaponRemixer_LegendaryMixRequested,
   WeaponRemixer_WeaponGenerated,
   WeaponRemixer_WeaponMixRequested,
-} from "generated";
+} from "../generated";
 import "./handlers/GymHandler";
 import "./handlers/DragmaUnderlingsHandler";
+import "./handlers/HeroArmoryHandler";
+import "./handlers/Weapon721Handler";
+import "./handlers/Hero721Handler";
 
 Blacksmith.Upgraded.handler(async ({ event, context }) => {
   const entity: Blacksmith_Upgraded = {
@@ -82,26 +77,6 @@ GachaMachine.WeaponRequested.handler(async ({ event, context }) => {
   context.GachaMachine_WeaponRequested.set(entity);
 });
 
-HeroArmory.Equipped.handler(async ({ event, context }) => {
-  const entity: HeroArmory_Equipped = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    heroId: event.params.heroId,
-    weaponId: event.params.weaponId,
-  };
-
-  context.HeroArmory_Equipped.set(entity);
-});
-
-HeroArmory.Unequipped.handler(async ({ event, context }) => {
-  const entity: HeroArmory_Unequipped = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    heroId: event.params.heroId,
-    weaponId: event.params.weaponId,
-  };
-
-  context.HeroArmory_Unequipped.set(entity);
-});
-
 HeroGachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
   const entity: HeroGachaMachine_WeaponGenerated = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
@@ -125,49 +100,6 @@ HeroGachaMachine.WeaponRequested.handler(async ({ event, context }) => {
   };
 
   context.HeroGachaMachine_WeaponRequested.set(entity);
-});
-
-Weapon721.ConsecutiveTransfer.handler(async ({ event, context }) => {
-  const entity: Weapon721_ConsecutiveTransfer = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    fromTokenId: event.params.fromTokenId,
-    toTokenId: event.params.toTokenId,
-    from: event.params.from,
-    to: event.params.to,
-  };
-
-  context.Weapon721_ConsecutiveTransfer.set(entity);
-});
-
-Weapon721.Transfer.handler(async ({ event, context }) => {
-  const entity: Weapon721_Transfer = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    from: event.params.from,
-    to: event.params.to,
-    tokenId: event.params.tokenId,
-  };
-
-  context.Weapon721_Transfer.set(entity);
-});
-
-Weapon721.WeaponGenerated.handler(async ({ event, context }) => {
-  const entity: Weapon721_WeaponGenerated = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    to: event.params.to,
-    qty: event.params.qty,
-  };
-
-  context.Weapon721_WeaponGenerated.set(entity);
-});
-
-Weapon721.WeaponMetadataGenerated.handler(async ({ event, context }) => {
-  const entity: Weapon721_WeaponMetadataGenerated = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    event_id: event.params.id,
-    metadata: event.params.metadata,
-  };
-
-  context.Weapon721_WeaponMetadataGenerated.set(entity);
 });
 
 WeaponRemixer.LegendaryMixRequested.handler(async ({ event, context }) => {

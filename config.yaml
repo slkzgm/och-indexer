@@ -2,7 +2,7 @@
 name: envio-indexer
 networks:
 - id: 2741
-  start_block: 0
+  start_block: 2180840
   contracts:
   - name: WeaponRemixer
     address:
@@ -71,4 +71,11 @@ networks:
     - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
     - event: WeaponGenerated(address to, uint256 qty)
     - event: WeaponMetadataGenerated(uint256 id, uint32 metadata)
+  - name: Hero721
+    address:
+    - 0x7c47ea32FD27d1a74Fc6e9F31Ce8162e6Ce070eB
+    handler: src/EventHandlers.ts
+    events:
+    - event: ConsecutiveTransfer(uint256 indexed fromTokenId, uint256 toTokenId, address indexed from, address indexed to)
+    - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
 unordered_multichain_mode: true
