@@ -7,7 +7,7 @@ import {
   Gym_UnknownUpgraded,
   Gym_UpgradeRequested,
   Gym_Upgraded,
-} from "generated";
+} from "../../generated";
 import { processTraining } from "../utils/TrainingHelper";
 
 /**

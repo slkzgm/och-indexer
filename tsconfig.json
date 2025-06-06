@@ -1,27 +1,28 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "generated": ["generated"],
-      "generated/*": ["generated/*"]
-    },
-    "target": "es2020", //required for use with BigInt types
-    "lib": [
-      "es2020"
-    ],
-    "allowJs": true,
-    "checkJs": false,
-    "outDir": "build",
-    "strict": true,
-    "noImplicitAny": true,
+    /* Base Options */
     "esModuleInterop": true,
-    "resolveJsonModule": true,
     "skipLibCheck": true,
-    "module": "CommonJS"
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+
+    /* Strictness */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitAny": false, /* Peut être mis à true plus tard, mais false aide à débugger */
+
+    /* Module Options */
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "outDir": "build",
+    "paths": {
+      "generated": ["./generated/src/Types.gen"]
+    }
   },
-  "include": [
-    "src",
-    "test",
-    "generated"
-  ]
+  "include": ["src", "generated"], /* Assurez-vous que "generated" est bien inclus ici */
+  "exclude": ["node_modules", "build"]
 }
