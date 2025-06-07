@@ -1,6 +1,5 @@
 import { Blacksmith } from "../../generated";
 import type { Blacksmith_WeaponSharpened, Blacksmith_WeaponRepaired } from "../../generated";
-import type { Player_t, Weapon_t } from "../../generated/src/db/Entities.gen";
 import { createDefaultPlayer } from "../utils/EntityHelper";
 
 /**

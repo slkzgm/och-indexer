@@ -3,10 +3,6 @@
  * Please refer to https://docs.envio.dev for a thorough guide on all Envio indexer features
  */
 import {
-  Blacksmith,
-  Blacksmith_Upgraded,
-  Blacksmith_WeaponRepaired,
-  Blacksmith_WeaponSharpened,
   GachaMachine,
   GachaMachine_WeaponGenerated,
   GachaMachine_WeaponRequested,
@@ -18,40 +14,12 @@ import {
   WeaponRemixer_WeaponGenerated,
   WeaponRemixer_WeaponMixRequested,
 } from "../generated";
+import "./handlers/BlacksmithHandler";
 import "./handlers/GymHandler";
 import "./handlers/DragmaUnderlingsHandler";
 import "./handlers/HeroArmoryHandler";
 import "./handlers/Weapon721Handler";
 import "./handlers/Hero721Handler";
-
-Blacksmith.Upgraded.handler(async ({ event, context }) => {
-  const entity: Blacksmith_Upgraded = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    implementation: event.params.implementation,
-  };
-
-  context.Blacksmith_Upgraded.set(entity);
-});
-
-Blacksmith.WeaponRepaired.handler(async ({ event, context }) => {
-  const entity: Blacksmith_WeaponRepaired = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    weaponId: event.params.weaponId,
-    amount: event.params.amount,
-  };
-
-  context.Blacksmith_WeaponRepaired.set(entity);
-});
-
-Blacksmith.WeaponSharpened.handler(async ({ event, context }) => {
-  const entity: Blacksmith_WeaponSharpened = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    weaponId: event.params.weaponId,
-    amount: event.params.amount,
-  };
-
-  context.Blacksmith_WeaponSharpened.set(entity);
-});
 
 GachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
   const entity: GachaMachine_WeaponGenerated = {
