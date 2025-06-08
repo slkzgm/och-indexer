@@ -209,6 +209,18 @@ type WeaponRemixer_WeaponMixRequested {
   requestId: BigInt!
 }
 
+type WeaponGachaMint {
+  id: ID! # weaponId
+  requestId: BigInt!
+  player: Player!
+  gachaRaritySource: BigInt! # tokenId from request
+  weapon: Weapon!
+  weaponType: BigInt!
+  weaponRarity: BigInt!
+  weaponDurability: BigInt!
+  weaponSharpness: BigInt!
+}
+
 enum TrainingType {
   NORMAL
   CHAOS
@@ -227,6 +239,10 @@ type Player {
   repairedTimes: Int!
   sharpenSpend: BigInt!
   sharpenedTimes: Int!
+  bronzeGachaOpened: Int!
+  silverGachaOpened: Int!
+  goldGachaOpened: Int!
+  rainbowGachaOpened: Int!
 }
 
 type Hero {
@@ -286,4 +302,12 @@ type Weapon {
   repairedTimes: Int!
   sharpenSpend: BigInt!
   sharpenedTimes: Int!
+}
+
+type GachaRequest {
+  id: ID! # requestId
+  player: Player!
+  gachaRaritySource: BigInt! # tokenId from request
+  qty: BigInt!
+  generatedCount: Int!
 }

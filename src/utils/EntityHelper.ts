@@ -13,6 +13,10 @@ export function createDefaultPlayer(id: string): Player_t {
         repairedTimes: 0,
         sharpenSpend: BigInt(0),
         sharpenedTimes: 0,
+        bronzeGachaOpened: 0,
+        silverGachaOpened: 0,
+        goldGachaOpened: 0,
+        rainbowGachaOpened: 0,
     } as Player_t;
 }
 

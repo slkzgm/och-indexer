@@ -3,9 +3,6 @@
  * Please refer to https://docs.envio.dev for a thorough guide on all Envio indexer features
  */
 import {
-  GachaMachine,
-  GachaMachine_WeaponGenerated,
-  GachaMachine_WeaponRequested,
   HeroGachaMachine,
   HeroGachaMachine_WeaponGenerated,
   HeroGachaMachine_WeaponRequested,
@@ -20,30 +17,7 @@ import "./handlers/DragmaUnderlingsHandler";
 import "./handlers/HeroArmoryHandler";
 import "./handlers/Weapon721Handler";
 import "./handlers/Hero721Handler";
-
-GachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
-  const entity: GachaMachine_WeaponGenerated = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    weaponId: event.params.weaponId,
-    metadata: event.params.metadata,
-    requestId: event.params.requestId,
-  };
-
-  context.GachaMachine_WeaponGenerated.set(entity);
-});
-
-GachaMachine.WeaponRequested.handler(async ({ event, context }) => {
-  const entity: GachaMachine_WeaponRequested = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    tokenId: event.params.tokenId,
-    qty: event.params.qty,
-    requestId: event.params.requestId,
-  };
-
-  context.GachaMachine_WeaponRequested.set(entity);
-});
+import "./handlers/GachaMachineHandler";
 
 HeroGachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
   const entity: HeroGachaMachine_WeaponGenerated = {
