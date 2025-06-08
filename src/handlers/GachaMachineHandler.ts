@@ -32,7 +32,7 @@ GachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
     return;
   }
 
-  let player = await context.Player.get(gachaRequest.player_id);
+  let player = await context.Player.get(gachaRequest.player_id.toLowerCase());
 
   if (!player) {
     player = createDefaultPlayer(gachaRequest.player_id);
@@ -93,7 +93,7 @@ GachaMachine.WeaponRequested.handler(async ({ event, context }) => {
 
   context.GachaMachine_WeaponRequested.set(rawEntity);
 
-  let player = await context.Player.get(event.params.user);
+  let player = await context.Player.get(event.params.user.toLowerCase());
 
   if (!player) {
     player = createDefaultPlayer(event.params.user);

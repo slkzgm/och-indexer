@@ -221,6 +221,33 @@ type WeaponGachaMint {
   weaponSharpness: BigInt!
 }
 
+type WeaponHeroMint {
+  id: ID! # weaponId
+  requestId: BigInt!
+  player: Player!
+  weapon: Weapon!
+  weaponType: BigInt!
+  weaponRarity: BigInt!
+  weaponDurability: BigInt!
+  weaponSharpness: BigInt!
+  cost: BigInt!
+}
+
+type WeaponRemixerMint {
+  id: ID! # weaponId
+  requestId: BigInt!
+  player: Player!
+  remixRarity: Int!
+  weapon: Weapon!
+  weaponType: BigInt!
+  weaponRarity: BigInt!
+  weaponDurability: BigInt!
+  weaponSharpness: BigInt!
+  amount: BigInt!
+  cost: BigInt!
+  success: Boolean!
+}
+
 enum TrainingType {
   NORMAL
   CHAOS
@@ -243,6 +270,37 @@ type Player {
   silverGachaOpened: Int!
   goldGachaOpened: Int!
   rainbowGachaOpened: Int!
+  weaponHeroMinted: Int!
+  weaponHeroSpend: BigInt!
+  weaponRemixerMinted: Int!
+  weaponRemixerSpend: BigInt!
+  weaponRemixerAmount: BigInt!
+  weaponRemixerSuccess: Int!
+  weaponRemixerFail: Int!
+  weaponCommonRemixed: Int!
+  weaponCommonRemixedSpend: BigInt!
+  weaponCommonRemixedSuccess: Int!
+  weaponCommonRemixedFail: Int!
+  weaponUncommonRemixed: Int!
+  weaponUncommonRemixedSpend: BigInt!
+  weaponUncommonRemixedSuccess: Int!
+  weaponUncommonRemixedFail: Int!
+  weaponRareRemixed: Int!
+  weaponRareRemixedSpend: BigInt!
+  weaponRareRemixedSuccess: Int!
+  weaponRareRemixedFail: Int!
+  weaponEpicRemixed: Int!
+  weaponEpicRemixedSpend: BigInt!
+  weaponEpicRemixedSuccess: Int!
+  weaponEpicRemixedFail: Int!
+  weaponHeroicRemixed: Int!
+  weaponHeroicRemixedSpend: BigInt!
+  weaponHeroicRemixedSuccess: Int!
+  weaponHeroicRemixedFail: Int!
+  weaponLegendaryRemixed: Int!
+  weaponLegendaryRemixedSpend: BigInt!
+  weaponLegendaryRemixedSuccess: Int!
+  weaponLegendaryRemixedFail: Int!
 }
 
 type Hero {
@@ -310,4 +368,20 @@ type GachaRequest {
   gachaRaritySource: BigInt! # tokenId from request
   qty: BigInt!
   generatedCount: Int!
+}
+
+type WeaponHeroMintRequest {
+  id: ID! # requestId
+  player: Player!
+  qty: BigInt!
+  cost: BigInt!
+  generatedCount: Int!
+}
+
+type WeaponRemixerMintRequest {
+  id: ID! # requestId
+  player: Player!
+  remixRarity: BigInt!
+  amount: BigInt!
+  cost: BigInt!
 }
