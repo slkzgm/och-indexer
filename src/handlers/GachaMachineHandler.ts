@@ -7,7 +7,7 @@ import {
   GachaRequest_t,
   WeaponGachaMint_t,
 } from "../../generated/src/db/Entities.gen";
-import { createDefaultPlayer } from "../utils/EntityHelper";
+import { getOrCreatePlayer } from "../utils/EntityHelper";
 import { parseWeaponMetadata } from "../utils/WeaponMetadataHelper";
 
 GachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
@@ -32,11 +32,7 @@ GachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
     return;
   }
 
-  let player = await context.Player.get(gachaRequest.player_id.toLowerCase());
-
-  if (!player) {
-    player = createDefaultPlayer(gachaRequest.player_id);
-  }
+  const player = await getOrCreatePlayer(gachaRequest.player_id, context);
 
   const gachaRaritySource = Number(gachaRequest.gachaRaritySource);
   let updatedPlayer = { ...player };
@@ -93,16 +89,11 @@ GachaMachine.WeaponRequested.handler(async ({ event, context }) => {
 
   context.GachaMachine_WeaponRequested.set(rawEntity);
 
-  let player = await context.Player.get(event.params.user.toLowerCase());
+  const player = await getOrCreatePlayer(event.params.user, context);
 
-  if (!player) {
-    player = createDefaultPlayer(event.params.user);
-    context.Player.set(player);
-  }
-
-  const gachaRequest: GachaRequest_t = {
+  const gachaRequest: any = {
     id: event.params.requestId.toString(),
-    player_id: player.id,
+    player_id: player.id.toLowerCase(),
     gachaRaritySource: event.params.tokenId,
     qty: event.params.qty,
     generatedCount: 0,

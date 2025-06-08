@@ -1,6 +1,10 @@
 import { Blacksmith } from "../../generated";
-import type { Blacksmith_WeaponSharpened, Blacksmith_WeaponRepaired } from "../../generated";
-import { createDefaultPlayer } from "../utils/EntityHelper";
+import type {
+  Blacksmith_WeaponSharpened,
+  Blacksmith_WeaponRepaired,
+} from "../../generated";
+import type { Player_t, Weapon_t } from "../../generated/src/db/Entities.gen";
+import { getOrCreatePlayer } from "../utils/EntityHelper";
 
 /**
  * Handler for Blacksmith.WeaponSharpened events.
@@ -25,25 +29,21 @@ Blacksmith.WeaponSharpened.handler(async ({ event, context }: any) => {
   const weaponIdStr = event.params.weaponId.toString();
   const weapon = await context.Weapon.get(weaponIdStr);
   if (!weapon) return;
-  const updatedWeapon = {
+  const updatedWeapon: Weapon_t = {
     ...weapon,
     sharpness: weapon.maxSharpness,
     sharpenSpend: (weapon.sharpenSpend ?? BigInt(0)) + event.params.amount,
     sharpenedTimes: (weapon.sharpenedTimes ?? 0) + 1,
-  } as any;
+  };
   await context.Weapon.set(updatedWeapon);
 
   // Update player sharpen stats
-  const playerId = weapon.player_id;
-  let player = await context.Player.get(playerId);
-  if (!player) {
-    player = createDefaultPlayer(playerId);
-  }
-  const updatedPlayer = {
+  const player = await getOrCreatePlayer(weapon.player_id, context);
+  const updatedPlayer: Player_t = {
     ...player,
     sharpenSpend: player.sharpenSpend + event.params.amount,
     sharpenedTimes: player.sharpenedTimes + 1,
-  } as any;
+  };
   await context.Player.set(updatedPlayer);
 });
 
@@ -70,24 +70,20 @@ Blacksmith.WeaponRepaired.handler(async ({ event, context }: any) => {
   const weaponIdStr = event.params.weaponId.toString();
   const weapon = await context.Weapon.get(weaponIdStr);
   if (!weapon) return;
-  const updatedWeapon2 = {
+  const updatedWeapon: Weapon_t = {
     ...weapon,
     durability: weapon.maxDurability,
     repairSpend: (weapon.repairSpend ?? BigInt(0)) + event.params.amount,
     repairedTimes: (weapon.repairedTimes ?? 0) + 1,
-  } as any;
-  await context.Weapon.set(updatedWeapon2);
+  };
+  await context.Weapon.set(updatedWeapon);
 
   // Update player repair stats
-  const playerId = weapon.player_id;
-  let player = await context.Player.get(playerId);
-  if (!player) {
-    player = createDefaultPlayer(playerId);
-  }
-  const updatedPlayer = {
+  const player = await getOrCreatePlayer(weapon.player_id, context);
+  const updatedPlayer: Player_t = {
     ...player,
     repairSpend: player.repairSpend + event.params.amount,
     repairedTimes: player.repairedTimes + 1,
-  } as any;
+  };
   await context.Player.set(updatedPlayer);
 }); 

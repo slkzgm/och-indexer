@@ -11,7 +11,7 @@ import {
 } from "../../generated";
 import { computeRewards } from "../utils/ComputationHelper";
 import type { Hero_t, Player_t, Weapon_t, Staking_t } from "../../generated/src/db/Entities.gen";
-import { createDefaultHero, createDefaultPlayer } from "../utils/EntityHelper";
+import { createDefaultHero, getOrCreatePlayer } from "../utils/EntityHelper";
 
 /**
  * Handler for DragmaUnderlings.Staked events.
@@ -21,43 +21,33 @@ import { createDefaultHero, createDefaultPlayer } from "../utils/EntityHelper";
  */
 DragmaUnderlings.Staked.handler(async ({ event, context }: any) => {
     const user = event.params.user;
-    const heroIdBI = event.params.heroId;
-    const heroIdStr = heroIdBI.toString();
+    const heroIdStr = event.params.heroId.toString().toLowerCase();
     const timestampBI = BigInt(event.block.timestamp);
     const chainIdBI = BigInt(event.chainId);
     const blockNumBI = BigInt(event.block.number);
     const logIndexBI = BigInt(event.logIndex);
 
-    // Load existing Hero (returns Hero_t | undefined)
-    let existingHero: Hero_t | undefined = await context.Hero.get(heroIdStr);
-    let heroToSave: Hero_t;
-
-    if (existingHero) {
-        // Update staking fields on existing Hero
-        heroToSave = {
-            ...existingHero,
-            stakedSince: timestampBI,
-            stakingType: "DRAGMA_UNDERLINGS",
-        };
-    } else {
-        // Create minimal Hero record if none exists
-        heroToSave = {
-            ...createDefaultHero(heroIdStr, user),
-            stakedSince: timestampBI,
-            stakingType: "DRAGMA_UNDERLINGS",
-        };
+    let hero = await context.Hero.get(heroIdStr);
+    if (!hero) {
+        hero = createDefaultHero(heroIdStr, user);
     }
+
+    const heroToSave: Hero_t = {
+        ...hero,
+        stakedSince: timestampBI,
+        stakingType: "DRAGMA_UNDERLINGS",
+    };
     await context.Hero.set(heroToSave);
 
-    // Persist raw event
     const stakedEvent: DragmaUnderlings_Staked = {
         id: `${chainIdBI}_${blockNumBI}_${logIndexBI}`,
         user,
-        heroId: heroIdBI,
+        heroId: event.params.heroId,
     };
     await context.DragmaUnderlings_Staked.set(stakedEvent);
 
-    // Persist Staking record using hero entity's dailyReward
+    const player = await getOrCreatePlayer(user, context);
+
     const heroForStake = await context.Hero.get(heroIdStr);
     if (!heroForStake) {
         throw new Error(`Hero ${heroIdStr} not found for staking`);
@@ -65,11 +55,11 @@ DragmaUnderlings.Staked.handler(async ({ event, context }: any) => {
     if (!heroForStake.weapon_id) {
         throw new Error(`Hero ${heroIdStr} has no weapon to stake`);
     }
-    const stakingId = `${chainIdBI}_${blockNumBI}_${logIndexBI}`;
+
     const stakingEntity: Staking_t = {
-        id: stakingId,
+        id: `${chainIdBI}_${blockNumBI}_${logIndexBI}`,
         hero_id: heroIdStr,
-        player_id: user,
+        player_id: player.id,
         stakedSince: timestampBI,
         stakingType: "DRAGMA_UNDERLINGS",
         weapon_id: heroForStake.weapon_id,
@@ -88,7 +78,7 @@ DragmaUnderlings.Staked.handler(async ({ event, context }: any) => {
 DragmaUnderlings.Unstaked.handler(async ({ event, context }: any) => {
     const user = event.params.user;
     const heroIdBI = event.params.heroId;
-    const heroIdStr = heroIdBI.toString();
+    const heroIdStr = heroIdBI.toString().toLowerCase();
     const chainIdBI = BigInt(event.chainId);
     const blockNumBI = BigInt(event.block.number);
     const logIndexBI = BigInt(event.logIndex);
@@ -122,50 +112,33 @@ DragmaUnderlings.Unstaked.handler(async ({ event, context }: any) => {
  */
 DragmaUnderlings.Claimed.handler(async ({ event, context }: any) => {
     const user = event.params.user;
-    const heroIdBI = event.params.heroId;
     const amountBI = event.params.amount;
-    const heroIdStr = heroIdBI.toString();
+    const heroIdStr = event.params.heroId.toString().toLowerCase();
     const timestampBI = BigInt(event.block.timestamp);
-    const chainIdBI = BigInt(event.chainId);
-    const blockNumBI = BigInt(event.block.number);
-    const logIndexBI = BigInt(event.logIndex);
 
-    // Load and update Hero
     let hero: Hero_t | undefined = await context.Hero.get(heroIdStr);
-    if (hero) {
-        const updatedHero: Hero_t = {
-            ...hero,
-            claimedAmount: hero.claimedAmount + amountBI,
-            lastClaimed: timestampBI,
-        };
-        await context.Hero.set(updatedHero);
-    } else {
-        // Create minimal Hero if not exists
-        const defaultHero = createDefaultHero(heroIdStr, user);
-        const newHero: Hero_t = {
-            ...defaultHero,
-            claimedAmount: amountBI,
-            lastClaimed: timestampBI,
-        };
-        await context.Hero.set(newHero);
+    if (!hero) {
+        hero = createDefaultHero(heroIdStr, user);
     }
+    
+    const updatedHero: Hero_t = {
+        ...hero,
+        claimedAmount: hero.claimedAmount + amountBI,
+        lastClaimed: timestampBI,
+    };
+    await context.Hero.set(updatedHero);
 
-    // Load and update Player
-    let player: Player_t | undefined = await context.Player.get(user);
-    if (!player) {
-        player = createDefaultPlayer(user);
-    }
+    const player = await getOrCreatePlayer(user, context);
     const updatedPlayer: Player_t = {
         ...player,
         claimedAmount: player.claimedAmount + amountBI,
     };
     await context.Player.set(updatedPlayer);
 
-    // Persist raw event
     const claimedEvent: DragmaUnderlings_Claimed = {
-        id: `${chainIdBI}_${blockNumBI}_${logIndexBI}`,
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
         user,
-        heroId: heroIdBI,
+        heroId: event.params.heroId,
         amount: amountBI,
     };
     await context.DragmaUnderlings_Claimed.set(claimedEvent);

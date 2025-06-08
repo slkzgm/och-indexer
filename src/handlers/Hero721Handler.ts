@@ -5,7 +5,7 @@ import {
 } from "../../generated";
 import type { Hero_t } from "../../generated/src/db/Entities.gen";
 import { ZERO_ADDRESS, DRAGMA_UNDERLINGS_CONTRACT, S1_LEVELING_CONTRACT, S1_ENDGAME_CONTRACT } from "../utils/constants";
-import { createDefaultHero } from "../utils/EntityHelper";
+import { createDefaultHero, getOrCreatePlayer } from "../utils/EntityHelper";
 
 /**
  * Handler for Hero721.ConsecutiveTransfer events.
@@ -24,15 +24,14 @@ Hero721.ConsecutiveTransfer.handler(async ({ event, context }: any) => {
   let currentId = event.params.fromTokenId;
   const endId = event.params.toTokenId;
   while (currentId <= endId) {
-    const heroIdStr = currentId.toString();
+    const heroIdStr = currentId.toString().toLowerCase();
     if (toAddr === ZERO_ADDRESS) {
-      // Burn: delete the hero record
       await context.Hero.deleteUnsafe(heroIdStr);
     } else {
-      // Mint or transfer: upsert owner
+      await getOrCreatePlayer(toAddr, context);
       const hero: Hero_t | undefined = await context.Hero.get(heroIdStr);
       if (hero) {
-        await context.Hero.set({ ...hero, player_id: toAddr });
+        await context.Hero.set({ ...hero, player_id: toAddr.toLowerCase() });
       } else {
         const newHero = createDefaultHero(heroIdStr, toAddr);
         await context.Hero.set(newHero);
@@ -49,9 +48,8 @@ Hero721.Transfer.handler(async ({ event, context }: any) => {
   const from = event.params.from;
   const to = event.params.to;
   const tokenIdBI = event.params.tokenId;
-  const heroIdStr = tokenIdBI.toString();
+  const heroIdStr = tokenIdBI.toString().toLowerCase();
 
-  // Persist raw transfer event
   const entity: Hero721_Transfer = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
     from,
@@ -60,13 +58,11 @@ Hero721.Transfer.handler(async ({ event, context }: any) => {
   };
   await context.Hero721_Transfer.set(entity);
 
-  // Handle burn
   if (to === ZERO_ADDRESS) {
     await context.Hero.deleteUnsafe(heroIdStr);
     return;
   }
 
-  // Skip staking contract transfers (DragmaUnderlings, S1)
   if (
     from === DRAGMA_UNDERLINGS_CONTRACT ||
     to === DRAGMA_UNDERLINGS_CONTRACT ||
@@ -78,10 +74,10 @@ Hero721.Transfer.handler(async ({ event, context }: any) => {
     return;
   }
 
-  // Upsert Hero owner
+  await getOrCreatePlayer(to, context);
   let hero: Hero_t | undefined = await context.Hero.get(heroIdStr);
   if (hero) {
-    await context.Hero.set({ ...hero, player_id: to });
+    await context.Hero.set({ ...hero, player_id: to.toLowerCase() });
   } else {
     const newHero = createDefaultHero(heroIdStr, to);
     await context.Hero.set(newHero);

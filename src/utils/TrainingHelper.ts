@@ -7,7 +7,7 @@ import type {
 } from "../../generated/src/db/Entities.gen";
 import type { TrainingType_t as TrainingTypeEnum } from "../../generated/src/db/Enums.gen";
 import { computeRewards, computeDamage, computeUpgradeCost } from "./ComputationHelper";
-import { createDefaultPlayer, createDefaultHero } from "./EntityHelper";
+import { createDefaultHero, getOrCreatePlayer } from "./EntityHelper";
 
 
 /**
@@ -45,13 +45,7 @@ export async function processTraining(
     logIndexBI: bigint,
     chances?: bigint[]
 ): Promise<void> {
-    // --- Ensure Player exists ---
-    let player = await context.Player.get(owner);
-    if (!player) {
-        const newPlayer = createDefaultPlayer(owner);
-        await context.Player.set(newPlayer);
-        player = newPlayer;
-    }
+    const player = await getOrCreatePlayer(owner, context);
 
     // --- Ensure Hero exists ---
     let hero = await context.Hero.get(heroIdStr);
@@ -111,7 +105,7 @@ export async function processTraining(
     const trainingEntity: Training_t = {
         id: trainingId,
         hero_id: heroIdStr,
-        player_id: owner,
+        player_id: player.id,
         trainingType,
         timestamp: timestampBI,
         result: newLevelNum - oldLevelNum,

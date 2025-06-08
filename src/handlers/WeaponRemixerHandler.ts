@@ -9,7 +9,7 @@ import {
   WeaponRemixerMint_t,
   Player_t,
 } from "../../generated/src/db/Entities.gen";
-import { createDefaultPlayer } from "../utils/EntityHelper";
+import { createDefaultPlayer, getOrCreatePlayer } from "../utils/EntityHelper";
 import { parseWeaponMetadata } from "../utils/WeaponMetadataHelper";
 
 WeaponRemixer.WeaponGenerated.handler(async ({ event, context }) => {
@@ -32,10 +32,7 @@ WeaponRemixer.WeaponGenerated.handler(async ({ event, context }) => {
     return;
   }
 
-  let player = await context.Player.get(event.params.user.toLowerCase());
-  if (!player) {
-    player = createDefaultPlayer(event.params.user);
-  }
+  const player = await getOrCreatePlayer(event.params.user, context);
 
   const { weaponType, rarity, maxDurability, maxSharpness } =
     parseWeaponMetadata(event.params.metadata);

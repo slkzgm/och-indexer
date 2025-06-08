@@ -19,7 +19,7 @@ HeroArmory.Equipped.handler(async ({ event, context }: any) => {
   await context.HeroArmory_Equipped.set(entity);
 
   // Equip logic: update Hero stats based on weapon
-  const heroIdStr = event.params.heroId.toString();
+  const heroIdStr = event.params.heroId.toString().toLowerCase();
   const weaponIdStr = event.params.weaponId.toString();
   const hero: Hero_t | undefined = await context.Hero.get(heroIdStr);
   if (!hero) {
@@ -69,7 +69,7 @@ HeroArmory.Unequipped.handler(async ({ event, context }: any) => {
   await context.HeroArmory_Unequipped.set(entity);
 
   // Unequip logic: reset Hero weapon and stats
-  const heroIdStr = event.params.heroId.toString();
+  const heroIdStr = event.params.heroId.toString().toLowerCase();
   const hero: Hero_t | undefined = await context.Hero.get(heroIdStr);
   if (!hero) return;
   const updatedHero: Hero_t = {

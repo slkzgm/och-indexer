@@ -8,7 +8,7 @@ import {
 import type { Weapon_t } from "../../generated/src/db/Entities.gen";
 import { parseWeaponMetadata } from "../utils/WeaponMetadataHelper";
 import { ZERO_ADDRESS, ARMORY_CONTRACT } from "../utils/constants";
-import { createDefaultWeapon } from "../utils/EntityHelper";
+import { createDefaultWeapon, getOrCreatePlayer } from "../utils/EntityHelper";
 
 /**
  * Handler for Weapon721.ConsecutiveTransfer events.
@@ -24,20 +24,18 @@ Weapon721.ConsecutiveTransfer.handler(async ({ event, context }: any) => {
 
   await context.Weapon721_ConsecutiveTransfer.set(entity);
 
-  // Batch update owner or burn for each token in the range
   const toAddr = event.params.to;
   let currentId = event.params.fromTokenId;
   const endId = event.params.toTokenId;
   while (currentId <= endId) {
-    const tokenIdStr = currentId.toString();
+    const tokenIdStr = currentId.toString().toLowerCase();
     if (toAddr === ZERO_ADDRESS) {
-      // Burn: delete the weapon
       await context.Weapon.deleteUnsafe(tokenIdStr);
     } else {
-      // Mint or transfer: upsert owner
+      await getOrCreatePlayer(toAddr, context);
       const weapon: Weapon_t | undefined = await context.Weapon.get(tokenIdStr);
       if (weapon) {
-        await context.Weapon.set({ ...weapon, player_id: toAddr });
+        await context.Weapon.set({ ...weapon, player_id: toAddr.toLowerCase() });
       } else {
         const newWeapon = createDefaultWeapon(tokenIdStr, toAddr);
         await context.Weapon.set(newWeapon);
@@ -54,9 +52,8 @@ Weapon721.Transfer.handler(async ({ event, context }: any) => {
   const from = event.params.from;
   const to = event.params.to;
   const tokenIdBI = event.params.tokenId;
-  const tokenIdStr = tokenIdBI.toString();
+  const tokenIdStr = tokenIdBI.toString().toLowerCase();
 
-  // Persist raw transfer event
   const entity: Weapon721_Transfer = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
     from,
@@ -65,22 +62,19 @@ Weapon721.Transfer.handler(async ({ event, context }: any) => {
   };
   await context.Weapon721_Transfer.set(entity);
 
-  // Handle burn
   if (to === ZERO_ADDRESS) {
     await context.Weapon.deleteUnsafe(tokenIdStr);
     return;
   }
 
-  // juste après avoir extrait `from` et `to`
   if (from === ARMORY_CONTRACT || to === ARMORY_CONTRACT) {
-    // on skipper l'ownership update, on se base sur HeroArmoryHandler pour l'état équipé
     return;
   }
 
-  // Upsert Weapon owner
+  await getOrCreatePlayer(to, context);
   let weapon: Weapon_t | undefined = await context.Weapon.get(tokenIdStr);
   if (weapon) {
-    const updated: Weapon_t = { ...weapon, player_id: to };
+    const updated: Weapon_t = { ...weapon, player_id: to.toLowerCase() };
     await context.Weapon.set(updated);
   } else {
     const newWeapon = createDefaultWeapon(tokenIdStr, to);
@@ -106,10 +100,9 @@ Weapon721.WeaponGenerated.handler(async ({ event, context }: any) => {
  */
 Weapon721.WeaponMetadataGenerated.handler(async ({ event, context }: any) => {
   const tokenIdBI = event.params.id;
-  const tokenIdStr = tokenIdBI.toString();
+  const tokenIdStr = tokenIdBI.toString().toLowerCase();
   const metadataBI = event.params.metadata;
 
-  // Persist raw metadata event
   const entity: Weapon721_WeaponMetadataGenerated = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
     event_id: tokenIdBI,
@@ -117,14 +110,12 @@ Weapon721.WeaponMetadataGenerated.handler(async ({ event, context }: any) => {
   };
   await context.Weapon721_WeaponMetadataGenerated.set(entity);
 
-  // Parse metadata bits
   const { rarity, weaponType, maxSharpness, maxDurability } = parseWeaponMetadata(metadataBI);
 
-  // Load existing weapon or create minimal
   let weapon: Weapon_t | undefined = await context.Weapon.get(tokenIdStr);
   if (!weapon) {
     const baseWeapon = createDefaultWeapon(tokenIdStr, "");
-    const newWeapon = {
+    const newWeapon: Weapon_t = {
       ...baseWeapon,
       rarity,
       maxDurability,
@@ -132,10 +123,9 @@ Weapon721.WeaponMetadataGenerated.handler(async ({ event, context }: any) => {
       durability: maxDurability,
       sharpness: maxSharpness,
       weaponType,
-    } as any;
+    };
     await context.Weapon.set(newWeapon);
   } else {
-    // Update metadata fields
     const updated: Weapon_t = {
       ...weapon,
       rarity,

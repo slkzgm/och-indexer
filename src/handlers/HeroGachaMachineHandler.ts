@@ -7,7 +7,7 @@ import {
   WeaponHeroMintRequest_t,
   WeaponHeroMint_t,
 } from "../../generated/src/db/Entities.gen";
-import { createDefaultPlayer } from "../utils/EntityHelper";
+import { getOrCreatePlayer } from "../utils/EntityHelper";
 import { parseWeaponMetadata } from "../utils/WeaponMetadataHelper";
 
 HeroGachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
@@ -32,12 +32,7 @@ HeroGachaMachine.WeaponGenerated.handler(async ({ event, context }) => {
     return;
   }
 
-  let player = await context.Player.get(request.player_id.toLowerCase());
-
-  if (!player) {
-    player = createDefaultPlayer(request.player_id);
-  }
-
+  const player = await getOrCreatePlayer(request.player_id, context);
   const costPerWeapon = request.cost / request.qty;
 
   const updatedPlayer = {
@@ -89,16 +84,11 @@ HeroGachaMachine.WeaponRequested.handler(async ({ event, context }) => {
 
   context.HeroGachaMachine_WeaponRequested.set(rawEntity);
 
-  let player = await context.Player.get(event.params.user.toLowerCase());
-
-  if (!player) {
-    player = createDefaultPlayer(event.params.user);
-    context.Player.set(player);
-  }
+  const player = await getOrCreatePlayer(event.params.user, context);
 
   const request: WeaponHeroMintRequest_t = {
     id: event.params.requestId.toString(),
-    player_id: player.id,
+    player_id: player.id.toLowerCase(),
     qty: event.params.qty,
     cost: event.params.amount,
     generatedCount: 0,

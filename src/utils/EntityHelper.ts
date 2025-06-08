@@ -22,8 +22,6 @@ export function createDefaultPlayer(id: string): Player_t {
         weaponRemixerMinted: 0,
         weaponRemixerSpend: BigInt(0),
         weaponRemixerAmount: BigInt(0),
-        weaponRemixerAmountSuccess: 0,
-        weaponRemixerAmountFail: 0,
         weaponRemixerSuccess: 0,
         weaponRemixerFail: 0,
         weaponCommonRemixed: 0,
@@ -51,6 +49,37 @@ export function createDefaultPlayer(id: string): Player_t {
         weaponLegendaryRemixedSuccess: 0,
         weaponLegendaryRemixedFail: 0,
     } as Player_t;
+}
+
+export async function getOrCreatePlayer(
+  id: string,
+  context: any
+): Promise<Player_t> {
+  const lowerCaseId = id.toLowerCase();
+
+  let player = await context.Player.get(lowerCaseId);
+  if (player) {
+    return player;
+  }
+
+  const oldPlayer = await context.Player.get(id);
+  if (oldPlayer) {
+    context.log.info(`Migrating player ${id} to lowercase ID.`);
+
+    const migratedPlayer: Player_t = {
+      ...oldPlayer,
+      id: lowerCaseId,
+    };
+    context.Player.set(migratedPlayer);
+
+    context.Player.deleteUnsafe(id);
+
+    return migratedPlayer;
+  }
+
+  const newPlayer = createDefaultPlayer(id);
+  context.Player.set(newPlayer);
+  return newPlayer;
 }
 
 /**
