@@ -380,7 +380,6 @@ type WeaponHeroMintRequest {
 
 type WeaponRemixerMintRequest {
   id: ID! # requestId
-  player: Player!
   remixRarity: BigInt!
   amount: BigInt!
   cost: BigInt!
