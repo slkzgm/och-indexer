@@ -115,7 +115,7 @@ export function createDefaultHero(id: string, player_id: string): Hero_t {
 export function createDefaultWeapon(id: string, player_id: string, hero_id: string = ""): Weapon_t {
     return {
         id,
-        player_id,
+        player_id: player_id.toLowerCase(),
         hero_id,
         rarity: BigInt(0),
         durability: BigInt(0),
