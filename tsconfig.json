@@ -20,7 +20,8 @@
     "baseUrl": ".",
     "outDir": "build",
     "paths": {
-      "generated": ["./generated/src/Types.gen"]
+      "generated": ["./generated/src/Types.gen"],
+      "root/*": ["./*"]
     }
   },
   "include": ["src", "generated"], /* Assurez-vous que "generated" est bien inclus ici */
