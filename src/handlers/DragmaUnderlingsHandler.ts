@@ -21,7 +21,7 @@ import { createDefaultHero, getOrCreatePlayer } from "../utils/EntityHelper";
  */
 DragmaUnderlings.Staked.handler(async ({ event, context }: any) => {
     const user = event.params.user;
-    const heroIdStr = event.params.heroId.toString().toLowerCase();
+    const heroIdStr = event.params.heroId.toString();
     const timestampBI = BigInt(event.block.timestamp);
     const chainIdBI = BigInt(event.chainId);
     const blockNumBI = BigInt(event.block.number);
@@ -78,7 +78,7 @@ DragmaUnderlings.Staked.handler(async ({ event, context }: any) => {
 DragmaUnderlings.Unstaked.handler(async ({ event, context }: any) => {
     const user = event.params.user;
     const heroIdBI = event.params.heroId;
-    const heroIdStr = heroIdBI.toString().toLowerCase();
+    const heroIdStr = heroIdBI.toString();
     const chainIdBI = BigInt(event.chainId);
     const blockNumBI = BigInt(event.block.number);
     const logIndexBI = BigInt(event.logIndex);
@@ -113,7 +113,7 @@ DragmaUnderlings.Unstaked.handler(async ({ event, context }: any) => {
 DragmaUnderlings.Claimed.handler(async ({ event, context }: any) => {
     const user = event.params.user;
     const amountBI = event.params.amount;
-    const heroIdStr = event.params.heroId.toString().toLowerCase();
+    const heroIdStr = event.params.heroId.toString();
     const timestampBI = BigInt(event.block.timestamp);
 
     let hero: Hero_t | undefined = await context.Hero.get(heroIdStr);

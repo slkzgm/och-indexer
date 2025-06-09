@@ -28,7 +28,7 @@ Weapon721.ConsecutiveTransfer.handler(async ({ event, context }: any) => {
   let currentId = event.params.fromTokenId;
   const endId = event.params.toTokenId;
   while (currentId <= endId) {
-    const tokenIdStr = currentId.toString().toLowerCase();
+    const tokenIdStr = currentId.toString();
     if (toAddr === ZERO_ADDRESS) {
       await context.Weapon.deleteUnsafe(tokenIdStr);
     } else {
@@ -52,7 +52,7 @@ Weapon721.Transfer.handler(async ({ event, context }: any) => {
   const from = event.params.from;
   const to = event.params.to;
   const tokenIdBI = event.params.tokenId;
-  const tokenIdStr = tokenIdBI.toString().toLowerCase();
+  const tokenIdStr = tokenIdBI.toString();
 
   const entity: Weapon721_Transfer = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
@@ -100,7 +100,7 @@ Weapon721.WeaponGenerated.handler(async ({ event, context }: any) => {
  */
 Weapon721.WeaponMetadataGenerated.handler(async ({ event, context }: any) => {
   const tokenIdBI = event.params.id;
-  const tokenIdStr = tokenIdBI.toString().toLowerCase();
+  const tokenIdStr = tokenIdBI.toString();
   const metadataBI = event.params.metadata;
 
   const entity: Weapon721_WeaponMetadataGenerated = {

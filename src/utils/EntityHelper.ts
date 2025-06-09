@@ -89,8 +89,8 @@ export async function getOrCreatePlayer(
  */
 export function createDefaultHero(id: string, player_id: string): Hero_t {
     return {
-        id,
-        player_id,
+        id: id,
+        player_id: player_id.toLowerCase(),
         level: 0,
         trainingSpend: BigInt(0),
         lastTrained: BigInt(0),

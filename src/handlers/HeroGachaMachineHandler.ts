@@ -88,7 +88,7 @@ HeroGachaMachine.WeaponRequested.handler(async ({ event, context }) => {
 
   const request: WeaponHeroMintRequest_t = {
     id: event.params.requestId.toString(),
-    player_id: player.id.toLowerCase(),
+    player_id: player.id,
     qty: event.params.qty,
     cost: event.params.amount,
     generatedCount: 0,

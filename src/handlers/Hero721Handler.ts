@@ -24,7 +24,7 @@ Hero721.ConsecutiveTransfer.handler(async ({ event, context }: any) => {
   let currentId = event.params.fromTokenId;
   const endId = event.params.toTokenId;
   while (currentId <= endId) {
-    const heroIdStr = currentId.toString().toLowerCase();
+    const heroIdStr = currentId.toString();
     if (toAddr === ZERO_ADDRESS) {
       await context.Hero.deleteUnsafe(heroIdStr);
     } else {
@@ -48,7 +48,7 @@ Hero721.Transfer.handler(async ({ event, context }: any) => {
   const from = event.params.from;
   const to = event.params.to;
   const tokenIdBI = event.params.tokenId;
-  const heroIdStr = tokenIdBI.toString().toLowerCase();
+  const heroIdStr = tokenIdBI.toString();
 
   const entity: Hero721_Transfer = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,

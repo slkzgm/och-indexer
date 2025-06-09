@@ -93,7 +93,7 @@ GachaMachine.WeaponRequested.handler(async ({ event, context }) => {
 
   const gachaRequest: any = {
     id: event.params.requestId.toString(),
-    player_id: player.id.toLowerCase(),
+    player_id: player.id,
     gachaRaritySource: event.params.tokenId,
     qty: event.params.qty,
     generatedCount: 0,
