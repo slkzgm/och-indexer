@@ -1,0 +1,91 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: och-s2-indexer
+networks:
+- id: 2741
+  start_block: 0
+  contracts:
+  - name: Hero721
+    address:
+    - 0x7c47ea32FD27d1a74Fc6e9F31Ce8162e6Ce070eB
+    handler: src/EventHandlers.ts
+    events:
+    - event: ConsecutiveTransfer(uint256 indexed fromTokenId, uint256 toTokenId, address indexed from, address indexed to)
+    - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+  - name: Hero20
+    address:
+    - 0x33EE11cE309854a45B65368C078616ABcb5c6e3d
+    handler: src/EventHandlers.ts
+    events:
+    - event: Transfer(address indexed from, address indexed to, uint256 amount)
+  - name: Weapon721
+    address:
+    - 0x686bFe70F061507065f3E939C12aC9EE5a564dCf
+    handler: src/EventHandlers.ts
+    events:
+    - event: ConsecutiveTransfer(uint256 indexed fromTokenId, uint256 toTokenId, address indexed from, address indexed to)
+    - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+    - event: WeaponGenerated(address to, uint256 qty)
+    - event: WeaponMetadataGenerated(uint256 id, uint32 metadata)
+  - name: Gym
+    address:
+    - 0x485575E611dC1BFAF7a1170812a60CF0373430Dc
+    handler: src/EventHandlers.ts
+    events:
+    - event: ChaosUpgraded(address owner, uint256 heroId, uint256 season, uint256 oldLevel, uint256 newLevel, uint256[11] chances)
+    - event: NormalUpgraded(address owner, uint256 heroId, uint256 season, uint256 oldLevel, uint256 newLevel)
+    - event: UnknownUpgraded(address owner, uint256 heroId, uint256 season, uint256 oldLevel, uint256 newLevel, uint256[5] chances)
+    - event: UpgradeRequested(uint256 indexed season, address owner, uint256 heroId, uint256 levelUp, uint256 cost)
+  - name: DragmaUnderlings
+    address:
+    - 0xB964Bbf171ec414d2343066fD217FeC036B7B098
+    handler: src/EventHandlers.ts
+    events:
+    - event: Claimed(address user, uint256 heroId, uint256 amount)
+    - event: Staked(address user, uint256 heroId)
+    - event: Unstaked(address user, uint256 heroId)
+    - event: WeaponDurabilityUpdated(address user, uint256 weaponId, uint256 oldDurability, uint256 newDurability)
+    - event: WeaponSharpnessUpdated(address user, uint256 weaponId, uint256 oldSharpness, uint256 newSharpness)
+  - name: HeroArmory
+    address:
+    - 0x036A2598A6752b4986a629964F428680F737DECD
+    handler: src/EventHandlers.ts
+    events:
+    - event: Equipped(uint256 indexed heroId, uint256 weaponId)
+    - event: Unequipped(uint256 indexed heroId, uint256 weaponId)
+  - name: Blacksmith
+    address:
+    - 0x7d5E9F4AD95B5F9d26d774b8a579656aaafB2ebC
+    handler: src/EventHandlers.ts
+    events:
+    - event: WeaponRepaired(uint256 weaponId, uint256 amount)
+    - event: WeaponSharpened(uint256 weaponId, uint256 amount)
+  - name: WeaponRemixer
+    address:
+    - 0xD33Aa455CCbE93e243B19A1B2Cc6d195FF171911
+    handler: src/EventHandlers.ts
+    events:
+    - event: LegendaryMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
+    - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
+    - event: WeaponMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
+  - name: HeroWeaponMachine
+    address:
+    - 0xB964Bbf171ec414d2343066fD217FeC036B7B098
+    handler: src/EventHandlers.ts
+    events:
+    - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
+    - event: WeaponRequested(address user, uint256 slot, uint256 qty, uint256 amount, uint256 requestId)
+  - name: Gacha1155
+    address:
+    - 0xB5EC907d0E80F9A1cA9C1942D69Fb558E01140d4
+    handler: src/EventHandlers.ts
+    events:
+    - event: TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts)
+    - event: TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount)
+  - name: GachaWeaponMachine
+    address:
+    - 0x24B15b69343B58BdD5482986978308934a2Fd91E
+    handler: src/EventHandlers.ts
+    events:
+    - event: WeaponGenerated(address indexed user, uint256 weaponId, uint256 metadata, uint256 requestId)
+    - event: WeaponRequested(address indexed user, uint256 tokenId, uint256 qty, uint256 requestId)
+unordered_multichain_mode: true
