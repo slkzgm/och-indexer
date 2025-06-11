@@ -33,6 +33,11 @@ services:
       HASURA_GRAPHQL_DATABASE_URL: postgres://${ENVIO_PG_USER:-postgres}:${ENVIO_POSTGRES_PASSWORD:-postgres}@envio-postgres:5432/${ENVIO_PG_DATABASE:-postgres}
       HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-myadminsecretkey}
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
     networks:
       - my-proxy-net
 
@@ -45,7 +50,7 @@ services:
       - "8081:8081"
     depends_on:
       graphql-engine:
-        condition: service_started
+        condition: service_healthy
     restart: always
     environment:
       ENVIO_POSTGRES_PASSWORD: ${ENVIO_POSTGRES_PASSWORD:-postgres}
