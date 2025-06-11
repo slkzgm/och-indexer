@@ -219,3 +219,63 @@ type WeaponRemixer_WeaponMixRequested {
   requestId: BigInt!
 }
 
+type Player @entity {
+  "L'adresse du portefeuille, utilisée comme identifiant unique"
+  id: String!
+
+  "La balance du token ERC20 du joueur (Hero20)"
+  balance: BigInt!
+
+  "La liste des héros (ERC721) que ce joueur possède. Cette liste est remplie automatiquement grâce à la relation 'owner' sur l'entité Hero."
+  heroes: [Hero!]! @derivedFrom(field: "owner")
+
+  "La liste des armes (ERC721) que ce joueur possède."
+  weapons: [Weapon!]! @derivedFrom(field: "owner")
+
+  "La balance des différents items de Gacha (ERC1155) que ce joueur possède. C'est une table de jointure."
+  gachaBalances: [GachaBalance!]! @derivedFrom(field: "player")
+}
+
+type Hero @entity {
+  "Le tokenId du NFT, stocké sous forme de chaîne de caractères"
+  id: String!
+
+  "Le joueur qui possède ce héros. C'est le champ qui permet la relation inverse (@derivedFrom)"
+  owner: Player!
+
+  # ... autres propriétés du Hero (level, stats, etc.) à ajouter plus tard
+}
+
+type Weapon @entity {
+  "Le tokenId du NFT, stocké sous forme de chaîne de caractères"
+  id: String!
+
+  "Le joueur qui possède cette arme"
+  owner: Player!
+
+  # ... autres propriétés de l'arme (durability, sharpness, etc.)
+}
+
+"Représente un type d'item Gacha (par exemple, 'Potion de Soin', 'Clé Rare')"
+type GachaItem @entity {
+  "Le tokenId du Gacha (ERC1155), stocké sous forme de chaîne de caractères"
+  id: String!
+
+  # ... propriétés de l'item (rareté, image, etc.)
+}
+
+"Table de jointure pour gérer les balances des items Gacha (ERC1155) pour chaque joueur"
+type GachaBalance @entity {
+  "ID composite unique, par exemple : '0x123...-42' (adresse-tokenId)"
+  id: String!
+
+  "Le joueur concerné"
+  player: Player!
+
+  "L'item Gacha concerné"
+  item: GachaItem!
+
+  "La quantité de cet item que le joueur possède"
+  balance: BigInt!
+}
+

@@ -1,12 +1,18 @@
-import { Hero20, Hero20_Transfer } from "generated";
+import { Hero20 } from "generated";
+import { updatePlayerBalance } from "../helpers/player";
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 Hero20.Transfer.handler(async ({ event, context }) => {
-  const entity: Hero20_Transfer = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    from: event.params.from,
-    to: event.params.to,
-    amount: event.params.amount,
-  };
+  const { from, to, amount } = event.params;
 
-  context.Hero20_Transfer.set(entity);
+  // Augmente la balance du destinataire
+  if (to !== ZERO_ADDRESS) {
+    await updatePlayerBalance(context, to, amount);
+  }
+
+  // Diminue la balance de l'expéditeur
+  if (from !== ZERO_ADDRESS) {
+    await updatePlayerBalance(context, from, -amount);
+  }
 }); 

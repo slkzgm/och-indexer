@@ -1,28 +1,18 @@
-import {
-  Hero721,
-  Hero721_ConsecutiveTransfer,
-  Hero721_Transfer,
-} from "generated";
-
-Hero721.ConsecutiveTransfer.handler(async ({ event, context }) => {
-  const entity: Hero721_ConsecutiveTransfer = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    fromTokenId: event.params.fromTokenId,
-    toTokenId: event.params.toTokenId,
-    from: event.params.from,
-    to: event.params.to,
-  };
-
-  context.Hero721_ConsecutiveTransfer.set(entity);
-});
+import { Hero721 } from "generated";
+import { handleHeroTransfer } from "../helpers/hero";
 
 Hero721.Transfer.handler(async ({ event, context }) => {
-  const entity: Hero721_Transfer = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    from: event.params.from,
-    to: event.params.to,
-    tokenId: event.params.tokenId,
-  };
+  const { from, to, tokenId } = event.params;
+  await handleHeroTransfer(context, tokenId, from, to);
+});
 
-  context.Hero721_Transfer.set(entity);
+// Le `ConsecutiveTransfer` est souvent utilisé pour les mints de masse.
+// On le traite comme une série de transferts individuels.
+Hero721.ConsecutiveTransfer.handler(async ({ event, context }) => {
+  const { fromTokenId, toTokenId, from, to } = event.params;
+
+  // Le `toTokenId` est inclusif, donc de fromTokenId à toTokenId.
+  for (let tokenId = fromTokenId; tokenId <= toTokenId; tokenId++) {
+    await handleHeroTransfer(context, tokenId, from, to);
+  }
 }); 

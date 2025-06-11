@@ -1,32 +1,21 @@
 import {
   Weapon721,
-  Weapon721_ConsecutiveTransfer,
-  Weapon721_Transfer,
   Weapon721_WeaponGenerated,
   Weapon721_WeaponMetadataGenerated,
 } from "generated";
+import { handleWeaponTransfer } from "../helpers/weapon";
 
 Weapon721.ConsecutiveTransfer.handler(async ({ event, context }) => {
-  const entity: Weapon721_ConsecutiveTransfer = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    fromTokenId: event.params.fromTokenId,
-    toTokenId: event.params.toTokenId,
-    from: event.params.from,
-    to: event.params.to,
-  };
+  const { fromTokenId, toTokenId, from, to } = event.params;
 
-  context.Weapon721_ConsecutiveTransfer.set(entity);
+  for (let tokenId = fromTokenId; tokenId <= toTokenId; tokenId++) {
+    await handleWeaponTransfer(context, tokenId, from, to);
+  }
 });
 
 Weapon721.Transfer.handler(async ({ event, context }) => {
-  const entity: Weapon721_Transfer = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    from: event.params.from,
-    to: event.params.to,
-    tokenId: event.params.tokenId,
-  };
-
-  context.Weapon721_Transfer.set(entity);
+  const { from, to, tokenId } = event.params;
+  await handleWeaponTransfer(context, tokenId, from, to);
 });
 
 Weapon721.WeaponGenerated.handler(async ({ event, context }) => {

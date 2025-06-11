@@ -2,7 +2,7 @@
 name: och-s2-indexer
 networks:
 - id: 2741
-  start_block: 0
+  start_block: 2156264
   contracts:
   - name: Hero721
     address:
