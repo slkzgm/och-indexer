@@ -1,61 +1,39 @@
 import {
   Gym,
-  Gym_ChaosUpgraded,
-  Gym_NormalUpgraded,
-  Gym_UnknownUpgraded,
-  Gym_UpgradeRequested,
 } from "generated";
-
-Gym.ChaosUpgraded.handler(async ({ event, context }) => {
-  const entity: Gym_ChaosUpgraded = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    owner: event.params.owner,
-    heroId: event.params.heroId,
-    season: event.params.season,
-    oldLevel: event.params.oldLevel,
-    newLevel: event.params.newLevel,
-    chances: event.params.chances,
-  };
-
-  context.Gym_ChaosUpgraded.set(entity);
-});
+import { handleTraining } from "../helpers";
 
 Gym.NormalUpgraded.handler(async ({ event, context }) => {
-  const entity: Gym_NormalUpgraded = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    owner: event.params.owner,
-    heroId: event.params.heroId,
-    season: event.params.season,
-    oldLevel: event.params.oldLevel,
-    newLevel: event.params.newLevel,
-  };
+  const { owner, heroId, oldLevel, newLevel } = event.params;
+  await handleTraining(context, owner, heroId, oldLevel, newLevel, "Normal");
+});
 
-  context.Gym_NormalUpgraded.set(entity);
+Gym.ChaosUpgraded.handler(async ({ event, context }) => {
+  const { owner, heroId, oldLevel, newLevel, chances } = event.params;
+  await handleTraining(
+    context,
+    owner,
+    heroId,
+    oldLevel,
+    newLevel,
+    "Chaos",
+    chances,
+  );
 });
 
 Gym.UnknownUpgraded.handler(async ({ event, context }) => {
-  const entity: Gym_UnknownUpgraded = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    owner: event.params.owner,
-    heroId: event.params.heroId,
-    season: event.params.season,
-    oldLevel: event.params.oldLevel,
-    newLevel: event.params.newLevel,
-    chances: event.params.chances,
-  };
-
-  context.Gym_UnknownUpgraded.set(entity);
+  const { owner, heroId, oldLevel, newLevel, chances } = event.params;
+  await handleTraining(
+    context,
+    owner,
+    heroId,
+    oldLevel,
+    newLevel,
+    "Unknown",
+    chances,
+  );
 });
 
 Gym.UpgradeRequested.handler(async ({ event, context }) => {
-  const entity: Gym_UpgradeRequested = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    season: event.params.season,
-    owner: event.params.owner,
-    heroId: event.params.heroId,
-    levelUp: event.params.levelUp,
-    cost: event.params.cost,
-  };
-
-  context.Gym_UpgradeRequested.set(entity);
+  // We are ignoring UpgradeRequested for now as per the requirements.
 }); 

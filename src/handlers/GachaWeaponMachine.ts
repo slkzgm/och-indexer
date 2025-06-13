@@ -3,27 +3,32 @@ import {
   GachaWeaponMachine_WeaponGenerated,
   GachaWeaponMachine_WeaponRequested,
 } from "generated";
+import { getOrCreatePlayer, handleGachaWeaponGeneration } from "../helpers";
 
 GachaWeaponMachine.WeaponGenerated.handler(async ({ event, context }) => {
-  const entity: GachaWeaponMachine_WeaponGenerated = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    weaponId: event.params.weaponId,
-    metadata: event.params.metadata,
-    requestId: event.params.requestId,
-  };
-
-  context.GachaWeaponMachine_WeaponGenerated.set(entity);
+  const { user, requestId, weaponId, metadata } = event.params;
+  await handleGachaWeaponGeneration(
+    context,
+    user,
+    requestId,
+    weaponId,
+    metadata,
+  );
 });
 
 GachaWeaponMachine.WeaponRequested.handler(async ({ event, context }) => {
-  const entity: GachaWeaponMachine_WeaponRequested = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    tokenId: event.params.tokenId,
-    qty: event.params.qty,
-    requestId: event.params.requestId,
-  };
+  const player = await getOrCreatePlayer(context, event.params.user);
 
-  context.GachaWeaponMachine_WeaponRequested.set(entity);
+  context.WeaponMintRequest.set({
+    id: event.params.requestId.toString(),
+    player_id: player.id,
+    origin: "GACHA_MACHINE",
+    gachaRaritySource: event.params.tokenId,
+    qty: event.params.qty,
+    generatedCount: 0n,
+    cost: undefined,
+    remixRarity: undefined,
+    remixIsLegendary: undefined,
+    remixAmount: undefined,
+  });
 }); 

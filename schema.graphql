@@ -1,3 +1,334 @@
+# =================================================================================================
+# Entities for tracking player assets and statistics.
+# This schema is designed for a "nerd platform" to provide deep insights into the game economy.
+# We pre-calculate as many stats as possible during indexing to ensure fast query performance.
+# All entity IDs are Strings as required by the framework.
+# =================================================================================================
+
+# -------------------------------------------------------------------------------------------------
+# Player Entity: Represents a user and aggregates their assets and statistics.
+# -------------------------------------------------------------------------------------------------
+type Player @entity {
+  "Wallet address, used as the unique ID."
+  id: String!
+
+  "Player's ERC20 token balance."
+  balance: BigInt! @default(value: "0")
+
+  tokenIn: BigInt! @default(value: "0")
+  tokenOut: BigInt! @default(value: "0")
+  tokenTransferEventsIn: BigInt! @default(value: "0")
+  tokenTransferEventsOut: BigInt! @default(value: "0")
+
+  "Heroes (ERC721) owned by this player. Derived from the 'owner' field on the Hero entity."
+  heroes: [Hero!]! @derivedFrom(field: "owner")
+
+  heroesCount: BigInt! @default(value: "0")
+  totalHeroesLevel: BigInt! @default(value: "0")
+  heroTransfersIn: BigInt! @default(value: "0")
+  heroTransfersOut: BigInt! @default(value: "0")
+  heroesAverageLevel: BigInt! @default(value: "0")
+  heroCountByLevel: [BigInt!]! @default(value: "[]")
+
+  "Weapons (ERC721) owned by this player. Derived from the 'owner' field on the Weapon entity."
+  weapons: [Weapon!]! @derivedFrom(field: "owner")
+
+  "Gacha items (ERC1155) balances for this player. This is a join table."
+  gachaBalances: [GachaBalance!]! @derivedFrom(field: "player")
+
+  totalClaimed: BigInt! @default(value: "0")
+  totalStaked: BigInt! @default(value: "0")
+  totalUnstaked: BigInt! @default(value: "0")
+
+  # --- Aggregate Training Statistics (for all heroes) ---
+  totalTrainings: BigInt! @default(value: "0")
+  totalTrainingCost: BigInt! @default(value: "0")
+  totalLevelGains: BigInt! @default(value: "0")
+
+  # --- Per-Type Training Statistics (for all heroes) ---
+  normalTrainingCost: BigInt! @default(value: "0")
+  chaosTrainingCost: BigInt! @default(value: "0")
+  unknownTrainingCost: BigInt! @default(value: "0")
+  
+  normalTrainingsCount: BigInt! @default(value: "0")
+  chaosTrainingsCount: BigInt! @default(value: "0")
+  unknownTrainingsCount: BigInt! @default(value: "0")
+
+  normalLevelGains: BigInt! @default(value: "0")
+  chaosLevelGains: BigInt! @default(value: "0")
+  unknownLevelGains: BigInt! @default(value: "0")
+  chaosLevelGainsDistribution: [BigInt!]! @default(value: "[]")
+  unknownLevelGainsDistribution: [BigInt!]! @default(value: "[]")
+
+  # --- Chance Statistics for Averaging (Player-level, per type) ---
+  chaosChancesSum: [BigInt!]! @default(value: "[]")
+  unknownChancesSum: [BigInt!]! @default(value: "[]")
+
+  "Full history of training sessions initiated by this player."
+  trainingHistory: [Training!]! @derivedFrom(field: "player")
+
+  # --- Mint/Burn Statistics ---
+  heroesMinted: BigInt! @default(value: "0")
+  heroesBurned: BigInt! @default(value: "0")
+  weaponsMinted: BigInt! @default(value: "0")
+  weaponsBurned: BigInt! @default(value: "0")
+  gachaMinted: BigInt! @default(value: "0")
+  gachaBurned: BigInt! @default(value: "0")
+  gachaTransfersIn: BigInt! @default(value: "0")
+  gachaTransfersOut: BigInt! @default(value: "0")
+  
+  # --- Gacha Mint/Burn Statistics (by type) ---
+  bronzeGachasMinted: BigInt! @default(value: "0")
+  bronzeGachasBurned: BigInt! @default(value: "0")
+  bronzeGachaTransfersIn: BigInt! @default(value: "0")
+  bronzeGachaTransfersOut: BigInt! @default(value: "0")
+  silverGachasMinted: BigInt! @default(value: "0")
+  silverGachasBurned: BigInt! @default(value: "0")
+  silverGachaTransfersIn: BigInt! @default(value: "0")
+  silverGachaTransfersOut: BigInt! @default(value: "0")
+  goldGachasMinted: BigInt! @default(value: "0")
+  goldGachasBurned: BigInt! @default(value: "0")
+  goldGachaTransfersIn: BigInt! @default(value: "0")
+  goldGachaTransfersOut: BigInt! @default(value: "0")
+  rainbowGachasMinted: BigInt! @default(value: "0")
+  rainbowGachasBurned: BigInt! @default(value: "0")
+  rainbowGachaTransfersIn: BigInt! @default(value: "0")
+  rainbowGachaTransfersOut: BigInt! @default(value: "0")
+
+  weaponsCount: BigInt! @default(value: "0")
+  weaponTransfersIn: BigInt! @default(value: "0")
+  weaponTransfersOut: BigInt! @default(value: "0")
+}
+
+
+# -------------------------------------------------------------------------------------------------
+# Asset Entities: Represent the core NFTs in the game (Heroes and Weapons).
+# -------------------------------------------------------------------------------------------------
+type Hero @entity {
+  "Token ID of the Hero NFT, used as the unique ID."
+  id: String!
+
+  "The current owner of the Hero. If null, the hero is burned or in a non-tracked contract."
+  owner: Player
+
+  "The player who originally minted this Hero."
+  minter: Player!
+
+  "Timestamp of when this Hero was minted."
+  mintedTimestamp: BigInt!
+
+  "Current level of the hero."
+  level: BigInt! @default(value: "1")
+
+  "Timestamp of the last successful training."
+  lastTrainedTimestamp: BigInt! @default(value: "0")
+
+  "Total amount of tokens claimed by this player."
+  totalClaimed: BigInt! @default(value: "0")
+  totalStaked: BigInt! @default(value: "0")
+  totalUnstaked: BigInt! @default(value: "0")
+
+  # --- Aggregate Training Statistics (for this hero) ---
+  totalTrainings: BigInt! @default(value: "0")
+  totalTrainingCost: BigInt! @default(value: "0")
+  totalLevelGains: BigInt! @default(value: "0")
+
+  # --- Per-Type Training Statistics (for this hero) ---
+  normalTrainingCost: BigInt! @default(value: "0")
+  chaosTrainingCost: BigInt! @default(value: "0")
+  unknownTrainingCost: BigInt! @default(value: "0")
+
+  normalTrainingsCount: BigInt! @default(value: "0")
+  chaosTrainingsCount: BigInt! @default(value: "0")
+  unknownTrainingsCount: BigInt! @default(value: "0")
+
+  normalLevelGains: BigInt! @default(value: "0")
+  chaosLevelGains: BigInt! @default(value: "0")
+  unknownLevelGains: BigInt! @default(value: "0")
+  chaosLevelGainsDistribution: [BigInt!]! @default(value: "[]")
+  unknownLevelGainsDistribution: [BigInt!]! @default(value: "[]")
+
+  # --- Chance Statistics for Averaging (Hero-level, per type) ---
+  chaosChancesSum: [BigInt!]! @default(value: "[]")
+  unknownChancesSum: [BigInt!]! @default(value: "[]")
+
+  "Full history of training sessions for this specific hero."
+  trainingHistory: [Training!]! @derivedFrom(field: "hero")
+
+  transferCount: BigInt! @default(value: "0")
+}
+
+enum WeaponOrigin {
+  GACHA_MACHINE,
+  WEAPON_MACHINE,
+  REMIX_MACHINE
+}
+
+type Weapon @entity {
+  "Token ID of the Weapon NFT, used as the unique ID."
+  id: String!
+
+  "The current owner of the Weapon. If null, the weapon is burned or in a non-tracked contract."
+  owner: Player
+
+  "The origin of the weapon."
+  origin: WeaponOrigin!
+
+  "The player who originally minted this Weapon."
+  minter: Player!
+
+  "Timestamp of when this Weapon was minted."
+  mintedTimestamp: BigInt!
+
+  transferCount: BigInt! @default(value: "0")
+
+  "Durability of the weapon."
+  durability: BigInt!
+  maxDurability: BigInt!
+  repairedCount: BigInt! @default(value: "0")
+  repairSpent: BigInt! @default(value: "0")
+
+  "Sharpness of the weapon."
+  sharpness: BigInt!
+  maxSharpness: BigInt!
+  sharpenedCount: BigInt! @default(value: "0")
+  sharpenSpent: BigInt! @default(value: "0")
+}
+
+
+# -------------------------------------------------------------------------------------------------
+# Gacha Entities: For tracking ERC1155 assets.
+# -------------------------------------------------------------------------------------------------
+type GachaItem @entity {
+  "Token ID of the Gacha Item (ERC1155), used as the unique ID."
+  id: String!
+
+  "Balances of this item across all players."
+  balances: [GachaBalance!]! @derivedFrom(field: "item")
+
+  transferCount: BigInt! @default(value: "0")
+}
+
+type GachaBalance @entity {
+  "Composite ID: playerAddress-gachaItemId"
+  id: String!
+
+  "The player who owns these items."
+  player: Player!
+
+  "The Gacha Item being tracked."
+  item: GachaItem!
+
+  "The quantity of this item owned by the player."
+  balance: BigInt!
+}
+
+
+# -------------------------------------------------------------------------------------------------
+# History Entity: Logs individual events for detailed analysis.
+# -------------------------------------------------------------------------------------------------
+enum TrainingType {
+  Normal
+  Chaos
+  Unknown
+}
+
+type Training @entity {
+  "Transaction hash + log index, to uniquely identify the training event."
+  id: String!
+
+  "The player who initiated the training."
+  player: Player!
+
+  "The hero that was trained."
+  hero: Hero!
+
+  "The type of training session."
+  trainingType: TrainingType!
+
+  "The cost of the training session in ERC20 tokens."
+  cost: BigInt!
+
+  "The number of levels gained in this session."
+  levelGain: BigInt!
+
+  "The chances array, if applicable (for Chaos/Unknown types)."
+  chances: [BigInt!]
+
+  "Timestamp of the block where the training occurred."
+  timestamp: BigInt!
+}
+
+
+# -------------------------------------------------------------------------------------------------
+# Global Singleton Entity: Aggregates game-wide statistics.
+# -------------------------------------------------------------------------------------------------
+type GlobalStats @entity(immutable: false) {
+  "Singleton ID, always 'global'. There will only ever be one instance of this entity."
+  id: String!
+
+  # --- Entity Counts ---
+  playerCount: BigInt! @default(value: "0")
+  heroesCount: BigInt! @default(value: "0")
+  totalHeroesLevel: BigInt! @default(value: "0")
+  weaponsCount: BigInt! @default(value: "0")
+  gachasCount: BigInt! @default(value: "0")
+  bronzeGachasCount: BigInt! @default(value: "0")
+  silverGachasCount: BigInt! @default(value: "0")
+  goldGachasCount: BigInt! @default(value: "0")
+  rainbowGachasCount: BigInt! @default(value: "0")
+  heroCountByLevel: [BigInt!]! @default(value: "[]")
+
+  # --- Transfer Counts ---
+  totalTokenTransfers: BigInt! @default(value: "0")
+  totalHeroTransfers: BigInt! @default(value: "0")
+  totalWeaponTransfers: BigInt! @default(value: "0")
+  totalGachaTransfers: BigInt! @default(value: "0")
+  totalBronzeGachaTransfers: BigInt! @default(value: "0")
+  totalSilverGachaTransfers: BigInt! @default(value: "0")
+  totalGoldGachaTransfers: BigInt! @default(value: "0")
+  totalRainbowGachaTransfers: BigInt! @default(value: "0")
+
+  # --- Mint/Burn Statistics ---
+  totalHeroesMinted: BigInt! @default(value: "0")
+  totalHeroesBurned: BigInt! @default(value: "0")
+  totalWeaponsMinted: BigInt! @default(value: "0")
+  totalWeaponsBurned: BigInt! @default(value: "0")
+  totalGachasMinted: BigInt! @default(value: "0")
+  totalGachasBurned: BigInt! @default(value: "0")
+  totalBronzeGachasMinted: BigInt! @default(value: "0")
+  totalBronzeGachasBurned: BigInt! @default(value: "0")
+  totalSilverGachasMinted: BigInt! @default(value: "0")
+  totalSilverGachasBurned: BigInt! @default(value: "0")
+  totalGoldGachasMinted: BigInt! @default(value: "0")
+  totalGoldGachasBurned: BigInt! @default(value: "0")
+  totalRainbowGachasMinted: BigInt! @default(value: "0")
+  totalRainbowGachasBurned: BigInt! @default(value: "0")
+
+  # --- Staking / Claiming ---
+  totalClaimed: BigInt! @default(value: "0")
+  totalStaked: BigInt! @default(value: "0")
+  totalUnstaked: BigInt! @default(value: "0")
+
+  # --- Training Statistics ---
+  totalTrainings: BigInt! @default(value: "0")
+  totalTrainingCost: BigInt! @default(value: "0")
+  totalLevelGains: BigInt! @default(value: "0")
+  totalNormalTrainingsCount: BigInt! @default(value: "0")
+  totalChaosTrainingsCount: BigInt! @default(value: "0")
+  totalUnknownTrainingsCount: BigInt! @default(value: "0")
+  totalNormalTrainingCost: BigInt! @default(value: "0")
+  totalChaosTrainingCost: BigInt! @default(value: "0")
+  totalUnknownTrainingCost: BigInt! @default(value: "0")
+  totalNormalLevelGains: BigInt! @default(value: "0")
+  totalChaosLevelGains: BigInt! @default(value: "0")
+  totalUnknownLevelGains: BigInt! @default(value: "0")
+  totalChaosLevelGainsDistribution: [BigInt!]! @default(value: "[]")
+  totalUnknownLevelGainsDistribution: [BigInt!]! @default(value: "[]")
+  totalChaosChancesSum: [BigInt!]! @default(value: "[]")
+  totalUnknownChancesSum: [BigInt!]! @default(value: "[]")
+}
+
 type Blacksmith_WeaponRepaired {
   id: ID!
   weaponId: BigInt!
@@ -218,64 +549,3 @@ type WeaponRemixer_WeaponMixRequested {
   rarity: BigInt!
   requestId: BigInt!
 }
-
-type Player @entity {
-  "L'adresse du portefeuille, utilisée comme identifiant unique"
-  id: String!
-
-  "La balance du token ERC20 du joueur (Hero20)"
-  balance: BigInt!
-
-  "La liste des héros (ERC721) que ce joueur possède. Cette liste est remplie automatiquement grâce à la relation 'owner' sur l'entité Hero."
-  heroes: [Hero!]! @derivedFrom(field: "owner")
-
-  "La liste des armes (ERC721) que ce joueur possède."
-  weapons: [Weapon!]! @derivedFrom(field: "owner")
-
-  "La balance des différents items de Gacha (ERC1155) que ce joueur possède. C'est une table de jointure."
-  gachaBalances: [GachaBalance!]! @derivedFrom(field: "player")
-}
-
-type Hero @entity {
-  "Le tokenId du NFT, stocké sous forme de chaîne de caractères"
-  id: String!
-
-  "Le joueur qui possède ce héros. C'est le champ qui permet la relation inverse (@derivedFrom)"
-  owner: Player!
-
-  # ... autres propriétés du Hero (level, stats, etc.) à ajouter plus tard
-}
-
-type Weapon @entity {
-  "Le tokenId du NFT, stocké sous forme de chaîne de caractères"
-  id: String!
-
-  "Le joueur qui possède cette arme"
-  owner: Player!
-
-  # ... autres propriétés de l'arme (durability, sharpness, etc.)
-}
-
-"Représente un type d'item Gacha (par exemple, 'Potion de Soin', 'Clé Rare')"
-type GachaItem @entity {
-  "Le tokenId du Gacha (ERC1155), stocké sous forme de chaîne de caractères"
-  id: String!
-
-  # ... propriétés de l'item (rareté, image, etc.)
-}
-
-"Table de jointure pour gérer les balances des items Gacha (ERC1155) pour chaque joueur"
-type GachaBalance @entity {
-  "ID composite unique, par exemple : '0x123...-42' (adresse-tokenId)"
-  id: String!
-
-  "Le joueur concerné"
-  player: Player!
-
-  "L'item Gacha concerné"
-  item: GachaItem!
-
-  "La quantité de cet item que le joueur possède"
-  balance: BigInt!
-}
-

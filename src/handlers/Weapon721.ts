@@ -3,19 +3,25 @@ import {
   Weapon721_WeaponGenerated,
   Weapon721_WeaponMetadataGenerated,
 } from "generated";
-import { handleWeaponTransfer } from "../helpers/weapon";
+import { handleWeaponTransfer } from "../helpers";
 
 Weapon721.ConsecutiveTransfer.handler(async ({ event, context }) => {
   const { fromTokenId, toTokenId, from, to } = event.params;
 
   for (let tokenId = fromTokenId; tokenId <= toTokenId; tokenId++) {
-    await handleWeaponTransfer(context, tokenId, from, to);
+    await handleWeaponTransfer(
+      context,
+      tokenId,
+      from,
+      to,
+      event.block.timestamp,
+    );
   }
 });
 
 Weapon721.Transfer.handler(async ({ event, context }) => {
   const { from, to, tokenId } = event.params;
-  await handleWeaponTransfer(context, tokenId, from, to);
+  await handleWeaponTransfer(context, tokenId, from, to, event.block.timestamp);
 });
 
 Weapon721.WeaponGenerated.handler(async ({ event, context }) => {

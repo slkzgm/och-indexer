@@ -22,3 +22,44 @@ export const WEAPON_STAKING_CONTRACTS: string[] = (
     ARMORY_CONTRACT,
   ] as string[]
 ).map((addr) => addr.toLowerCase());
+
+// IDs for Gacha items (ERC1155)
+export const BRONZE_GACHA_ID = 1n;
+export const SILVER_GACHA_ID = 2n;
+export const GOLD_GACHA_ID = 3n;
+export const RAINBOW_GACHA_ID = 4n;
+
+// Maximum level for Heroes and Weapons
+export const MAX_LEVEL = 100;
+
+// Level gain range for Chaos trainings
+export const CHAOS_LEVEL_GAIN_MIN = -5;
+export const CHAOS_LEVEL_GAIN_MAX = 5;
+export const CHAOS_LEVEL_GAIN_RANGE_SIZE =
+  CHAOS_LEVEL_GAIN_MAX - CHAOS_LEVEL_GAIN_MIN + 1;
+
+// Level gain range for Unknown trainings
+export const UNKNOWN_LEVEL_GAIN_MIN = -1;
+export const UNKNOWN_LEVEL_GAIN_MAX = 3;
+export const UNKNOWN_LEVEL_GAIN_RANGE_SIZE =
+  UNKNOWN_LEVEL_GAIN_MAX - UNKNOWN_LEVEL_GAIN_MIN + 1;
+
+// Size of the `chances` array for each training type
+export const CHAOS_CHANCES_SIZE = 11;
+export const UNKNOWN_CHANCES_SIZE = 5;
+
+// Weapon Rarity: 0-6 (Common, Uncommon, Rare, Epic, Heroic, Legendary, Mythic)
+export const WEAPON_RARITY_MIN = 0;
+export const WEAPON_RARITY_MAX = 6;
+export const WEAPON_RARITY_COUNT = WEAPON_RARITY_MAX - WEAPON_RARITY_MIN + 1;
+
+// Weapon Sharpness: assumed 1-100
+export const WEAPON_SHARPNESS_MIN = 1;
+export const WEAPON_SHARPNESS_MAX = 100;
+export const WEAPON_SHARPNESS_COUNT =
+  WEAPON_SHARPNESS_MAX - WEAPON_SHARPNESS_MIN + 1;
+
+// Weapon Remixer amount: 2-5
+export const REMIXER_AMOUNT_MIN = 2;
+export const REMIXER_AMOUNT_MAX = 5;
+export const REMIXER_AMOUNT_COUNT = REMIXER_AMOUNT_MAX - REMIXER_AMOUNT_MIN + 1;

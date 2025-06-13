@@ -1,9 +1,9 @@
 import { Hero721 } from "generated";
-import { handleHeroTransfer } from "../helpers/hero";
+import { handleHeroTransfer } from "../helpers";
 
 Hero721.Transfer.handler(async ({ event, context }) => {
   const { from, to, tokenId } = event.params;
-  await handleHeroTransfer(context, tokenId, from, to);
+  await handleHeroTransfer(context, tokenId, from, to, event.block.timestamp);
 });
 
 // Le `ConsecutiveTransfer` est souvent utilisé pour les mints de masse.
@@ -13,6 +13,6 @@ Hero721.ConsecutiveTransfer.handler(async ({ event, context }) => {
 
   // Le `toTokenId` est inclusif, donc de fromTokenId à toTokenId.
   for (let tokenId = fromTokenId; tokenId <= toTokenId; tokenId++) {
-    await handleHeroTransfer(context, tokenId, from, to);
+    await handleHeroTransfer(context, tokenId, from, to, event.block.timestamp);
   }
 }); 
