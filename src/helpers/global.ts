@@ -84,6 +84,11 @@ const NEW_GLOBAL_STATS_DEFAULTS = {
   totalRemixSuccesses: 0n,
   totalRemixFailures: 0n,
   totalRemixBigSuccesses: 0n,
+  totalWeaponsGenerated: 0n,
+  totalWeaponsMintedByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  totalWeaponsBurnedByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  totalWeaponsMintedBySharpness: Array(WEAPON_SHARPNESS_COUNT).fill(0n),
+  totalWeaponsBurnedBySharpness: Array(WEAPON_SHARPNESS_COUNT).fill(0n),
 };
 
 export async function getOrCreateGlobalStats(context: any) {
