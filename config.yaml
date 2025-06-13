@@ -65,8 +65,17 @@ networks:
     handler: src/EventHandlers.ts
     events:
     - event: LegendaryMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
+      field_selection:
+        transaction_fields:
+        - from
     - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
+      field_selection:
+        transaction_fields:
+        - from
     - event: WeaponMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
+      field_selection:
+        transaction_fields:
+        - from
   - name: HeroWeaponMachine
     address:
     - 0xB964Bbf171ec414d2343066fD217FeC036B7B098
