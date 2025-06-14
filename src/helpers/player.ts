@@ -18,7 +18,7 @@ export async function updatePlayerBalance(
     heroCount: 0,
     weaponCount: 0,
     stakedHeroCount: 0,
-    gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
+    gachaBalances: [0n, 0n, 0n, 0n],
   });
 
   player.balance = player.balance + amountChange;
@@ -48,7 +48,7 @@ export async function updatePlayerCounts(
     heroCount: 0,
     weaponCount: 0,
     stakedHeroCount: 0,
-    gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
+    gachaBalances: [0n, 0n, 0n, 0n],
   });
 
   if (changes.heroCount !== undefined) {

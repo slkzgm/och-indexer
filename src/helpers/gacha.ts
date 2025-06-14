@@ -1,5 +1,3 @@
-import { ZERO_ADDRESS } from "../constants/index";
-
 // Mapping des IDs Gacha vers les index dans l'array
 const GACHA_TYPE_INDEX: Record<string, number> = {
   "1": 0, // BRONZE

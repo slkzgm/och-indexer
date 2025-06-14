@@ -244,6 +244,7 @@ type Hero @entity {
   level: Int! @default(value: "1")
   lastTrainingTimestamp: BigInt! @default(value: "0")
   nextTrainingCost: BigInt! @default(value: "0")
+  nextTrainingAvailable: BigInt! @default(value: "0")
 
   equippedWeapon: Weapon @oneToOne
   damage: BigInt! @default(value: "0")

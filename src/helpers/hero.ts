@@ -1,5 +1,6 @@
 import { HERO_STAKING_CONTRACTS, ZERO_ADDRESS } from "../constants/index";
 import { updatePlayerCounts } from "./player";
+import { calculateTrainingCost } from "./calculations";
 
 /**
  * Gère la logique de transfert pour un Hero NFT.
@@ -59,7 +60,8 @@ export async function handleHeroTransfer(
       mintedTimestamp: blockTimestamp || 0n,
       level: 1,
       lastTrainingTimestamp: 0n,
-      nextTrainingCost: 0n,
+      nextTrainingCost: calculateTrainingCost(1),
+      nextTrainingAvailable: 0n,
       damage: 0n,
       staked: false,
     });
