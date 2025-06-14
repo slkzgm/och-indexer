@@ -19,11 +19,14 @@ export async function handleHeroTraining(
   // Validation : niveau minimum
   const finalLevel = validateHeroLevel(newLevel);
   
-  // Récupère le héro
-  const hero = await context.Hero.getOrThrow(
-    heroId,
-    `Hero ${heroId} non trouvé pour le training`
-  );
+  // PARALLELISATION : Récupère le héro et son arme équipée en parallèle
+  const [hero, equippedWeapon] = await Promise.all([
+    context.Hero.getOrThrow(heroId, `Hero ${heroId} non trouvé pour le training`),
+    // Récupère l'arme équipée en parallèle si elle existe
+    context.Hero.get(heroId).then((h: any) => 
+      h?.equippedWeapon_id ? context.Weapon.get(h.equippedWeapon_id) : null
+    ),
+  ]);
 
   // Met à jour le héro avec le nouveau niveau
   const updatedHero = {
@@ -36,12 +39,6 @@ export async function handleHeroTraining(
 
   // OPTIMISATION : Ne recalcule les stats que si le niveau a réellement changé
   if (oldLevel !== newLevel) {
-    // Récupère l'arme équipée pour recalculer les stats
-    let equippedWeapon = null;
-    if (hero.equippedWeapon_id) {
-      equippedWeapon = await context.Weapon.get(hero.equippedWeapon_id);
-    }
-
     // Recalcule les stats (damage et rewards) avec le nouveau niveau
     await updateHeroStats(context, updatedHero, equippedWeapon);
   } else {

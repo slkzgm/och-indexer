@@ -7,6 +7,9 @@
 const TRAINING_COOLDOWN_SECONDS = 24 * 60 * 60; // 24h
 const MIN_HERO_LEVEL = 1;
 
+// Constants pour DragmaUnderlings staking
+const UNSTAKE_COOLDOWN_SECONDS = 6 * 60 * 60; // 6h
+
 // Constants pour les rewards (en wei)
 const WEI_SCALE = BigInt("1000000000000000000"); // 1e18
 const BASE_REWARD_WEI = 50n * WEI_SCALE; // 50 tokens base
@@ -36,6 +39,15 @@ export function calculateTrainingCost(level: number): bigint {
  */
 export function calculateNextTrainingAvailable(lastTrainingTimestamp: bigint): bigint {
   return lastTrainingTimestamp + BigInt(TRAINING_COOLDOWN_SECONDS);
+}
+
+/**
+ * Calcule le timestamp de disponibilité pour unstake
+ * @param stakedTimestamp Le timestamp du début du staking
+ * @returns Le timestamp où le héro pourra être unstake
+ */
+export function calculateUnstakeAvailable(stakedTimestamp: bigint): bigint {
+  return stakedTimestamp + BigInt(UNSTAKE_COOLDOWN_SECONDS);
 }
 
 /**

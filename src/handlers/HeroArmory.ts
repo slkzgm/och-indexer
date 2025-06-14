@@ -19,23 +19,24 @@ HeroArmory.Equipped.handler(async ({ event, context }) => {
     weaponId,
   };
 
-  // PARALLELISATION : Stockage event + récupération des entités
-  const [, hero, weapon] = await Promise.all([
+  // PARALLELISATION : Stockage event + récupération des entités + ancienne arme si nécessaire
+  const [, hero, weapon, oldWeapon] = await Promise.all([
     context.HeroArmory_Equipped.set(entity),
     context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`),
     context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`),
+    // Récupère l'ancienne arme en parallèle si elle existe
+    context.Hero.get(heroId.toString()).then(h => 
+      h?.equippedWeapon_id ? context.Weapon.get(h.equippedWeapon_id) : null
+    ),
   ]);
 
   // Déséquipe l'ancienne arme si elle existe
-  if (hero.equippedWeapon_id) {
-    const oldWeapon = await context.Weapon.get(hero.equippedWeapon_id);
-    if (oldWeapon) {
-      const updatedOldWeapon = {
-        ...oldWeapon,
-        equipped: false,
-      };
-      context.Weapon.set(updatedOldWeapon);
-    }
+  if (oldWeapon) {
+    const updatedOldWeapon = {
+      ...oldWeapon,
+      equipped: false,
+    };
+    context.Weapon.set(updatedOldWeapon);
   }
 
   // PARALLELISATION : Met à jour weapon + hero + recalcule stats

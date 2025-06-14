@@ -134,6 +134,7 @@ export async function updateHeroStats(
 
 /**
  * Met à jour une arme et recalcule les stats du héro équipé si nécessaire
+ * Gère automatiquement le champ broken basé sur la durability
  * @param context Le contexte du handler
  * @param weapon L'arme à mettre à jour
  * @param updates Les champs à mettre à jour
@@ -149,24 +150,23 @@ export async function updateWeaponAndHeroStats(
     broken: boolean;
   }>
 ) {
-  // Met à jour l'arme
+  // Calcule automatiquement broken si durability est mise à jour
+  const newDurability = updates.durability != undefined ? updates.durability : weapon.durability;
+  
+  // Met à jour l'arme (broken automatique sauf si explicitement fourni)
   const updatedWeapon = {
     ...weapon,
     ...updates,
+    broken: updates.broken !== undefined ? updates.broken : newDurability === 0,
   };
   
   context.Weapon.set(updatedWeapon);
 
   // Si l'arme est équipée, recalcule les stats du héro
-  if (weapon.equipped) {
-    // Trouve le héro qui a cette arme équipée
-    const equippedHeroes = await context.Hero.getWhere.equippedWeapon_id.eq(weapon.id);
-    
-    if (equippedHeroes.length > 0) {
-      // Normalement il ne devrait y avoir qu'un seul héro avec cette arme
-      const hero = equippedHeroes[0];
-      await updateHeroStats(context, hero, updatedWeapon);
-    }
+  if (weapon.equipped && weapon.equippedBy && weapon.equippedBy.length > 0) {
+    // Utilise la relation derivedFrom pour récupérer directement le héro
+    const hero = weapon.equippedBy[0]; // Normalement un seul héro par arme
+    await updateHeroStats(context, hero, updatedWeapon);
   }
 
   return updatedWeapon;
