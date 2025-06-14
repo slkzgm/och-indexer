@@ -249,6 +249,16 @@ type Hero @entity {
   equippedWeapon: Weapon @oneToOne
   damage: BigInt! @default(value: "0")
 
+  # Rewards calculation (all in wei - 1e18)
+  maxHeroPerDay: BigInt! @default(value: "0") # Maximum possible rewards per day
+  baseHeroPerDay: BigInt! @default(value: "0") # Guaranteed 80% of max
+  bonusHeroPerDay: BigInt! @default(value: "0") # Current sharpness bonus (0-20% of max)
+  effectiveHeroPerDay: BigInt! @default(value: "0") # Total daily rewards (base + bonus + 50)
+  
+  # Hourly equivalents for convenience
+  maxHeroPerHour: BigInt! @default(value: "0") # maxHeroPerDay / 24
+  effectiveHeroPerHour: BigInt! @default(value: "0") # effectiveHeroPerDay / 24
+
   staked: Boolean! @default(value: false)
   stakingType: StakingType
   stakedTimestamp: BigInt

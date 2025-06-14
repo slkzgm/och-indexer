@@ -70,8 +70,66 @@ export function createHero(
     nextTrainingCost: heroData.nextTrainingCost || calculateTrainingCost(level),
     nextTrainingAvailable: heroData.nextTrainingAvailable || 0n,
     damage: heroData.damage || 0n,
+    // Rewards fields (default to 0, will be calculated when weapon equipped)
+    maxHeroPerDay: 0n,
+    baseHeroPerDay: 0n,
+    bonusHeroPerDay: 0n,
+    effectiveHeroPerDay: 0n,
+    maxHeroPerHour: 0n,
+    effectiveHeroPerHour: 0n,
     staked: heroData.staked || false,
   });
+}
+
+/**
+ * Recalcule et met à jour les stats d'un héro (damage et rewards)
+ * @param context Le contexte du handler
+ * @param hero L'entité Hero à mettre à jour
+ * @param weapon L'arme équipée (null si pas d'arme)
+ */
+export async function updateHeroStats(
+  context: any,
+  hero: any,
+  weapon: any | null
+) {
+  // Import dynamique pour éviter les dépendances circulaires
+  const { calculateHeroDamage, calculateHeroRewards } = require('./calculations');
+  
+  let damage = 0n;
+  let rewards = {
+    maxHeroPerDay: 0n,
+    baseHeroPerDay: 0n,
+    bonusHeroPerDay: 0n,
+    effectiveHeroPerDay: 0n,
+    maxHeroPerHour: 0n,
+    effectiveHeroPerHour: 0n,
+  };
+  
+  // Si une arme est équipée, calcule damage et rewards
+  if (weapon) {
+    damage = calculateHeroDamage(hero.level, weapon.rarity);
+    rewards = calculateHeroRewards(
+      damage,
+      hero.level,
+      weapon.sharpness,
+      weapon.maxSharpness
+    );
+  }
+  
+  // Met à jour le héro avec les nouvelles stats
+  const updatedHero = {
+    ...hero,
+    damage,
+    maxHeroPerDay: rewards.maxHeroPerDay,
+    baseHeroPerDay: rewards.baseHeroPerDay,
+    bonusHeroPerDay: rewards.bonusHeroPerDay,
+    effectiveHeroPerDay: rewards.effectiveHeroPerDay,
+    maxHeroPerHour: rewards.maxHeroPerHour,
+    effectiveHeroPerHour: rewards.effectiveHeroPerHour,
+  };
+  
+  context.Hero.set(updatedHero);
+  return updatedHero;
 }
 
 /**
