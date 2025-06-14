@@ -5,8 +5,8 @@ import {
   WeaponRemixer_WeaponMixRequested,
 } from "generated";
 
-WeaponRemixer.LegendaryMixRequested.handler(async ({ event, context }) => {
-  const entity: WeaponRemixer_LegendaryMixRequested = {
+WeaponRemixer.WeaponMixRequested.handler(async ({ event, context }) => {
+  const entity: WeaponRemixer_WeaponMixRequested = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
     weaponIds: event.params.weaponIds,
     cost: event.params.cost,
@@ -14,8 +14,8 @@ WeaponRemixer.LegendaryMixRequested.handler(async ({ event, context }) => {
     requestId: event.params.requestId,
   };
 
-  context.WeaponRemixer_LegendaryMixRequested.set(entity);
-});
+  context.WeaponRemixer_WeaponMixRequested.set(entity);
+}); 
 
 WeaponRemixer.WeaponGenerated.handler(async ({ event, context }) => {
   const entity: WeaponRemixer_WeaponGenerated = {
@@ -29,8 +29,8 @@ WeaponRemixer.WeaponGenerated.handler(async ({ event, context }) => {
   context.WeaponRemixer_WeaponGenerated.set(entity);
 });
 
-WeaponRemixer.WeaponMixRequested.handler(async ({ event, context }) => {
-  const entity: WeaponRemixer_WeaponMixRequested = {
+WeaponRemixer.LegendaryMixRequested.handler(async ({ event, context }) => {
+  const entity: WeaponRemixer_LegendaryMixRequested = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
     weaponIds: event.params.weaponIds,
     cost: event.params.cost,
@@ -38,5 +38,5 @@ WeaponRemixer.WeaponMixRequested.handler(async ({ event, context }) => {
     requestId: event.params.requestId,
   };
 
-  context.WeaponRemixer_WeaponMixRequested.set(entity);
-}); 
+  context.WeaponRemixer_LegendaryMixRequested.set(entity);
+});

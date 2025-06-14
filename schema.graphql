@@ -220,62 +220,82 @@ type WeaponRemixer_WeaponMixRequested {
 }
 
 type Player @entity {
-  "L'adresse du portefeuille, utilisée comme identifiant unique"
-  id: String!
+  id: Bytes!
 
-  "La balance du token ERC20 du joueur (Hero20)"
   balance: BigInt!
 
-  "La liste des héros (ERC721) que ce joueur possède. Cette liste est remplie automatiquement grâce à la relation 'owner' sur l'entité Hero."
+  heroCount: Int! @default(value: "0")
+  weaponCount: Int! @default(value: "0")
+  stakedHeroCount: Int! @default(value: "0")
+
+  # Balances Gacha : [bronze, silver, gold, rainbow] - ordre fixe
+  gachaBalances: [BigInt!]! @default(value: "[0, 0, 0, 0]")
+
   heroes: [Hero!]! @derivedFrom(field: "owner")
-
-  "La liste des armes (ERC721) que ce joueur possède."
   weapons: [Weapon!]! @derivedFrom(field: "owner")
-
-  "La balance des différents items de Gacha (ERC1155) que ce joueur possède. C'est une table de jointure."
-  gachaBalances: [GachaBalance!]! @derivedFrom(field: "player")
 }
 
 type Hero @entity {
-  "Le tokenId du NFT, stocké sous forme de chaîne de caractères"
   id: String!
-
-  "Le joueur qui possède ce héros. C'est le champ qui permet la relation inverse (@derivedFrom)"
   owner: Player!
+  minter: Bytes!
+  mintedTimestamp: BigInt!
 
-  # ... autres propriétés du Hero (level, stats, etc.) à ajouter plus tard
+  level: Int! @default(value: "1")
+  lastTrainingTimestamp: BigInt! @default(value: "0")
+  nextTrainingCost: BigInt! @default(value: "0")
+
+  equippedWeapon: Weapon @oneToOne
+  damage: BigInt! @default(value: "0")
+
+  staked: Boolean! @default(value: false)
+  stakingType: StakingType
+  stakedTimestamp: BigInt
+  unstakeAvailableTimestamp: BigInt
+  lastClaimTimestamp: BigInt
+}
+
+enum WeaponRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  HEROIC
+  LEGENDARY
+  MYTHIC
+}
+
+enum WeaponOrigin {
+  GACHA_MACHINE
+  HERO_MACHINE
+  REMIXER
+  DIRECT_MINT
 }
 
 type Weapon @entity {
-  "Le tokenId du NFT, stocké sous forme de chaîne de caractères"
   id: String!
-
-  "Le joueur qui possède cette arme"
   owner: Player!
+  origin: WeaponOrigin!
+  rarity: WeaponRarity!
+  minter: Bytes!
+  mintedTimestamp: BigInt!
 
-  # ... autres propriétés de l'arme (durability, sharpness, etc.)
+  equipped: Boolean! @default(value: false)
+  equippedBy: [Hero!]! @derivedFrom(field: "equippedWeapon")
+
+  sharpness: Int!
+  maxSharpness: Int!
+  durability: Int!
+  maxDurability: Int!
 }
 
-"Représente un type d'item Gacha (par exemple, 'Potion de Soin', 'Clé Rare')"
-type GachaItem @entity {
-  "Le tokenId du Gacha (ERC1155), stocké sous forme de chaîne de caractères"
-  id: String!
-
-  # ... propriétés de l'item (rareté, image, etc.)
+enum GachaType {
+  BRONZE
+  SILVER
+  GOLD
+  RAINBOW
 }
 
-"Table de jointure pour gérer les balances des items Gacha (ERC1155) pour chaque joueur"
-type GachaBalance @entity {
-  "ID composite unique, par exemple : '0x123...-42' (adresse-tokenId)"
-  id: String!
-
-  "Le joueur concerné"
-  player: Player!
-
-  "L'item Gacha concerné"
-  item: GachaItem!
-
-  "La quantité de cet item que le joueur possède"
-  balance: BigInt!
+enum StakingType {
+  DRAGMA_UNDERLINGS
 }
-

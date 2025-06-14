@@ -31,10 +31,10 @@ networks:
     - 0x485575E611dC1BFAF7a1170812a60CF0373430Dc
     handler: src/EventHandlers.ts
     events:
+    - event: UpgradeRequested(uint256 indexed season, address owner, uint256 heroId, uint256 levelUp, uint256 cost)
     - event: ChaosUpgraded(address owner, uint256 heroId, uint256 season, uint256 oldLevel, uint256 newLevel, uint256[11] chances)
     - event: NormalUpgraded(address owner, uint256 heroId, uint256 season, uint256 oldLevel, uint256 newLevel)
     - event: UnknownUpgraded(address owner, uint256 heroId, uint256 season, uint256 oldLevel, uint256 newLevel, uint256[5] chances)
-    - event: UpgradeRequested(uint256 indexed season, address owner, uint256 heroId, uint256 levelUp, uint256 cost)
   - name: DragmaUnderlings
     address:
     - 0xB964Bbf171ec414d2343066fD217FeC036B7B098
@@ -64,16 +64,16 @@ networks:
     - 0xD33Aa455CCbE93e243B19A1B2Cc6d195FF171911
     handler: src/EventHandlers.ts
     events:
+    - event: WeaponMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
     - event: LegendaryMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
     - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
-    - event: WeaponMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
   - name: HeroWeaponMachine
     address:
     - 0xB964Bbf171ec414d2343066fD217FeC036B7B098
     handler: src/EventHandlers.ts
     events:
-    - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
     - event: WeaponRequested(address user, uint256 slot, uint256 qty, uint256 amount, uint256 requestId)
+    - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
   - name: Gacha1155
     address:
     - 0xB5EC907d0E80F9A1cA9C1942D69Fb558E01140d4
@@ -86,6 +86,6 @@ networks:
     - 0x24B15b69343B58BdD5482986978308934a2Fd91E
     handler: src/EventHandlers.ts
     events:
-    - event: WeaponGenerated(address indexed user, uint256 weaponId, uint256 metadata, uint256 requestId)
     - event: WeaponRequested(address indexed user, uint256 tokenId, uint256 qty, uint256 requestId)
+    - event: WeaponGenerated(address indexed user, uint256 weaponId, uint256 metadata, uint256 requestId)
 unordered_multichain_mode: true
