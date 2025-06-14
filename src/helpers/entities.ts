@@ -133,6 +133,46 @@ export async function updateHeroStats(
 }
 
 /**
+ * Met à jour une arme et recalcule les stats du héro équipé si nécessaire
+ * @param context Le contexte du handler
+ * @param weapon L'arme à mettre à jour
+ * @param updates Les champs à mettre à jour
+ */
+export async function updateWeaponAndHeroStats(
+  context: any,
+  weapon: any,
+  updates: Partial<{
+    sharpness: number;
+    maxSharpness: number;
+    durability: number;
+    maxDurability: number;
+    broken: boolean;
+  }>
+) {
+  // Met à jour l'arme
+  const updatedWeapon = {
+    ...weapon,
+    ...updates,
+  };
+  
+  context.Weapon.set(updatedWeapon);
+
+  // Si l'arme est équipée, recalcule les stats du héro
+  if (weapon.equipped) {
+    // Trouve le héro qui a cette arme équipée
+    const equippedHeroes = await context.Hero.getWhere.equippedWeapon_id.eq(weapon.id);
+    
+    if (equippedHeroes.length > 0) {
+      // Normalement il ne devrait y avoir qu'un seul héro avec cette arme
+      const hero = equippedHeroes[0];
+      await updateHeroStats(context, hero, updatedWeapon);
+    }
+  }
+
+  return updatedWeapon;
+}
+
+/**
  * Crée un Weapon avec toutes les valeurs par défaut
  * Note: Utilise .set() car les Weapons sont toujours créés, jamais récupérés
  * @param context Le contexte du handler
@@ -173,6 +213,7 @@ export function createWeapon(
     maxSharpness: weaponData.maxSharpness || 100,
     durability: weaponData.durability || 100,
     maxDurability: weaponData.maxDurability || 100,
+    broken: weaponData.durability === 0 || false, // Broken si durability = 0
     equipped: weaponData.equipped || false,
     requestId: weaponData.requestId || null,
     sourceGachaTokenId: weaponData.sourceGachaTokenId || undefined,

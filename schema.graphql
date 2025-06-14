@@ -329,6 +329,7 @@ type Weapon @entity {
   maxSharpness: Int!
   durability: Int!
   maxDurability: Int!
+  broken: Boolean! @default(value: false)
 
   # Source tracking
   requestId: String # Lien vers WeaponRequest (null pour DIRECT_MINT)
