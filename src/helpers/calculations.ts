@@ -9,13 +9,17 @@ const MIN_HERO_LEVEL = 1;
 
 /**
  * Calcule le coût d'entraînement d'un héro selon son niveau
- * Formule: (Level * 10000) / (69 + Level)
+ * Formule: (Level * 10000e18) / (69 + Level)
  * @param level Le niveau actuel du héro
- * @returns Le coût en tokens pour s'entraîner
+ * @returns Le coût en wei (1e18) pour s'entraîner
  */
 export function calculateTrainingCost(level: number): bigint {
-  const cost = (level * 10000) / (69 + level);
-  return BigInt(Math.floor(cost));
+  const lvl = BigInt(level);
+  // 10000e18 = 10^4 * 10^18 = 10^22
+  const SCALE = BigInt("10000000000000000000000");
+  const numerator = lvl * SCALE;
+  const denominator = BigInt(69 + level);
+  return numerator / denominator;
 }
 
 /**

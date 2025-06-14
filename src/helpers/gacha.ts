@@ -1,3 +1,5 @@
+import { getOrCreatePlayer } from "./entities";
+
 // Mapping des IDs Gacha vers les index dans l'array
 const GACHA_TYPE_INDEX: Record<string, number> = {
   "1": 0, // BRONZE
@@ -33,18 +35,10 @@ export async function updateGachaBalance(
     return;
   }
 
-  const playerId_lc = playerId.toLowerCase();
   const gachaIndex = getGachaIndex(itemId);
 
   // S'assure que le joueur existe avec des balances par défaut
-  const player = await context.Player.getOrCreate({
-    id: playerId_lc,
-    balance: 0n,
-    heroCount: 0,
-    weaponCount: 0,
-    stakedHeroCount: 0,
-    gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-  });
+  const player = await getOrCreatePlayer(context, playerId);
 
   // Met à jour la balance du type spécifique
   const newBalances = [...player.gachaBalances];
@@ -52,7 +46,7 @@ export async function updateGachaBalance(
   
   // Validation : balance ne peut pas être négative
   if (newBalance < 0n) {
-    console.warn(`Tentative de balance négative pour ${playerId_lc}, index ${gachaIndex}: ${newBalance}`);
+    console.warn(`Tentative de balance négative pour ${playerId}, index ${gachaIndex}: ${newBalance}`);
     return;
   }
 

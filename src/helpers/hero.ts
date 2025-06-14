@@ -1,6 +1,6 @@
 import { HERO_STAKING_CONTRACTS, ZERO_ADDRESS } from "../constants/index";
 import { updatePlayerCounts } from "./player";
-import { calculateTrainingCost } from "./calculations";
+import { getOrCreatePlayer, createHero } from "./entities";
 
 /**
  * Gère la logique de transfert pour un Hero NFT.
@@ -43,27 +43,14 @@ export async function handleHeroTransfer(
   // CAS 2: MINT (création du NFT)
   if (from_lc === ZERO_ADDRESS) {
     // S'assure que le joueur propriétaire existe
-    const player = await context.Player.getOrCreate({
-      id: to_lc,
-      balance: 0n,
-      heroCount: 0,
-      weaponCount: 0,
-      stakedHeroCount: 0,
-      gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-    });
+    await getOrCreatePlayer(context, to_lc);
 
     // Crée l'entité Hero avec TOUS les champs obligatoires
-    context.Hero.set({
+    createHero(context, {
       id: heroId,
       owner_id: to_lc,
       minter: to_lc, // Le minter est le destinataire du mint (Bytes!)
       mintedTimestamp: blockTimestamp || 0n,
-      level: 1,
-      lastTrainingTimestamp: 0n,
-      nextTrainingCost: calculateTrainingCost(1),
-      nextTrainingAvailable: 0n,
-      damage: 0n,
-      staked: false,
     });
 
     // Incrémente le compteur du propriétaire
@@ -83,14 +70,7 @@ export async function handleHeroTransfer(
     const oldOwnerId = hero.owner_id;
 
     // S'assure que le nouveau joueur propriétaire existe
-    await context.Player.getOrCreate({
-      id: to_lc,
-      balance: 0n,
-      heroCount: 0,
-      weaponCount: 0,
-      stakedHeroCount: 0,
-      gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-    });
+    await getOrCreatePlayer(context, to_lc);
 
     // Met à jour le propriétaire du Hero
     hero.owner_id = to_lc;

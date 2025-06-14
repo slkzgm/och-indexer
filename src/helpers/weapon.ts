@@ -1,5 +1,6 @@
 import { WEAPON_STAKING_CONTRACTS, ZERO_ADDRESS } from "../constants/index";
 import { updatePlayerCounts } from "./player";
+import { getOrCreatePlayer, createWeapon } from "./entities";
 
 /**
  * Gère la logique de transfert pour un Weapon NFT.
@@ -42,28 +43,15 @@ export async function handleWeaponTransfer(
   // CAS 2: MINT (création du NFT)
   if (from_lc === ZERO_ADDRESS) {
     // S'assure que le joueur propriétaire existe
-    await context.Player.getOrCreate({
-      id: to_lc,
-      balance: 0n,
-      heroCount: 0,
-      weaponCount: 0,
-      stakedHeroCount: 0,
-      gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-    });
+    await getOrCreatePlayer(context, to_lc);
 
     // Crée l'entité Weapon avec TOUS les champs obligatoires
-    context.Weapon.set({
+    createWeapon(context, {
       id: weaponId,
       owner_id: to_lc,
       minter: to_lc, // Le minter est le destinataire du mint (Bytes!)
       mintedTimestamp: blockTimestamp || 0n,
-      origin: "DIRECT_MINT", // Valeur par défaut, sera mise à jour par les handlers spécialisés
-      rarity: "COMMON", // Valeur par défaut
-      sharpness: 100,
-      maxSharpness: 100,
-      durability: 100,
-      maxDurability: 100,
-      equipped: false,
+      // Les autres champs utilisent les valeurs par défaut
     });
 
     // Incrémente le compteur du propriétaire
@@ -83,14 +71,7 @@ export async function handleWeaponTransfer(
     const oldOwnerId = weapon.owner_id;
 
     // S'assure que le nouveau joueur propriétaire existe
-    await context.Player.getOrCreate({
-      id: to_lc,
-      balance: 0n,
-      heroCount: 0,
-      weaponCount: 0,
-      stakedHeroCount: 0,
-      gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-    });
+    await getOrCreatePlayer(context, to_lc);
 
     // Met à jour le propriétaire du Weapon
     weapon.owner_id = to_lc;

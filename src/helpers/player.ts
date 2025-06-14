@@ -1,3 +1,5 @@
+import { getOrCreatePlayer } from "./entities";
+
 /**
  * Met à jour la balance du token Hero20 d'un joueur.
  * Crée le joueur avec une balance de 0 s'il n'existe pas.
@@ -10,17 +12,7 @@ export async function updatePlayerBalance(
   playerId: string,
   amountChange: bigint,
 ) {
-  const playerId_lc = playerId.toLowerCase();
-
-  const player = await context.Player.getOrCreate({
-    id: playerId_lc,
-    balance: 0n,
-    heroCount: 0,
-    weaponCount: 0,
-    stakedHeroCount: 0,
-    gachaBalances: [0n, 0n, 0n, 0n],
-  });
-
+  const player = await getOrCreatePlayer(context, playerId);
   player.balance = player.balance + amountChange;
   context.Player.set(player);
 }
@@ -40,16 +32,7 @@ export async function updatePlayerCounts(
     stakedHeroCount?: number;
   }
 ) {
-  const playerId_lc = playerId.toLowerCase();
-
-  const player = await context.Player.getOrCreate({
-    id: playerId_lc,
-    balance: 0n,
-    heroCount: 0,
-    weaponCount: 0,
-    stakedHeroCount: 0,
-    gachaBalances: [0n, 0n, 0n, 0n],
-  });
+  const player = await getOrCreatePlayer(context, playerId);
 
   if (changes.heroCount !== undefined) {
     player.heroCount += changes.heroCount;
