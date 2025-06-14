@@ -110,6 +110,7 @@ DragmaUnderlings.Claimed.handler(async ({ event, context }) => {
 /**
  * Handler pour DragmaUnderlings.WeaponDurabilityUpdated
  * Met à jour la durability d'une arme (peut la casser si durability = 0)
+ * OPTIMISÉ : Pas de recalcul des stats car durability n'affecte pas les rewards
  */
 DragmaUnderlings.WeaponDurabilityUpdated.handler(async ({ event, context }) => {
   const { user, weaponId, oldDurability, newDurability } = event.params;
@@ -129,11 +130,15 @@ DragmaUnderlings.WeaponDurabilityUpdated.handler(async ({ event, context }) => {
     context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`),
   ]);
 
-  // Met à jour la durability (et broken si durability = 0)
-  // Pas besoin de recalculer les stats car durability n'affecte pas les rewards
-  await updateWeaponAndHeroStats(context, weapon, {
-    durability: Number(newDurability),
-  });
+  // OPTIMISATION : Met à jour seulement l'arme (durability n'affecte pas les rewards)
+  const newDurabilityNum = Number(newDurability);
+  const updatedWeapon = {
+    ...weapon,
+    durability: newDurabilityNum,
+    broken: newDurabilityNum === 0, // Calcule broken automatiquement
+  };
+  
+  context.Weapon.set(updatedWeapon);
 });
 
 /**

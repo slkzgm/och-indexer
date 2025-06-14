@@ -37,7 +37,7 @@ networks:
     - event: UnknownUpgraded(address owner, uint256 heroId, uint256 season, uint256 oldLevel, uint256 newLevel, uint256[5] chances)
   - name: DragmaUnderlings
     address:
-    - 0xB964Bbf171ec414d2343066fD217FeC036B7B098
+    - 0xd6C4268BC7252eAd69Da0d801CbAD9508Fc58F85 
     handler: src/EventHandlers.ts
     events:
     - event: Claimed(address user, uint256 heroId, uint256 amount)

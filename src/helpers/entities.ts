@@ -162,8 +162,10 @@ export async function updateWeaponAndHeroStats(
   
   context.Weapon.set(updatedWeapon);
 
-  // Si l'arme est équipée, recalcule les stats du héro
-  if (weapon.equipped && weapon.equippedBy && weapon.equippedBy.length > 0) {
+  // OPTIMISATION : Recalcule les stats seulement si sharpness ou maxSharpness changent
+  const sharpnessChanged = updates.sharpness !== undefined || updates.maxSharpness !== undefined;
+  
+  if (weapon.equipped && weapon.equippedBy && weapon.equippedBy.length > 0 && sharpnessChanged) {
     // Utilise la relation derivedFrom pour récupérer directement le héro
     const hero = weapon.equippedBy[0]; // Normalement un seul héro par arme
     await updateHeroStats(context, hero, updatedWeapon);
