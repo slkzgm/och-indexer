@@ -102,6 +102,7 @@ type Player @entity {
   weaponsBurnedByRarity: [BigInt!]! @default(value: "[]")
   weaponsMintedBySharpness: [BigInt!]! @default(value: "[]")
   weaponsBurnedBySharpness: [BigInt!]! @default(value: "[]")
+  weaponsOwnedByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
 
   # --- Remixer Stats ---
   remixerStats: [PlayerRemixerStatsByRarity!]! @derivedFrom(field: "player")
@@ -111,8 +112,58 @@ type Player @entity {
   totalRemixFailures: BigInt! @default(value: "0")
   totalRemixBigSuccesses: BigInt! @default(value: "0")
 
+  weaponsSacrificedToRemixer: BigInt! @default(value: "0")
+  weaponsSacrificedToRemixerByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  weaponsGeneratedFromRemixer: BigInt! @default(value: "0")
+  weaponsGeneratedFromRemixerByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
   gachaStats: [PlayerGachaStat!]! @derivedFrom(field: "player")
   weaponsMintedFromGachaByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
+  # --- Hero Weapon Machine Stats ---
+  hero20SpentOnWeapons: BigInt! @default(value: "0")
+  weaponsMintedFromHeroMachine: BigInt! @default(value: "0")
+  weaponsMintedFromHeroMachineByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
+  # --- Direct Mint Stats ---
+  weaponsMintedFromDirectMint: BigInt! @default(value: "0")
+  weaponsMintedFromDirectMintByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  
+  "The sum of the next training cost for all heroes owned by the player."
+  totalNextTrainingCost: BigInt! @default(value: "0")
+
+  # --- Armory Stats ---
+  "The number of heroes owned by the player that have a weapon equipped."
+  equippedHeroesCount: BigInt! @default(value: "0")
+  "The sum of the damage of all equipped heroes owned by the player."
+  totalEquippedDamage: BigInt! @default(value: "0")
+  "The sum of the damage of all equipped heroes owned by the player, broken down by weapon rarity."
+  totalEquippedDamageByWeaponRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  "The distribution of equipped weapons by rarity for this player."
+  equippedHeroesCountByWeaponRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  "Detailed armory stats by hero level."
+  armoryStatsByLevel: [PlayerArmoryStatsByLevel!]! @derivedFrom(field: "player")
+
+  # --- Blacksmith Stats ---
+  totalRepairs: BigInt! @default(value: "0")
+  totalRepairCost: BigInt! @default(value: "0")
+  totalSharpens: BigInt! @default(value: "0")
+  totalSharpenCost: BigInt! @default(value: "0")
+  repairsByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  repairCostByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  sharpensByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  sharpenCostByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
+  # --- Staking Stats ---
+  stakedHeroesCount: BigInt! @default(value: "0")
+  stakingCount: BigInt! @default(value: "0")
+  totalDailyReward: BigInt! @default(value: "0")
+  totalHourlyReward: BigInt! @default(value: "0")
+  stakingTotalClaimed: BigInt! @default(value: "0")
+  totalStakedTime: BigInt! @default(value: "0")
+  stakedHeroesCountByLevel: [BigInt!]! @default(value: "[]")
+  stakedHeroesCountByWeaponRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  stakingStatsByLevelAndRarity: [PlayerStakingStatsByLevelAndRarity!]! @derivedFrom(field: "player")
 }
 
 
@@ -137,6 +188,18 @@ type Hero @entity {
 
   "Timestamp of the last successful training."
   lastTrainedTimestamp: BigInt! @default(value: "0")
+
+  "Timestamp of when the hero will be available for training again."
+  nextTrainingAvailableTimestamp: BigInt! @default(value: "0")
+
+  "Cost of the next training session for this hero."
+  nextTrainingCost: BigInt! @default(value: "0")
+
+  "The current damage of the hero, based on its level and equipped weapon."
+  damage: BigInt! @default(value: "0")
+
+  "The weapon currently equipped by this hero."
+  equippedWeapon: Weapon @oneToOne
 
   "Total amount of tokens claimed by this player."
   totalClaimed: BigInt! @default(value: "0")
@@ -171,6 +234,26 @@ type Hero @entity {
   trainingHistory: [Training!]! @derivedFrom(field: "hero")
 
   transferCount: BigInt! @default(value: "0")
+
+  # --- Staking Stats ---
+  staked: Boolean! @default(value: false)
+  stakingType: StakingType
+  stakedTimestamp: BigInt! @default(value: "0")
+  unstakeAvailableTimestamp: BigInt! @default(value: "0")
+  lastClaimTimestamp: BigInt! @default(value: "0")
+  totalStakedTime: BigInt! @default(value: "0")
+  stakingCount: BigInt! @default(value: "0")
+  
+  "The base $HERO per day from staking."
+  baseHeroPerDay: BigInt! @default(value: "0")
+  "The bonus $HERO per day from staking, based on sharpness."
+  bonusHeroPerDay: BigInt! @default(value: "0")
+  "The total effective $HERO per day from staking."
+  dailyReward: BigInt! @default(value: "0")
+  "The total effective $HERO per hour from staking."
+  hourlyReward: BigInt! @default(value: "0")
+  "Total amount of $HERO claimed from staking this hero."
+  stakingTotalClaimed: BigInt! @default(value: "0")
 }
 
 enum WeaponRarity {
@@ -193,6 +276,9 @@ enum WeaponOrigin {
 type Weapon @entity {
   "Token ID of the Weapon NFT, used as the unique ID."
   id: String!
+
+  "The hero who has this weapon equipped."
+  equippedBy: Hero @oneToOne
 
   "The current owner of the Weapon. If null, the weapon is burned or in a non-tracked contract."
   owner: Player
@@ -225,6 +311,17 @@ type Weapon @entity {
   maxSharpness: BigInt!
   sharpenedCount: BigInt! @default(value: "0")
   sharpenSpent: BigInt! @default(value: "0")
+
+  # --- Staking Stats ---
+  totalStakedHeroesCount: BigInt! @default(value: "0")
+  playersWithStakedHeroesCount: BigInt! @default(value: "0")
+  totalStakingCount: BigInt! @default(value: "0")
+  grandTotalDailyReward: BigInt! @default(value: "0")
+  grandTotalHourlyReward: BigInt! @default(value: "0")
+  grandTotalClaimedFromStaking: BigInt! @default(value: "0")
+  grandTotalStakedTime: BigInt! @default(value: "0")
+  totalStakedHeroesCountByLevel: [BigInt!]! @default(value: "[]")
+  totalStakedHeroesCountByWeaponRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
 }
 
 
@@ -371,6 +468,11 @@ type GlobalStats @entity(immutable: false) {
   totalRemixFailures: BigInt! @default(value: "0")
   totalRemixBigSuccesses: BigInt! @default(value: "0")
 
+  weaponsSacrificedToRemixer: BigInt! @default(value: "0")
+  weaponsSacrificedToRemixerByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  weaponsGeneratedFromRemixer: BigInt! @default(value: "0")
+  weaponsGeneratedFromRemixerByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
   "Total number of weapons generated by players."
   totalWeaponsGenerated: BigInt! @default(value: "0")
 
@@ -380,16 +482,70 @@ type GlobalStats @entity(immutable: false) {
   "Distribution of weapons generated by sharpness."
   weaponsGeneratedBySharpness: [BigInt!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0]")
 
+  "Current distribution of all weapons in circulation by rarity."
+  totalWeaponsOwnedByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
   "Stats for the Remixer, aggregated by rarity."
   remixerStats: [GlobalRemixerStatsByRarity!]! @derivedFrom(field: "global")
 
   gachaStats: [GlobalGachaStat!]! @derivedFrom(field: "global")
+
+  # --- Hero Weapon Machine Stats ---
+  totalHero20SpentOnWeapons: BigInt! @default(value: "0")
+  totalWeaponsMintedFromHeroMachine: BigInt! @default(value: "0")
+  totalWeaponsMintedFromHeroMachineByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
+  # --- Direct Mint Stats ---
+  totalWeaponsMintedFromDirectMint: BigInt! @default(value: "0")
+  totalWeaponsMintedFromDirectMintByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
+  totalWeaponsSacrificedToRemixer: BigInt! @default(value: "0")
+  totalWeaponsSacrificedToRemixerByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  totalWeaponsGeneratedFromRemixer: BigInt! @default(value: "0")
+  totalWeaponsGeneratedFromRemixerByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
+  # --- Armory Stats ---
+  "The total number of heroes that have a weapon equipped."
+  totalEquippedHeroesCount: BigInt! @default(value: "0")
+  "The sum of the damage of all equipped heroes in the game."
+  grandTotalEquippedDamage: BigInt! @default(value: "0")
+  "The sum of the damage of all equipped heroes in the game, broken down by weapon rarity."
+  grandTotalEquippedDamageByWeaponRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  "The distribution of equipped weapons by rarity across all players."
+  totalEquippedHeroesCountByWeaponRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  "Detailed armory stats by hero level across all players."
+  armoryStatsByLevel: [GlobalArmoryStatsByLevel!]! @derivedFrom(field: "global")
+
+  # --- Blacksmith Stats ---
+  totalRepairs: BigInt! @default(value: "0")
+  totalRepairCost: BigInt! @default(value: "0")
+  totalSharpens: BigInt! @default(value: "0")
+  totalSharpenCost: BigInt! @default(value: "0")
+  repairsByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  repairCostByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  sharpensByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  sharpenCostByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+
+  # --- Staking Stats ---
+  totalStakedHeroesCount: BigInt! @default(value: "0")
+  playersWithStakedHeroesCount: BigInt! @default(value: "0")
+  totalStakingCount: BigInt! @default(value: "0")
+  grandTotalDailyReward: BigInt! @default(value: "0")
+  grandTotalHourlyReward: BigInt! @default(value: "0")
+  grandTotalClaimedFromStaking: BigInt! @default(value: "0")
+  grandTotalStakedTime: BigInt! @default(value: "0")
+  totalStakedHeroesCountByLevel: [BigInt!]! @default(value: "[]")
+  totalStakedHeroesCountByWeaponRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+  stakingStatsByLevelAndRarity: [GlobalStakingStatsByLevelAndRarity!]! @derivedFrom(field: "global")
 }
 
 type Blacksmith_WeaponRepaired {
   id: ID!
   weaponId: BigInt!
   amount: BigInt!
+  oldSharpness: BigInt!
+  newSharpness: BigInt!
+  count: BigInt! @default(value: "0")
 }
 
 type Blacksmith_WeaponSharpened {
@@ -685,4 +841,52 @@ type GlobalGachaStat @entity {
   gachaType: GachaType!
   totalOpened: BigInt! @default(value: "0")
   countsByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]") # Common -> Mythic
+}
+
+type PlayerArmoryStatsByLevel @entity {
+  "ID: {player_id}-{level}"
+  id: String!
+  player: Player!
+  level: Int!
+  "Number of heroes at this level with a weapon equipped."
+  equippedHeroesCount: BigInt! @default(value: "0")
+  "Sum of damage for heroes at this level."
+  totalDamage: BigInt! @default(value: "0")
+  "Distribution of equipped weapons by rarity for heroes at this level."
+  equippedCountByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+}
+
+type GlobalArmoryStatsByLevel @entity {
+  "ID: {level}"
+  id: String!
+  global: GlobalStats!
+  level: Int!
+  "Number of heroes at this level with a weapon equipped."
+  equippedHeroesCount: BigInt! @default(value: "0")
+  "Sum of damage for heroes at this level."
+  totalDamage: BigInt! @default(value: "0")
+  "Distribution of equipped weapons by rarity for heroes at this level."
+  equippedCountByRarity: [BigInt!]! @default(value: "[0,0,0,0,0,0,0]")
+}
+
+enum StakingType {
+  Dragma
+}
+
+type PlayerStakingStatsByLevelAndRarity @entity {
+  "ID: {player_id}-{level}-{rarity}"
+  id: String!
+  player: Player!
+  level: Int!
+  rarity: WeaponRarity!
+  count: BigInt! @default(value: "0")
+}
+
+type GlobalStakingStatsByLevelAndRarity @entity {
+  "ID: {level}-{rarity}"
+  id: String!
+  global: GlobalStats!
+  level: Int!
+  rarity: WeaponRarity!
+  count: BigInt! @default(value: "0")
 }

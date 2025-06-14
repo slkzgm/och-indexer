@@ -79,14 +79,48 @@ const NEW_PLAYER_DEFAULTS = {
   totalClaimed: 0n,
   totalStaked: 0n,
   totalUnstaked: 0n,
+  totalNextTrainingCost: 0n,
+  equippedHeroesCount: 0n,
+  totalEquippedDamage: 0n,
+  equippedHeroesCountByWeaponRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  totalEquippedDamageByWeaponRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  weaponsOwnedByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  weaponsSacrificedToRemixer: 0n,
+  weaponsSacrificedToRemixerByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  weaponsGeneratedFromRemixer: 0n,
+  weaponsGeneratedFromRemixerByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  hero20SpentOnWeapons: 0n,
+  weaponsMintedFromHeroMachine: 0n,
+  weaponsMintedFromHeroMachineByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  weaponsMintedFromDirectMint: 0n,
+  weaponsMintedFromDirectMintByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  
+  // Blacksmith stats
+  totalRepairs: 0n,
+  totalRepairCost: 0n,
+  totalSharpens: 0n,
+  totalSharpenCost: 0n,
+  repairsByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  repairCostByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  sharpensByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  sharpenCostByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+
+  // Staking stats
+  stakedHeroesCount: 0n,
+  stakingCount: 0n,
+  totalDailyReward: 0n,
+  totalHourlyReward: 0n,
+  stakingTotalClaimed: 0n,
+  totalStakedTime: 0n,
+  stakedHeroesCountByLevel: Array(MAX_LEVEL).fill(0n),
+  stakedHeroesCountByWeaponRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
 };
 
 export async function getOrCreatePlayer(context: any, playerId: string) {
   const playerId_lc = playerId.toLowerCase();
 
-  const player = await context.Player.get({
-    id: playerId_lc,
-  });
+  // Load existing player by ID
+  const player = await context.Player.get(playerId_lc);
 
   if (player) {
     // Normalise l'entité Player pour gérer les anciens enregistrements

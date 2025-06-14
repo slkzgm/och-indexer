@@ -89,12 +89,60 @@ const NEW_GLOBAL_STATS_DEFAULTS = {
   totalWeaponsBurnedByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
   totalWeaponsMintedBySharpness: Array(WEAPON_SHARPNESS_COUNT).fill(0n),
   totalWeaponsBurnedBySharpness: Array(WEAPON_SHARPNESS_COUNT).fill(0n),
+
+  // Armory Stats
+  totalEquippedHeroesCount: 0n,
+  grandTotalEquippedDamage: 0n,
+  totalEquippedHeroesCountByWeaponRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  grandTotalEquippedDamageByWeaponRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+
+  // Additional Remixer Stats defaults
+  weaponsSacrificedToRemixer: 0n,
+  weaponsSacrificedToRemixerByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  weaponsGeneratedFromRemixer: 0n,
+  weaponsGeneratedFromRemixerByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+
+  // Stats for all weapons in circulation by rarity
+  totalWeaponsOwnedByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+
+  // Hero Weapon Machine Stats defaults
+  totalHero20SpentOnWeapons: 0n,
+  totalWeaponsMintedFromHeroMachine: 0n,
+  totalWeaponsMintedFromHeroMachineByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+
+  // Direct Mint Stats defaults
+  totalWeaponsMintedFromDirectMint: 0n,
+  totalWeaponsMintedFromDirectMintByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  totalWeaponsSacrificedToRemixer: 0n,
+  totalWeaponsSacrificedToRemixerByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  totalWeaponsGeneratedFromRemixer: 0n,
+  totalWeaponsGeneratedFromRemixerByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+
+  // Blacksmith Stats
+  totalRepairs: 0n,
+  totalRepairCost: 0n,
+  totalSharpens: 0n,
+  totalSharpenCost: 0n,
+  repairsByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  repairCostByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  sharpensByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+  sharpenCostByRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
+
+  // Staking Stats
+  totalStakedHeroesCount: 0n,
+  playersWithStakedHeroesCount: 0n,
+  totalStakingCount: 0n,
+  grandTotalDailyReward: 0n,
+  grandTotalHourlyReward: 0n,
+  grandTotalClaimedFromStaking: 0n,
+  grandTotalStakedTime: 0n,
+  totalStakedHeroesCountByLevel: Array(MAX_LEVEL).fill(0n),
+  totalStakedHeroesCountByWeaponRarity: Array(WEAPON_RARITY_COUNT).fill(0n),
 };
 
 export async function getOrCreateGlobalStats(context: any) {
-  const globalStats = await context.GlobalStats.get({
-    id: GLOBAL_STATS_ID,
-  });
+  // Load existing global stats by singleton ID
+  const globalStats = await context.GlobalStats.get(GLOBAL_STATS_ID);
 
   if (globalStats) {
     // Normalise l'entité GlobalStats pour gérer les anciens enregistrements

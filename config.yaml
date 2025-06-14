@@ -50,8 +50,8 @@ networks:
     - 0x036A2598A6752b4986a629964F428680F737DECD
     handler: src/EventHandlers.ts
     events:
-    - event: Equipped(uint256 indexed heroId, uint256 weaponId)
     - event: Unequipped(uint256 indexed heroId, uint256 weaponId)
+    - event: Equipped(uint256 indexed heroId, uint256 weaponId)
   - name: Blacksmith
     address:
     - 0x7d5E9F4AD95B5F9d26d774b8a579656aaafB2ebC
@@ -68,11 +68,11 @@ networks:
       field_selection:
         transaction_fields:
         - from
-    - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
+    - event: WeaponMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
       field_selection:
         transaction_fields:
         - from
-    - event: WeaponMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
+    - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
       field_selection:
         transaction_fields:
         - from
@@ -81,8 +81,8 @@ networks:
     - 0xB964Bbf171ec414d2343066fD217FeC036B7B098
     handler: src/EventHandlers.ts
     events:
-    - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
     - event: WeaponRequested(address user, uint256 slot, uint256 qty, uint256 amount, uint256 requestId)
+    - event: WeaponGenerated(address user, uint256 weaponId, uint256 metadata, uint256 requestId)
   - name: Gacha1155
     address:
     - 0xB5EC907d0E80F9A1cA9C1942D69Fb558E01140d4
@@ -95,6 +95,6 @@ networks:
     - 0x24B15b69343B58BdD5482986978308934a2Fd91E
     handler: src/EventHandlers.ts
     events:
-    - event: WeaponGenerated(address indexed user, uint256 weaponId, uint256 metadata, uint256 requestId)
     - event: WeaponRequested(address indexed user, uint256 tokenId, uint256 qty, uint256 requestId)
+    - event: WeaponGenerated(address indexed user, uint256 weaponId, uint256 metadata, uint256 requestId)
 unordered_multichain_mode: true

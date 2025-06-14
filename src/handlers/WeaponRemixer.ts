@@ -2,21 +2,22 @@ import {
   WeaponRemixer,
   WeaponRemixer_WeaponGenerated,
 } from "generated";
-import { getOrCreatePlayer, handleRemixGeneration } from "../helpers";
+import { getOrCreatePlayer, handleRemixerWeaponGeneration } from "../helpers";
+import { WEAPON_RARITY_NAMES } from "../constants";
 
 async function handleMixRequest(
   event: any,
   context: any,
   isLegendary: boolean,
 ) {
-  const player = await getOrCreatePlayer(event.transaction.from, context);
+  const player = await getOrCreatePlayer(context, event.transaction.from);
 
   context.WeaponMintRequest.set({
     id: event.params.requestId.toString(),
     player_id: player.id,
     origin: "REMIXER",
     cost: event.params.cost,
-    remixRarity: event.params.rarity,
+    remixRarity: WEAPON_RARITY_NAMES[Number(event.params.rarity)],
     remixIsLegendary: isLegendary,
     remixAmount: BigInt(event.params.weaponIds.length),
   });
@@ -32,5 +33,5 @@ WeaponRemixer.LegendaryMixRequested.handler(async ({ event, context }) => {
 
 WeaponRemixer.WeaponGenerated.handler(async ({ event, context }) => {
   const { user, requestId, weaponId, metadata } = event.params;
-  await handleRemixGeneration(context, user, requestId, weaponId, metadata);
+  await handleRemixerWeaponGeneration(context, user, requestId, weaponId, metadata);
 }); 

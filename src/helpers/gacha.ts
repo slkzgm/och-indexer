@@ -5,8 +5,9 @@ import {
   SILVER_GACHA_ID,
   WEAPON_RARITY_COUNT,
   ZERO_ADDRESS,
+  WEAPON_RARITY_NAMES,
 } from "../constants/index";
-import { GachaType, GlobalStats, Player, WeaponRarity } from "generated";
+import { GachaType, GlobalStats, Player } from "generated";
 import { getOrCreateGlobalStats, getOrCreatePlayer } from "./";
 import { parseWeaponMetadata } from "./formulas";
 
@@ -27,7 +28,7 @@ async function _updateGachaBalance(
     item_id: itemId,
   });
 
-  gachaBalance.balance += amountChange;
+  gachaBalance.balance = (gachaBalance.balance ?? 0n) + amountChange;
   context.GachaBalance.set(gachaBalance);
 }
 
@@ -116,7 +117,11 @@ export async function handleGachaTransfer(
       getOrCreatePlayer(context, to_lc),
       getOrCreateGlobalStats(context),
     ]);
-    await context.GachaItem.getOrCreate({ id: itemId_str });
+    const gachaItem = await context.GachaItem.getOrCreate({ id: itemId_str, transferCount: 0n });
+    if (gachaItem.transferCount == null) {
+      gachaItem.transferCount = 0n;
+    }
+    context.GachaItem.set(gachaItem);
     await _updateGachaBalance(context, to_lc, itemId_str, amount);
     const { newPlayer, newGlobalStats } = _updateGachaStats(player, globalStats, itemId, amount, "mint");
     context.Player.set(newPlayer);
@@ -129,7 +134,11 @@ export async function handleGachaTransfer(
       getOrCreatePlayer(context, from_lc),
        getOrCreateGlobalStats(context),
     ]);
-    await context.GachaItem.getOrCreate({ id: itemId_str });
+    const gachaItem = await context.GachaItem.getOrCreate({ id: itemId_str, transferCount: 0n });
+    if (gachaItem.transferCount == null) {
+      gachaItem.transferCount = 0n;
+    }
+    context.GachaItem.set(gachaItem);
     await _updateGachaBalance(context, from_lc, itemId_str, -amount);
     const { newPlayer, newGlobalStats } = _updateGachaStats(player, globalStats, itemId, amount, "burn");
     context.Player.set(newPlayer);
@@ -217,7 +226,7 @@ export async function handleGachaWeaponGeneration(
     maxSharpness,
   } = parseWeaponMetadata(metadata);
   const gachaType = getGachaType(request.gachaRaritySource);
-  const rarity = Object.values(WeaponRarity)[rarityIndex];
+  const rarity = WEAPON_RARITY_NAMES[rarityIndex];
 
   if (!gachaType || !rarity) {
     context.log.error(
@@ -255,7 +264,27 @@ export async function handleGachaWeaponGeneration(
   newGlobalGachaStat.totalOpened = (newGlobalGachaStat.totalOpened || 0n) + 1n;
   newGlobalGachaStat.countsByRarity = newGlobalGachaStat.countsByRarity.map((count: bigint, index: number) => index === rarityIndex ? count + 1n : count);
 
+  // --- General Stats ---
+  newPlayer.weaponsMinted = (newPlayer.weaponsMinted || 0n) + 1n;
+  const newPlayerGeneralRarityCounts = newPlayer.weaponsMintedByRarity ? [...newPlayer.weaponsMintedByRarity] : Array(WEAPON_RARITY_COUNT).fill(0n);
+  newPlayerGeneralRarityCounts[rarityIndex] = (newPlayerGeneralRarityCounts[rarityIndex] || 0n) + 1n;
+  newPlayer.weaponsMintedByRarity = newPlayerGeneralRarityCounts;
+
+  const newGlobalGeneralRarityCounts = newGlobalStats.weaponsGeneratedByRarity ? [...newGlobalStats.weaponsGeneratedByRarity] : Array(WEAPON_RARITY_COUNT).fill(0n);
+  newGlobalGeneralRarityCounts[rarityIndex] = (newGlobalGeneralRarityCounts[rarityIndex] || 0n) + 1n;
+  newGlobalStats.weaponsGeneratedByRarity = newGlobalGeneralRarityCounts;
+
+  // --- Specific Stats ---
   newPlayer.weaponsMintedFromGachaByRarity = newPlayer.weaponsMintedFromGachaByRarity.map((count: bigint, index: number) => index === rarityIndex ? count + 1n : count);
+
+  // --- Owned Stats ---
+  const newPlayerOwnedRarityCounts = newPlayer.weaponsOwnedByRarity ? [...newPlayer.weaponsOwnedByRarity] : Array(WEAPON_RARITY_COUNT).fill(0n);
+  newPlayerOwnedRarityCounts[rarityIndex] = (newPlayerOwnedRarityCounts[rarityIndex] || 0n) + 1n;
+  newPlayer.weaponsOwnedByRarity = newPlayerOwnedRarityCounts;
+
+  const newGlobalOwnedRarityCounts = newGlobalStats.totalWeaponsOwnedByRarity ? [...newGlobalStats.totalWeaponsOwnedByRarity] : Array(WEAPON_RARITY_COUNT).fill(0n);
+  newGlobalOwnedRarityCounts[rarityIndex] = (newGlobalOwnedRarityCounts[rarityIndex] || 0n) + 1n;
+  newGlobalStats.totalWeaponsOwnedByRarity = newGlobalOwnedRarityCounts;
 
   context.PlayerGachaStat.set(newPlayerGachaStat);
   context.GlobalGachaStat.set(newGlobalGachaStat);
@@ -276,5 +305,13 @@ export async function handleGachaWeaponGeneration(
     context.log.error(`Weapon ${weaponId} not found during gacha generation.`);
   }
 
-  context.WeaponMintRequest.delete(request.id);
+  // Track how many weapons have been generated for this request
+  const newRequest = { ...request };
+  newRequest.generatedCount = (newRequest.generatedCount || 0n) + 1n;
+  // Only delete the request when we've generated the full quantity
+  if (newRequest.generatedCount >= (newRequest.qty || 0n)) {
+    context.WeaponMintRequest.deleteUnsafe(request.id);
+  } else {
+    context.WeaponMintRequest.set(newRequest);
+  }
 }

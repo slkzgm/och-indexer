@@ -1,25 +1,18 @@
-import {
-  Blacksmith,
-  Blacksmith_WeaponRepaired,
-  Blacksmith_WeaponSharpened,
-} from "generated";
+import { Blacksmith } from "generated";
+import { handleWeaponRepaired, handleWeaponSharpened } from "../helpers";
 
 Blacksmith.WeaponRepaired.handler(async ({ event, context }) => {
-  const entity: Blacksmith_WeaponRepaired = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    weaponId: event.params.weaponId,
-    amount: event.params.amount,
-  };
-
-  context.Blacksmith_WeaponRepaired.set(entity);
+  await handleWeaponRepaired(
+    context,
+    event.params.weaponId,
+    event.params.amount,
+  );
 });
 
 Blacksmith.WeaponSharpened.handler(async ({ event, context }) => {
-  const entity: Blacksmith_WeaponSharpened = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    weaponId: event.params.weaponId,
-    amount: event.params.amount,
-  };
-
-  context.Blacksmith_WeaponSharpened.set(entity);
+  await handleWeaponSharpened(
+    context,
+    event.params.weaponId,
+    event.params.amount,
+  );
 }); 

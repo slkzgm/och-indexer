@@ -1,5 +1,6 @@
 import {
   CHAOS_LEVEL_GAIN_MIN,
+  HERO_TRAINING_COOLDOWN_SECONDS,
   MAX_LEVEL,
   UNKNOWN_LEVEL_GAIN_MIN,
 } from "../constants";
@@ -16,6 +17,7 @@ export async function handleTraining(
   oldLevel: bigint,
   newLevel: bigint,
   trainingType: TrainingType,
+  event: any,
   chances?: bigint[],
 ) {
   const levelGain = newLevel - oldLevel;
@@ -34,53 +36,87 @@ export async function handleTraining(
     return;
   }
 
-  // 2. Calculate cost
+  // 4. Calculate cost & update player's total next training cost
+  const oldTrainingCost = hero.nextTrainingCost || getTrainingCost(oldLevel);
+  const newTrainingCost = getTrainingCost(newLevel);
+  player.totalNextTrainingCost = (player.totalNextTrainingCost || 0n) - BigInt(oldTrainingCost) + BigInt(newTrainingCost);
+  
+  // 5. Update Player, Hero, and GlobalStats
   const cost = getTrainingCost(oldLevel);
 
-  // 3. Update Player, Hero, and GlobalStats
-  const entities = [player, hero, globalStats];
-  for (const entity of entities) {
-    entity.totalTrainings += 1n;
-    entity.totalTrainingCost += cost;
-    entity.totalLevelGains += levelGain;
+  // --- Update Player Stats ---
+  player.totalTrainings += 1n;
+  player.totalTrainingCost += cost;
+  player.totalLevelGains += levelGain;
 
-    switch (trainingType) {
-      case "Normal":
-        entity.normalTrainingsCount += 1n;
-        entity.normalTrainingCost += cost;
-        entity.normalLevelGains += levelGain;
-        break;
-      case "Chaos":
-        entity.chaosTrainingsCount += 1n;
-        entity.chaosTrainingCost += cost;
-        entity.chaosLevelGains += levelGain;
-        if (chances && entity.chaosChancesSum) {
-          for (let i = 0; i < chances.length; i++) {
-            entity.chaosChancesSum[i] =
-              (entity.chaosChancesSum[i] || 0n) + chances[i];
-          }
+  // --- Update Hero Stats ---
+  hero.totalTrainings += 1n;
+  hero.totalTrainingCost += cost;
+  hero.totalLevelGains += levelGain;
+
+  // --- Update Global Stats ---
+  globalStats.totalTrainings += 1n;
+  globalStats.totalTrainingCost += cost;
+  globalStats.totalLevelGains += levelGain;
+
+  switch (trainingType) {
+    case "Normal":
+      player.normalTrainingsCount += 1n;
+      player.normalTrainingCost += cost;
+      player.normalLevelGains += levelGain;
+      hero.normalTrainingsCount += 1n;
+      hero.normalTrainingCost += cost;
+      hero.normalLevelGains += levelGain;
+      globalStats.totalNormalTrainingsCount += 1n;
+      globalStats.totalNormalTrainingCost += cost;
+      globalStats.totalNormalLevelGains += levelGain;
+      break;
+    case "Chaos":
+      player.chaosTrainingsCount += 1n;
+      player.chaosTrainingCost += cost;
+      player.chaosLevelGains += levelGain;
+      hero.chaosTrainingsCount += 1n;
+      hero.chaosTrainingCost += cost;
+      hero.chaosLevelGains += levelGain;
+      globalStats.totalChaosTrainingsCount += 1n;
+      globalStats.totalChaosTrainingCost += cost;
+      globalStats.totalChaosLevelGains += levelGain;
+
+      if (chances) {
+        for (let i = 0; i < chances.length; i++) {
+          player.chaosChancesSum[i] += chances[i];
+          hero.chaosChancesSum[i] += chances[i];
+          globalStats.totalChaosChancesSum[i] += chances[i];
         }
-        if (entity.chaosLevelGainsDistribution) {
-          const index = Number(levelGain) - CHAOS_LEVEL_GAIN_MIN;
-          entity.chaosLevelGainsDistribution[index] += 1n;
+      }
+      const chaosIndex = Number(levelGain) - CHAOS_LEVEL_GAIN_MIN;
+      player.chaosLevelGainsDistribution[chaosIndex] += 1n;
+      hero.chaosLevelGainsDistribution[chaosIndex] += 1n;
+      globalStats.totalChaosLevelGainsDistribution[chaosIndex] += 1n;
+      break;
+    case "Unknown":
+      player.unknownTrainingsCount += 1n;
+      player.unknownTrainingCost += cost;
+      player.unknownLevelGains += levelGain;
+      hero.unknownTrainingsCount += 1n;
+      hero.unknownTrainingCost += cost;
+      hero.unknownLevelGains += levelGain;
+      globalStats.totalUnknownTrainingsCount += 1n;
+      globalStats.totalUnknownTrainingCost += cost;
+      globalStats.totalUnknownLevelGains += levelGain;
+
+      if (chances) {
+        for (let i = 0; i < chances.length; i++) {
+          player.unknownChancesSum[i] += chances[i];
+          hero.unknownChancesSum[i] += chances[i];
+          globalStats.totalUnknownChancesSum[i] += chances[i];
         }
-        break;
-      case "Unknown":
-        entity.unknownTrainingsCount += 1n;
-        entity.unknownTrainingCost += cost;
-        entity.unknownLevelGains += levelGain;
-        if (chances && entity.unknownChancesSum) {
-          for (let i = 0; i < chances.length; i++) {
-            entity.unknownChancesSum[i] =
-              (entity.unknownChancesSum[i] || 0n) + chances[i];
-          }
-        }
-        if (entity.unknownLevelGainsDistribution) {
-          const index = Number(levelGain) - UNKNOWN_LEVEL_GAIN_MIN;
-          entity.unknownLevelGainsDistribution[index] += 1n;
-        }
-        break;
-    }
+      }
+      const unknownIndex = Number(levelGain) - UNKNOWN_LEVEL_GAIN_MIN;
+      player.unknownLevelGainsDistribution[unknownIndex] += 1n;
+      hero.unknownLevelGainsDistribution[unknownIndex] += 1n;
+      globalStats.totalUnknownLevelGainsDistribution[unknownIndex] += 1n;
+      break;
   }
 
   // 4. Update level-specific stats
@@ -102,10 +138,14 @@ export async function handleTraining(
   player.totalHeroesLevel += levelGain;
   globalStats.totalHeroesLevel += levelGain;
 
-  // 5. Update Hero entity specific fields
+  // 7. Update Hero entity specific fields
   hero.level = newLevel;
+  const timestamp = BigInt(event.block.timestamp);
+  hero.lastTrainedTimestamp = timestamp;
+  hero.nextTrainingAvailableTimestamp = timestamp + BigInt(HERO_TRAINING_COOLDOWN_SECONDS);
+  hero.nextTrainingCost = newTrainingCost;
 
-  // 6. Save all updated entities
+  // 8. Save all updated entities
   context.Player.set(player);
   context.Hero.set(hero);
   context.GlobalStats.set(globalStats);

@@ -11,12 +11,12 @@ import {
   getOrCreateGlobalStats,
   getAndNormalizePlayer,
 } from ".";
+import { getTrainingCost } from "./formulas";
 
 type Context = any; // Le typage sera inféré lors de l'appel dans le handler
 
 const NEW_HERO_DEFAULTS = {
   level: 1n,
-  staked: false,
   transferCount: 0n,
   lastTrainedTimestamp: 0n,
   totalClaimed: 0n,
@@ -38,6 +38,24 @@ const NEW_HERO_DEFAULTS = {
   unknownLevelGainsDistribution: Array(UNKNOWN_LEVEL_GAIN_RANGE_SIZE).fill(0n),
   chaosChancesSum: Array(CHAOS_CHANCES_SIZE).fill(0n),
   unknownChancesSum: Array(UNKNOWN_CHANCES_SIZE).fill(0n),
+  nextTrainingAvailableTimestamp: 0n,
+  nextTrainingCost: 0n,
+  damage: 0n,
+  equippedWeapon_id: undefined,
+
+  // Staking stats
+  staked: false,
+  stakingType: undefined,
+  stakedTimestamp: 0n,
+  unstakeAvailableTimestamp: 0n,
+  lastClaimTimestamp: 0n,
+  totalStakedTime: 0n,
+  stakingCount: 0n,
+  baseHeroPerDay: 0n,
+  bonusHeroPerDay: 0n,
+  dailyReward: 0n,
+  hourlyReward: 0n,
+  stakingTotalClaimed: 0n,
 };
 
 /**
@@ -78,6 +96,7 @@ export async function handleHeroTransfer(
         if (owner) {
           owner.heroesBurned += 1n;
           owner.heroesCount -= 1n;
+          owner.totalNextTrainingCost -= hero.nextTrainingCost;
           if (hero.level > 0 && hero.level <= owner.heroCountByLevel.length) {
             owner.heroCountByLevel[Number(hero.level) - 1] -= 1n;
           }
@@ -98,9 +117,11 @@ export async function handleHeroTransfer(
   if (from_lc === ZERO_ADDRESS) {
     // Met à jour les stats du minter.
     const player = await getOrCreatePlayer(context, to);
+    const initialTrainingCost = getTrainingCost(1n);
     player.heroesMinted += 1n;
     player.heroesCount += 1n;
     player.heroCountByLevel[0] += 1n; // Minted at level 1
+    player.totalNextTrainingCost = (player.totalNextTrainingCost || 0n) + initialTrainingCost;
     context.Player.set(player);
 
     globalStats.heroesCount += 1n;
@@ -114,6 +135,7 @@ export async function handleHeroTransfer(
       minter_id: to_lc,
       mintedTimestamp: BigInt(timestamp),
       ...NEW_HERO_DEFAULTS,
+      nextTrainingCost: initialTrainingCost,
     });
     return;
   }
@@ -143,6 +165,7 @@ export async function handleHeroTransfer(
     if (fromPlayer) {
       fromPlayer.heroesCount -= 1n;
       fromPlayer.heroTransfersOut += 1n;
+      fromPlayer.totalNextTrainingCost -= hero.nextTrainingCost;
       if (hero.level > 0 && hero.level <= fromPlayer.heroCountByLevel.length) {
         fromPlayer.heroCountByLevel[Number(hero.level) - 1] -= 1n;
       }
@@ -151,6 +174,7 @@ export async function handleHeroTransfer(
 
     toPlayer.heroesCount += 1n;
     toPlayer.heroTransfersIn += 1n;
+    toPlayer.totalNextTrainingCost = (toPlayer.totalNextTrainingCost || 0n) + hero.nextTrainingCost;
     if (hero.level > 0 && hero.level <= toPlayer.heroCountByLevel.length) {
       toPlayer.heroCountByLevel[Number(hero.level) - 1] += 1n;
     }

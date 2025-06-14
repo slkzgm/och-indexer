@@ -1,30 +1,32 @@
-import {
-  HeroWeaponMachine,
-  HeroWeaponMachine_WeaponGenerated,
-  HeroWeaponMachine_WeaponRequested,
-} from "generated";
+import { HeroWeaponMachine } from "generated";
+import { getOrCreatePlayer, handleHeroWeaponGeneration } from "../helpers";
 
+// Handle WeaponGenerated events
 HeroWeaponMachine.WeaponGenerated.handler(async ({ event, context }) => {
-  const entity: HeroWeaponMachine_WeaponGenerated = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    weaponId: event.params.weaponId,
-    metadata: event.params.metadata,
-    requestId: event.params.requestId,
-  };
-
-  context.HeroWeaponMachine_WeaponGenerated.set(entity);
+  const { user, requestId, weaponId, metadata } = event.params;
+  await handleHeroWeaponGeneration(
+    context,
+    user,
+    requestId,
+    weaponId,
+    metadata,
+  );
 });
 
+// Handle WeaponRequested events
 HeroWeaponMachine.WeaponRequested.handler(async ({ event, context }) => {
-  const entity: HeroWeaponMachine_WeaponRequested = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    user: event.params.user,
-    slot: event.params.slot,
-    qty: event.params.qty,
-    amount: event.params.amount,
-    requestId: event.params.requestId,
-  };
+  const player = await getOrCreatePlayer(context, event.params.user);
 
-  context.HeroWeaponMachine_WeaponRequested.set(entity);
+  context.WeaponMintRequest.set({
+    id: event.params.requestId.toString(),
+    player_id: player.id,
+    origin: "WEAPON_MACHINE",
+    gachaRaritySource: undefined,
+    qty: event.params.qty,
+    generatedCount: 0n,
+    cost: event.params.amount,
+    remixRarity: undefined,
+    remixIsLegendary: undefined,
+    remixAmount: undefined,
+  });
 }); 
