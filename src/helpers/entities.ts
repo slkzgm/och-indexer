@@ -87,13 +87,20 @@ export function createWeapon(
     owner_id: string;
     minter: string;
     mintedTimestamp: bigint;
-    origin?: string;
-    rarity?: string;
+    source?: string;
+    rarity?: number;
+    weaponType?: number;
     sharpness?: number;
     maxSharpness?: number;
     durability?: number;
     maxDurability?: number;
     equipped?: boolean;
+    requestId?: string;
+    sourceGachaTokenId?: bigint;
+    sourceHeroCost?: bigint;
+    sourceRemixedWeaponIds?: bigint[];
+    sourceRemixRarity?: number;
+    sourceRemixType?: string;
   }
 ) {
   context.Weapon.set({
@@ -101,12 +108,64 @@ export function createWeapon(
     owner_id: weaponData.owner_id,
     minter: weaponData.minter,
     mintedTimestamp: weaponData.mintedTimestamp,
-    origin: weaponData.origin || "DIRECT_MINT",
-    rarity: weaponData.rarity || "COMMON",
+    source: weaponData.source || "DIRECT_MINT",
+    rarity: weaponData.rarity || 0, // 0 = COMMON par défaut
+    weaponType: weaponData.weaponType || 0,
     sharpness: weaponData.sharpness || 100,
     maxSharpness: weaponData.maxSharpness || 100,
     durability: weaponData.durability || 100,
     maxDurability: weaponData.maxDurability || 100,
     equipped: weaponData.equipped || false,
+    requestId: weaponData.requestId || null,
+    sourceGachaTokenId: weaponData.sourceGachaTokenId || undefined,
+    sourceHeroCost: weaponData.sourceHeroCost || undefined,
+    sourceRemixedWeaponIds: weaponData.sourceRemixedWeaponIds || undefined,
+    sourceRemixRarity: weaponData.sourceRemixRarity ?? undefined,
+    sourceRemixType: weaponData.sourceRemixType || undefined,
+  });
+}
+
+/**
+ * Crée une WeaponRequest pour tracking des requests
+ * @param context Le contexte du handler
+ * @param requestData Les données de la request
+ */
+export function createWeaponRequest(
+  context: any,
+  requestData: {
+    id: string;
+    source: string;
+    requester: string;
+    timestamp: bigint;
+    expectedWeapons: number;
+    gachaTokenId?: bigint;
+    gachaQty?: number;
+    heroSlot?: bigint;
+    heroQty?: number;
+    heroCost?: bigint;
+    heroCostPerWeapon?: bigint;
+    remixedWeaponIds?: bigint[];
+    remixRarity?: number;
+    remixType?: string;
+  }
+) {
+  context.WeaponRequest.set({
+    id: requestData.id,
+    source: requestData.source,
+    requester: requestData.requester,
+    timestamp: requestData.timestamp,
+    expectedWeapons: requestData.expectedWeapons,
+    generatedWeapons: 0,
+    completed: false,
+    generatedWeaponIds: [],
+    gachaTokenId: requestData.gachaTokenId || undefined,
+    gachaQty: requestData.gachaQty || undefined,
+    heroSlot: requestData.heroSlot || undefined,
+    heroQty: requestData.heroQty || undefined,
+    heroCost: requestData.heroCost || undefined,
+    heroCostPerWeapon: requestData.heroCostPerWeapon || undefined,
+    remixedWeaponIds: requestData.remixedWeaponIds || undefined,
+    remixRarity: requestData.remixRarity ?? undefined,
+    remixType: requestData.remixType || undefined,
   });
 } 

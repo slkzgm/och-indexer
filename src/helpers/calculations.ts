@@ -38,4 +38,31 @@ export function calculateNextTrainingAvailable(lastTrainingTimestamp: bigint): b
  */
 export function validateHeroLevel(level: number): number {
   return Math.max(level, MIN_HERO_LEVEL);
-} 
+}
+
+/**
+ * Parse les métadonnées d'une weapon depuis un uint32
+ * Bits layout:
+ *  - bits [0..7]   : rarity
+ *  - bits [8..15]  : weaponType
+ *  - bits [16..23] : maxSharpness
+ *  - bits [24..31] : maxDurability
+ * @param metadata Le metadata en uint32
+ * @returns Les propriétés parsées de l'arme
+ */
+export function parseWeaponMetadata(metadata: bigint): {
+  rarity: number;
+  weaponType: number;
+  maxSharpness: number;
+  maxDurability: number;
+} {
+  const meta = Number(metadata);
+  
+  return {
+    rarity: meta & 0xff,                    // bits [0..7]
+    weaponType: (meta >> 8) & 0xff,         // bits [8..15]
+    maxSharpness: (meta >> 16) & 0xff,      // bits [16..23]
+    maxDurability: (meta >> 24) & 0xff,     // bits [24..31]
+  };
+}
+

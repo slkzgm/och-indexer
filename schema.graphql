@@ -256,38 +256,83 @@ type Hero @entity {
   lastClaimTimestamp: BigInt
 }
 
-enum WeaponRarity {
-  COMMON
-  UNCOMMON
-  RARE
-  EPIC
-  HEROIC
-  LEGENDARY
-  MYTHIC
-}
-
-enum WeaponOrigin {
+enum WeaponSource {
   GACHA_MACHINE
   HERO_MACHINE
   REMIXER
   DIRECT_MINT
 }
 
+enum RemixType {
+  NORMAL
+  LEGENDARY
+}
+
+type WeaponRequest @entity {
+  id: String! # requestId
+  
+  # Source tracking
+  source: WeaponSource! # GACHA_MACHINE, HERO_MACHINE, REMIXER, DIRECT_MINT
+  
+  # Request data (varies by source)
+  requester: Bytes!
+  timestamp: BigInt!
+  
+  # Gacha specific
+  gachaTokenId: BigInt # Pour tracking stats gacha
+  gachaQty: Int
+  
+  # Hero machine specific  
+  heroSlot: BigInt
+  heroQty: Int
+  heroCost: BigInt # Total cost
+  heroCostPerWeapon: BigInt # Calculated: cost/qty
+  
+  # Remixer specific
+  remixedWeaponIds: [BigInt!] # Weapons burned
+  remixRarity: Int
+  remixType: RemixType # NORMAL, LEGENDARY
+  
+  # Tracking
+  expectedWeapons: Int! # Qty expected
+  generatedWeapons: Int! @default(value: "0") # Counter
+  completed: Boolean! @default(value: false)
+  
+  # Relations
+  generatedWeaponIds: [String!]! # IDs des weapons générées
+}
+
 type Weapon @entity {
   id: String!
   owner: Player!
-  origin: WeaponOrigin!
-  rarity: WeaponRarity!
+  source: WeaponSource!
+  rarity: Int! # 0=COMMON, 1=UNCOMMON, 2=RARE, 3=EPIC, 4=HEROIC, 5=LEGENDARY, 6=MYTHIC
   minter: Bytes!
   mintedTimestamp: BigInt!
 
   equipped: Boolean! @default(value: false)
   equippedBy: [Hero!]! @derivedFrom(field: "equippedWeapon")
 
+  weaponType: Int!
+
   sharpness: Int!
   maxSharpness: Int!
   durability: Int!
   maxDurability: Int!
+
+  # Source tracking
+  requestId: String # Lien vers WeaponRequest (null pour DIRECT_MINT)
+  
+  # Gacha specific
+  sourceGachaTokenId: BigInt # Si source = GACHA_MACHINE
+  
+  # Hero machine specific
+  sourceHeroCost: BigInt # Si source = HERO_MACHINE
+  
+  # Remixer specific
+  sourceRemixedWeaponIds: [BigInt!] # Si source = REMIXER
+  sourceRemixRarity: Int # Si source = REMIXER
+  sourceRemixType: RemixType # Si source = REMIXER
 }
 
 enum GachaType {

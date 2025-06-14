@@ -4,6 +4,7 @@ import {
   Weapon721_WeaponMetadataGenerated,
 } from "generated";
 import { handleWeaponTransfer } from "../helpers/weapon";
+import { parseWeaponMetadata } from "../helpers/calculations";
 
 Weapon721.ConsecutiveTransfer.handler(async ({ event, context }) => {
   const { fromTokenId, toTokenId, from, to } = event.params;
@@ -35,11 +36,33 @@ Weapon721.WeaponGenerated.handler(async ({ event, context }) => {
 });
 
 Weapon721.WeaponMetadataGenerated.handler(async ({ event, context }) => {
+  const { id: weaponId, metadata } = event.params;
+  
+  // Stocke l'événement brut
   const entity: Weapon721_WeaponMetadataGenerated = {
     id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    event_id: event.params.id,
-    metadata: event.params.metadata,
+    event_id: weaponId,
+    metadata: metadata,
   };
-
   context.Weapon721_WeaponMetadataGenerated.set(entity);
+
+  // Met à jour l'entité Weapon avec les métadonnées parsées
+  const weapon = await context.Weapon.get(weaponId.toString());
+  if (weapon) {
+    const parsedMetadata = parseWeaponMetadata(metadata);
+    
+    // Met à jour les propriétés de l'arme
+    const updatedWeapon = {
+      ...weapon,
+      rarity: parsedMetadata.rarity,
+      weaponType: parsedMetadata.weaponType,
+      maxSharpness: parsedMetadata.maxSharpness,
+      maxDurability: parsedMetadata.maxDurability,
+      // Initialise sharpness et durability aux valeurs max si pas encore définies
+      sharpness: weapon.sharpness || parsedMetadata.maxSharpness,
+      durability: weapon.durability || parsedMetadata.maxDurability,
+    };
+    
+    context.Weapon.set(updatedWeapon);
+  }
 }); 

@@ -51,6 +51,7 @@ export async function handleWeaponTransfer(
       owner_id: to_lc,
       minter: to_lc, // Le minter est le destinataire du mint (Bytes!)
       mintedTimestamp: blockTimestamp || 0n,
+      rarity: 0, // COMMON par défaut, sera mis à jour par WeaponMetadataGenerated
       // Les autres champs utilisent les valeurs par défaut
     });
 
