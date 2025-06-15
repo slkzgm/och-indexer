@@ -165,10 +165,14 @@ export async function updateWeaponAndHeroStats(
   // OPTIMISATION : Recalcule les stats seulement si sharpness ou maxSharpness changent
   const sharpnessChanged = updates.sharpness !== undefined || updates.maxSharpness !== undefined;
   
-  if (weapon.equipped && weapon.equippedBy && weapon.equippedBy.length > 0 && sharpnessChanged) {
-    // Utilise la relation derivedFrom pour récupérer directement le héro
-    const hero = weapon.equippedBy[0]; // Normalement un seul héro par arme
-    await updateHeroStats(context, hero, updatedWeapon);
+  if (weapon.equipped && weapon.equippedHeroId && sharpnessChanged) {
+    // FIX : Utilise l'ID direct du héros équipé (plus efficace qu'une requête)
+    const equippedHero = await context.Hero.get(weapon.equippedHeroId);
+    
+    // Recalcule les stats pour le héros équipé
+    if (equippedHero) {
+      await updateHeroStats(context, equippedHero, updatedWeapon);
+    }
   }
 
   return updatedWeapon;
@@ -217,6 +221,7 @@ export function createWeapon(
     maxDurability: weaponData.maxDurability || 100,
     broken: weaponData.durability === 0 || false, // Broken si durability = 0
     equipped: weaponData.equipped || false,
+    equippedHeroId: undefined, // Pas équipée par défaut
     requestId: weaponData.requestId || null,
     sourceGachaTokenId: weaponData.sourceGachaTokenId || undefined,
     sourceHeroCost: weaponData.sourceHeroCost || undefined,

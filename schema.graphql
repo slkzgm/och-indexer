@@ -246,7 +246,7 @@ type Hero @entity {
   nextTrainingCost: BigInt! @default(value: "0")
   nextTrainingAvailable: BigInt! @default(value: "0")
 
-  equippedWeapon: Weapon @oneToOne
+  equippedWeapon: Weapon @oneToOne @index
   damage: BigInt! @default(value: "0")
 
   # Rewards calculation (all in wei - 1e18)
@@ -321,6 +321,7 @@ type Weapon @entity {
   mintedTimestamp: BigInt!
 
   equipped: Boolean! @default(value: false)
+  equippedHeroId: String # ID du héros qui équipe cette arme (null si pas équipée)
   equippedBy: [Hero!]! @derivedFrom(field: "equippedWeapon")
 
   weaponType: Int!

@@ -35,16 +35,18 @@ HeroArmory.Equipped.handler(async ({ event, context }) => {
     const updatedOldWeapon = {
       ...oldWeapon,
       equipped: false,
+      equippedHeroId: undefined, // Plus équipée par personne
     };
     context.Weapon.set(updatedOldWeapon);
   }
 
   // PARALLELISATION : Met à jour weapon + hero + recalcule stats
   await Promise.all([
-    // Met à jour la weapon comme équipée
+    // Met à jour la weapon comme équipée avec l'ID du héros
     context.Weapon.set({
       ...weapon,
       equipped: true,
+      equippedHeroId: heroId.toString(),
     }),
     
     // Met à jour le hero avec la nouvelle weapon et recalcule ses stats
@@ -82,6 +84,7 @@ HeroArmory.Unequipped.handler(async ({ event, context }) => {
     context.Weapon.set({
       ...weapon,
       equipped: false,
+      equippedHeroId: undefined, // Plus équipée par personne
     }),
     
     // Met à jour le hero sans weapon et recalcule ses stats (damage = 0)
