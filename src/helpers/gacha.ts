@@ -23,12 +23,14 @@ function getGachaIndex(itemId: bigint): number {
  * @param playerId L'adresse du joueur
  * @param itemId L'ID de l'item Gacha
  * @param amountChange La quantité à ajouter (positive) ou à soustraire (négative)
+ * @param preloadedPlayer Optionnel : entité Player déjà chargée pour économiser un accès BD
  */
 export async function updateGachaBalance(
   context: any, // Utilise le type généré par Envio
   playerId: string,
   itemId: bigint,
   amountChange: bigint,
+  preloadedPlayer?: any, // Optionnel : entité Player déjà chargée pour économiser un accès BD
 ) {
   // Validation : montant non-zéro
   if (amountChange === 0n) {
@@ -37,8 +39,8 @@ export async function updateGachaBalance(
 
   const gachaIndex = getGachaIndex(itemId);
 
-  // S'assure que le joueur existe avec des balances par défaut
-  const player = await getOrCreatePlayer(context, playerId);
+  // Réutilise l'entité déjà chargée si fournie, sinon fallback sur getOrCreatePlayer
+  const player = preloadedPlayer || await getOrCreatePlayer(context, playerId);
 
   // Met à jour la balance du type spécifique
   const newBalances = [...player.gachaBalances];

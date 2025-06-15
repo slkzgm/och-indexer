@@ -10,30 +10,35 @@ import { updateWeaponAndHeroStats } from "../helpers/entities";
  * Répare une arme (remet durability à maxDurability et broken à false)
  * OPTIMISÉ : Pas de recalcul des stats car durability n'affecte pas les rewards
  */
-Blacksmith.WeaponRepaired.handler(async ({ event, context }) => {
-  const { weaponId, amount } = event.params;
+Blacksmith.WeaponRepaired.handlerWithLoader({
+  loader: async ({ event, context }: { event: any; context: any }) => {
+    const { weaponId } = event.params;
+    const weapon = await context.Weapon.get(weaponId.toString());
+    return { weapon };
+  },
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
+    const { weaponId, amount } = event.params;
 
-  // Stocke l'événement brut
-  const entity: Blacksmith_WeaponRepaired = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    weaponId,
-    amount,
-  };
+    const { weapon } = loaderReturn as { weapon: any | null };
 
-  // PARALLELISATION : Stockage event + récupération de l'arme
-  const [, weapon] = await Promise.all([
-    context.Blacksmith_WeaponRepaired.set(entity),
-    context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`),
-  ]);
+    const resolvedWeapon = weapon ?? await context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`);
 
-  // OPTIMISATION : Met à jour seulement l'arme (durability n'affecte pas les stats du héro)
-  const updatedWeapon = {
-    ...weapon,
-    durability: weapon.maxDurability, // Remet à la durabilité max
-    broken: false, // Plus cassée
-  };
-  
-  context.Weapon.set(updatedWeapon);
+    // Stockage event
+    const entity: Blacksmith_WeaponRepaired = {
+      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+      weaponId,
+      amount,
+    };
+
+    // OPTIMISATION : Met à jour seulement l'arme (durability n'affecte pas les stats du héro)
+    const updatedWeapon = {
+      ...resolvedWeapon,
+      durability: resolvedWeapon.maxDurability, // Remet à la durabilité max
+      broken: false, // Plus cassée
+    };
+    
+    context.Weapon.set(updatedWeapon);
+  }
 });
 
 /**
@@ -41,24 +46,35 @@ Blacksmith.WeaponRepaired.handler(async ({ event, context }) => {
  * Aiguise une arme (remet sharpness à maxSharpness)
  * IMPORTANT : Recalcule les rewards car sharpness affecte le bonus
  */
-Blacksmith.WeaponSharpened.handler(async ({ event, context }) => {
-  const { weaponId, amount } = event.params;
+Blacksmith.WeaponSharpened.handlerWithLoader({
+  loader: async ({ event, context }: { event: any; context: any }) => {
+    const { weaponId } = event.params;
+    const weapon = await context.Weapon.get(weaponId.toString());
 
-  // Stocke l'événement brut
-  const entity: Blacksmith_WeaponSharpened = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    weaponId,
-    amount,
-  };
+    let hero: any | null = null;
+    if (weapon && weapon.equipped && weapon.equippedHeroId) {
+      hero = await context.Hero.get(weapon.equippedHeroId);
+    }
+    return { weapon, hero };
+  },
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
+    const { weaponId, amount } = event.params;
 
-  // PARALLELISATION : Stockage event + récupération de l'arme
-  const [, weapon] = await Promise.all([
-    context.Blacksmith_WeaponSharpened.set(entity),
-    context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`),
-  ]);
+    const { weapon, hero } = loaderReturn as { weapon: any | null; hero: any | null };
 
-  // IMPORTANT : Recalcule les rewards du héro car sharpness affecte les bonus
-  await updateWeaponAndHeroStats(context, weapon, {
-    sharpness: weapon.maxSharpness, // Remet à la sharpness max
-  });
+    const resolvedWeapon = weapon ?? await context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`);
+
+    // Stocke l'événement brut
+    const entity: Blacksmith_WeaponSharpened = {
+      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+      weaponId,
+      amount,
+    };
+
+    await context.Blacksmith_WeaponSharpened.set(entity);
+
+    await updateWeaponAndHeroStats(context, resolvedWeapon, {
+      sharpness: resolvedWeapon.maxSharpness,
+    }, hero);
+  }
 }); 

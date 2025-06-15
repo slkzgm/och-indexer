@@ -138,6 +138,7 @@ export async function updateHeroStats(
  * @param context Le contexte du handler
  * @param weapon L'arme à mettre à jour
  * @param updates Les champs à mettre à jour
+ * @param preloadedHero Le héro préchargé (optionnel)
  */
 export async function updateWeaponAndHeroStats(
   context: any,
@@ -148,7 +149,8 @@ export async function updateWeaponAndHeroStats(
     durability: number;
     maxDurability: number;
     broken: boolean;
-  }>
+  }>,
+  preloadedHero: any | null = null,
 ) {
   // Calcule automatiquement broken si durability est mise à jour
   const newDurability = updates.durability != undefined ? updates.durability : weapon.durability;
@@ -166,8 +168,8 @@ export async function updateWeaponAndHeroStats(
   const sharpnessChanged = updates.sharpness !== undefined || updates.maxSharpness !== undefined;
   
   if (weapon.equipped && weapon.equippedHeroId && sharpnessChanged) {
-    // FIX : Utilise l'ID direct du héros équipé (plus efficace qu'une requête)
-    const equippedHero = await context.Hero.get(weapon.equippedHeroId);
+    // Utilise le héro préchargé si fourni, sinon récupère-le depuis la BD
+    const equippedHero = preloadedHero ?? await context.Hero.get(weapon.equippedHeroId);
     
     // Recalcule les stats pour le héros équipé
     if (equippedHero) {

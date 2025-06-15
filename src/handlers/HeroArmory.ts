@@ -9,88 +9,123 @@ import { updateHeroStats } from "../helpers/entities";
  * Handler pour HeroArmory.Equipped
  * Équipe une arme à un héro et recalcule ses stats
  */
-HeroArmory.Equipped.handler(async ({ event, context }) => {
-  const { heroId, weaponId } = event.params;
+HeroArmory.Equipped.handlerWithLoader({
+  loader: async ({ event, context }: { event: any; context: any }) => {
+    const { heroId, weaponId } = event.params;
 
-  // Stocke l'événement brut
-  const entity: HeroArmory_Equipped = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    heroId,
-    weaponId,
-  };
+    // Charge hero et weapon en parallèle
+    const [hero, weapon] = await Promise.all([
+      context.Hero.get(heroId.toString()),
+      context.Weapon.get(weaponId.toString()),
+    ]);
 
-  // PARALLELISATION : Stockage event + récupération des entités + ancienne arme si nécessaire
-  const [, hero, weapon, oldWeapon] = await Promise.all([
-    context.HeroArmory_Equipped.set(entity),
-    context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`),
-    context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`),
-    // Récupère l'ancienne arme en parallèle si elle existe
-    context.Hero.get(heroId.toString()).then(h => 
-      h?.equippedWeapon_id ? context.Weapon.get(h.equippedWeapon_id) : null
-    ),
-  ]);
+    // Charge l'ancienne arme si l'info est déjà dispo
+    const oldWeapon = hero?.equippedWeapon_id
+      ? await context.Weapon.get(hero.equippedWeapon_id)
+      : null;
 
-  // Déséquipe l'ancienne arme si elle existe
-  if (oldWeapon) {
-    const updatedOldWeapon = {
-      ...oldWeapon,
-      equipped: false,
-      equippedHeroId: undefined, // Plus équipée par personne
+    return { hero, weapon, oldWeapon };
+  },
+
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
+    const { heroId, weaponId } = event.params;
+
+    let { hero, weapon, oldWeapon } = loaderReturn as { hero: any | null; weapon: any | null; oldWeapon: any | null };
+
+    // Fallbacks manquants ← on les récupère en parallèle pour garder la perf
+    if (!hero || !weapon) {
+      const [resolvedHero, resolvedWeapon] = await Promise.all([
+        hero ? Promise.resolve(hero) : context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`),
+        weapon ? Promise.resolve(weapon) : context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`),
+      ]);
+      hero = resolvedHero;
+      weapon = resolvedWeapon;
+    }
+
+    // Si oldWeapon pas encore chargée, on tente une récupération (non bloquante)
+    if (!oldWeapon && hero.equippedWeapon_id) {
+      oldWeapon = await context.Weapon.get(hero.equippedWeapon_id);
+    }
+
+    // Stocke l'événement brut
+    const entity: HeroArmory_Equipped = {
+      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+      heroId,
+      weaponId,
     };
-    context.Weapon.set(updatedOldWeapon);
-  }
+    context.HeroArmory_Equipped.set(entity);
 
-  // PARALLELISATION : Met à jour weapon + hero + recalcule stats
-  await Promise.all([
-    // Met à jour la weapon comme équipée avec l'ID du héros
-    context.Weapon.set({
-      ...weapon,
-      equipped: true,
-      equippedHeroId: heroId.toString(),
-    }),
-    
-    // Met à jour le hero avec la nouvelle weapon et recalcule ses stats
-    updateHeroStats(context, {
-      ...hero,
-      equippedWeapon_id: weaponId.toString(),
-    }, weapon),
-  ]);
+    // Déséquipe l'ancienne arme si elle existe
+    if (oldWeapon) {
+      const updatedOldWeapon = {
+        ...oldWeapon,
+        equipped: false,
+        equippedHeroId: undefined,
+      };
+      context.Weapon.set(updatedOldWeapon);
+    }
+
+    // Met à jour weapon + hero + recalcule stats
+    await Promise.all([
+      context.Weapon.set({
+        ...weapon,
+        equipped: true,
+        equippedHeroId: heroId.toString(),
+      }),
+      updateHeroStats(context, {
+        ...hero,
+        equippedWeapon_id: weaponId.toString(),
+      }, weapon),
+    ]);
+  },
 });
 
 /**
  * Handler pour HeroArmory.Unequipped
  * Déséquipe une arme d'un héro et recalcule ses stats
  */
-HeroArmory.Unequipped.handler(async ({ event, context }) => {
-  const { heroId, weaponId } = event.params;
+HeroArmory.Unequipped.handlerWithLoader({
+  loader: async ({ event, context }: { event: any; context: any }) => {
+    const { heroId, weaponId } = event.params;
 
-  // Stocke l'événement brut
-  const entity: HeroArmory_Unequipped = {
-    id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-    heroId,
-    weaponId,
-  };
+    const hero = await context.Hero.get(heroId.toString());
+    const weapon = await context.Weapon.get(weaponId.toString());
 
-  // PARALLELISATION : Stockage event + récupération des entités
-  const [, hero, weapon] = await Promise.all([
-    context.HeroArmory_Unequipped.set(entity),
-    context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`),
-    context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`),
-  ]);
+    return { hero, weapon };
+  },
 
-  // PARALLELISATION : Met à jour weapon + hero + recalcule stats
-  await Promise.all([
-    // Met à jour la weapon comme déséquipée
-    context.Weapon.set({
-      ...weapon,
-      equipped: false,
-      equippedHeroId: undefined, // Plus équipée par personne
-    }),
-    
-    // Met à jour le hero sans weapon et recalcule ses stats (damage = 0)
-    updateHeroStats(context, {
-      ...hero,
-      equippedWeapon_id: undefined,
-    }, null),
-  ]);
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
+    const { heroId, weaponId } = event.params;
+
+    let { hero, weapon } = loaderReturn as { hero: any | null; weapon: any | null };
+
+    if (!hero || !weapon) {
+      const [resolvedHero, resolvedWeapon] = await Promise.all([
+        hero ? Promise.resolve(hero) : context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`),
+        weapon ? Promise.resolve(weapon) : context.Weapon.getOrThrow(weaponId.toString(), `Weapon ${weaponId} non trouvée`),
+      ]);
+      hero = resolvedHero;
+      weapon = resolvedWeapon;
+    }
+
+    // Stocke l'événement brut
+    const entity: HeroArmory_Unequipped = {
+      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+      heroId,
+      weaponId,
+    };
+    context.HeroArmory_Unequipped.set(entity);
+
+    await Promise.all([
+      context.Weapon.set({
+        ...weapon,
+        equipped: false,
+        equippedHeroId: undefined,
+      }),
+      updateHeroStats(context, {
+        ...hero,
+        equippedWeapon_id: undefined,
+      }, null),
+    ]);
+  },
 }); 
