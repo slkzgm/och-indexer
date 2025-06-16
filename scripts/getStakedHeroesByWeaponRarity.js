@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // REMPLACEZ CETTE URL PAR L'URL DE VOTRE ENDPOINT GRAPHQL
-const SUBGRAPH_URL = 'https://indexer.dev.hyperindex.xyz/1900eb8/v1/graphql';
+const SUBGRAPH_URL = 'https://indexer.dev.hyperindex.xyz/97b71b3/v1/graphql';
 
 // Vérification de l'URL du sous-graphe
 if (SUBGRAPH_URL.includes('example/subgraph')) {
