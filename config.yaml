@@ -7,6 +7,7 @@ networks:
   - name: WeaponRemixer
     address:
     - 0xD33Aa455CCbE93e243B19A1B2Cc6d195FF171911
+    - 0x970Ff98F3813A5E710b2df461ecB7D2BC33E9Ec6
     handler: src/EventHandlers.ts
     events:
     - event: LegendaryMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
