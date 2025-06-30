@@ -4,7 +4,7 @@ import {
   WeaponRemixer_LegendaryMixRequested,
   WeaponRemixer_WeaponGenerated,
 } from "generated";
-import { createWeaponRequest, getOrCreatePlayer, createWeapon } from "../helpers/entities";
+import { createWeaponRequest, getOrCreatePlayerOptimized, createWeapon } from "../helpers/entities";
 import { parseWeaponMetadata } from "../helpers/calculations";
 
 /**
@@ -13,34 +13,43 @@ import { parseWeaponMetadata } from "../helpers/calculations";
  */
 WeaponRemixer.WeaponMixRequested.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
-    return {};
+    const { weaponIds } = event.params;
+    
+    if (context.isPreload && weaponIds.length > 0) {
+      // Premier run : essaie de déterminer l'owner depuis la première weapon
+      // pour un meilleur tracking (optionnel)
+      const firstWeapon = await context.Weapon.get(weaponIds[0].toString());
+      return { firstWeapon };
+    } else {
+      // Second run ou pas d'IDs : pas de préchargement nécessaire
+      return {};
+    }
   },
-  handler: async ({ event, context }: { event: any; context: any }) => {
+  
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { weaponIds, cost, rarity, requestId } = event.params;
     const timestamp = BigInt(event.block.timestamp);
+    const { firstWeapon } = loaderReturn as { firstWeapon?: any | null };
 
-    // Stocke l'événement brut
-    const entity: WeaponRemixer_WeaponMixRequested = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      weaponIds,
-      cost,
-      rarity,
-      requestId,
-    };
+    // Amélioration : utilise l'owner de la première weapon si disponible
+    const requester = firstWeapon?.owner_id || "0x0000000000000000000000000000000000000000";
 
-    // PARALLELISATION : Stockage event + création WeaponRequest + player check
+    // PARALLELISATION : Stockage event + création WeaponRequest
     await Promise.all([
       // Stocke l'événement brut
-      context.WeaponRemixer_WeaponMixRequested.set(entity),
+      context.WeaponRemixer_WeaponMixRequested.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        weaponIds,
+        cost,
+        rarity,
+        requestId,
+      }),
       
-      // S'assure que le player existe (on récupère l'owner depuis les events précédents)
-      // Note: Le contrat vérifie déjà l'ownership, donc on peut faire confiance
-      
-      // Crée la WeaponRequest pour tracking
+      // Crée la WeaponRequest pour tracking avec meilleur requester
       createWeaponRequest(context, {
         id: requestId.toString(),
         source: "REMIXER",
-        requester: "0x0000000000000000000000000000000000000000", // Sera mis à jour dans WeaponGenerated
+        requester: requester, // Amélioration : vrai owner si disponible
         timestamp: timestamp,
         expectedWeapons: 1, // Remix génère toujours 1 weapon
         remixedWeaponIds: weaponIds,
@@ -56,30 +65,42 @@ WeaponRemixer.WeaponMixRequested.handlerWithLoader({
  * Gère les mix légendaires (3 Legendary weapons → chance de Mythic)
  */
 WeaponRemixer.LegendaryMixRequested.handlerWithLoader({
-  loader: async () => ({}),
-  handler: async ({ event, context }: { event: any; context: any }) => {
+  loader: async ({ event, context }: { event: any; context: any }) => {
+    const { weaponIds } = event.params;
+    
+    if (context.isPreload && weaponIds.length > 0) {
+      // Premier run : essaie de déterminer l'owner depuis la première weapon
+      const firstWeapon = await context.Weapon.get(weaponIds[0].toString());
+      return { firstWeapon };
+    } else {
+      return {};
+    }
+  },
+  
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { weaponIds, cost, rarity, requestId } = event.params;
     const timestamp = BigInt(event.block.timestamp);
+    const { firstWeapon } = loaderReturn as { firstWeapon?: any | null };
 
-    // Stocke l'événement brut
-    const entity: WeaponRemixer_LegendaryMixRequested = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      weaponIds,
-      cost,
-      rarity,
-      requestId,
-    };
+    // Amélioration : utilise l'owner de la première weapon si disponible
+    const requester = firstWeapon?.owner_id || "0x0000000000000000000000000000000000000000";
 
     // PARALLELISATION : Stockage event + création WeaponRequest
     await Promise.all([
       // Stocke l'événement brut
-      context.WeaponRemixer_LegendaryMixRequested.set(entity),
+      context.WeaponRemixer_LegendaryMixRequested.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        weaponIds,
+        cost,
+        rarity,
+        requestId,
+      }),
       
-      // Crée la WeaponRequest pour tracking
+      // Crée la WeaponRequest pour tracking avec meilleur requester
       createWeaponRequest(context, {
         id: requestId.toString(),
         source: "REMIXER",
-        requester: "0x0000000000000000000000000000000000000000", // Sera mis à jour dans WeaponGenerated
+        requester: requester, // Amélioration : vrai owner si disponible
         timestamp: timestamp,
         expectedWeapons: 1, // Remix génère toujours 1 weapon
         remixedWeaponIds: weaponIds,
@@ -96,39 +117,48 @@ WeaponRemixer.LegendaryMixRequested.handlerWithLoader({
  */
 WeaponRemixer.WeaponGenerated.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
-    const { requestId } = event.params;
-    const weaponRequest = await context.WeaponRequest.get(requestId.toString());
-    return { weaponRequest };
+    const { requestId, user } = event.params;
+    
+    if (context.isPreload) {
+      // Premier run : charge WeaponRequest et crée Player en parallèle
+      const [weaponRequest, player] = await Promise.all([
+        context.WeaponRequest.get(requestId.toString()),
+        getOrCreatePlayerOptimized(context, user.toLowerCase())
+      ]);
+      return { weaponRequest, player };
+    } else {
+      // Second run : récupération simple
+      const [weaponRequest, player] = await Promise.all([
+        context.WeaponRequest.get(requestId.toString()),
+        context.Player.get(user.toLowerCase())
+      ]);
+      return { weaponRequest, player };
+    }
   },
+  
   handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { user, weaponId, metadata, requestId } = event.params;
     const timestamp = BigInt(event.block.timestamp);
 
-    // Stocke l'événement brut
-    const entity: WeaponRemixer_WeaponGenerated = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      user,
-      weaponId,
-      metadata,
-      requestId,
-    };
-
     const parsedMetadata = parseWeaponMetadata(metadata);
 
-    const { weaponRequest } = loaderReturn as { weaponRequest: any | null };
+    const { weaponRequest, player } = loaderReturn as { weaponRequest: any | null; player: any | null };
 
     const wr = weaponRequest ?? await context.WeaponRequest.get(requestId.toString());
     if (!wr) {
       console.warn(`WeaponRequest ${requestId} non trouvée pour weapon ${weaponId}`);
     }
 
-    // PARALLELISATION : Stockage event + création Weapon + update request + player check
+    // PARALLELISATION OPTIMISÉE : Plus besoin de getOrCreatePlayer !
     const operations = [
       // Stocke l'événement brut
-      context.WeaponRemixer_WeaponGenerated.set(entity),
-      
-      // S'assure que le player existe
-      getOrCreatePlayer(context, user),
+      context.WeaponRemixer_WeaponGenerated.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        user,
+        weaponId,
+        metadata,
+        requestId,
+      }),
       
       // Crée la Weapon avec source tracking remix
       createWeapon(context, {
@@ -153,7 +183,7 @@ WeaponRemixer.WeaponGenerated.handlerWithLoader({
     if (wr) {
       const updatedRequest = {
         ...wr,
-        requester: user,
+        requester: user, // Met à jour avec le vrai user
         generatedWeapons: wr.generatedWeapons + 1,
         generatedWeaponIds: [...wr.generatedWeaponIds, weaponId.toString()],
         completed: true,

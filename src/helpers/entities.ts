@@ -4,6 +4,39 @@
  */
 
 /**
+ * Version optimisée pour les loaders - utilise context.getOrCreate()
+ * @param context Le contexte du loader/handler
+ * @param playerId L'ID du joueur (sera normalisé en lowercase)
+ * @param overrides Champs à override (optionnel)
+ * @returns Le Player créé ou existant
+ */
+export async function getOrCreatePlayerOptimized(
+  context: any,
+  playerId: string,
+  overrides: Partial<{
+    balance: bigint;
+    heroCount: number;
+    weaponCount: number;
+    stakedHeroCount: number;
+    gachaBalances: bigint[];
+    itemsBalances: bigint[];
+  }> = {}
+) {
+  const playerId_lc = playerId.toLowerCase();
+  
+  return await context.Player.getOrCreate({
+    id: playerId_lc,
+    balance: 0n,
+    heroCount: 0,
+    weaponCount: 0,
+    stakedHeroCount: 0,
+    gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
+    itemsBalances: [0n, 0n, 0n], // [tokenId1, tokenId2, tokenId3]
+    ...overrides, // Override les valeurs si spécifiées
+  });
+}
+
+/**
  * Crée ou récupère un Player avec toutes les valeurs par défaut
  * @param context Le contexte du handler
  * @param playerId L'ID du joueur (sera normalisé en lowercase)
@@ -19,6 +52,7 @@ export async function getOrCreatePlayer(
     weaponCount: number;
     stakedHeroCount: number;
     gachaBalances: bigint[];
+    itemsBalances: bigint[];
   }> = {}
 ) {
   const playerId_lc = playerId.toLowerCase();
@@ -30,6 +64,7 @@ export async function getOrCreatePlayer(
     weaponCount: 0,
     stakedHeroCount: 0,
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
+    itemsBalances: [0n, 0n, 0n], // [tokenId1, tokenId2, tokenId3]
     ...overrides, // Override les valeurs si spécifiées
   });
 }
@@ -276,4 +311,35 @@ export function createWeaponRequest(
     remixRarity: requestData.remixRarity ?? undefined,
     remixType: requestData.remixType || undefined,
   });
+}
+
+/**
+ * Met à jour un héro pour le staking fishing avec le bon type selon la zone
+ * @param context Le contexte du handler
+ * @param hero L'entité Hero à mettre à jour
+ * @param zone La zone de fishing
+ * @param timestamp Le timestamp du staking
+ */
+export async function setHeroFishingStaked(
+  context: any,
+  hero: any,
+  zone: bigint,
+  timestamp: bigint
+) {
+  // Import dynamique pour éviter les dépendances circulaires
+  const { getFishingStakingType, calculateFishingUnstakeAvailable } = require('./calculations');
+  
+  const stakingType = getFishingStakingType(zone);
+  
+  const updatedHero = {
+    ...hero,
+    staked: true,
+    stakingType,
+    stakedTimestamp: timestamp,
+    unstakeAvailableTimestamp: calculateFishingUnstakeAvailable(timestamp),
+    lastClaimTimestamp: timestamp,
+  };
+  
+  context.Hero.set(updatedHero);
+  return updatedHero;
 } 

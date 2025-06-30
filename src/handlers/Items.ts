@@ -1,13 +1,13 @@
-import { Gacha1155 } from "generated";
+import { Items } from "generated";
 import { ZERO_ADDRESS } from "../constants";
-import { updateGachaBalance } from "../helpers/gacha";
+import { updateItemsBalance } from "../helpers/items";
 import { getOrCreatePlayerOptimized } from "../helpers/entities";
 
 // ----------------------------
 // TRANSFER BATCH avec loader optimisé
 // ----------------------------
 
-Gacha1155.TransferBatch.handlerWithLoader({
+Items.TransferBatch.handlerWithLoader({
   // Loader optimisé : crée directement les Players avec getOrCreate
   loader: async ({ event, context }: { event: any; context: any }) => {
     const { from, to } = event.params;
@@ -40,10 +40,10 @@ Gacha1155.TransferBatch.handlerWithLoader({
       const amount = amounts[i] as bigint;
 
       if (from !== ZERO_ADDRESS && sender) {
-        await updateGachaBalance(context, from, itemId, -amount, sender);
+        await updateItemsBalance(context, from, itemId, -amount, sender);
       }
       if (to !== ZERO_ADDRESS && receiver) {
-        await updateGachaBalance(context, to, itemId, amount, receiver);
+        await updateItemsBalance(context, to, itemId, amount, receiver);
       }
     }
   },
@@ -53,7 +53,7 @@ Gacha1155.TransferBatch.handlerWithLoader({
 // TRANSFER SINGLE avec loader optimisé
 // ----------------------------
 
-Gacha1155.TransferSingle.handlerWithLoader({
+Items.TransferSingle.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
     const { from, to } = event.params;
 
@@ -80,10 +80,10 @@ Gacha1155.TransferSingle.handlerWithLoader({
 
     // Simplification : plus de création conditionnelle nécessaire
     if (from !== ZERO_ADDRESS && sender) {
-      await updateGachaBalance(context, from, id, -amount, sender);
+      await updateItemsBalance(context, from, id, -amount, sender);
     }
     if (to !== ZERO_ADDRESS && receiver) {
-      await updateGachaBalance(context, to, id, amount, receiver);
+      await updateItemsBalance(context, to, id, amount, receiver);
     }
   },
 }); 

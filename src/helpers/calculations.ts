@@ -10,6 +10,16 @@ const MIN_HERO_LEVEL = 1;
 // Constants pour DragmaUnderlings staking
 const UNSTAKE_COOLDOWN_SECONDS = 6 * 60 * 60; // 6h
 
+// Constants pour Fishing staking
+const FISHING_UNSTAKE_COOLDOWN_SECONDS = 12 * 60 * 60; // 12h
+
+// Mapping des zones fishing vers les StakingType
+const FISHING_ZONE_TO_STAKING_TYPE: Record<number, string> = {
+  0: "FISHING_SLIME_BAY",
+  1: "FISHING_SHROOM_GROTTO", 
+  2: "FISHING_SKEET_PIER",
+};
+
 // Constants pour les rewards (en wei)
 const WEI_SCALE = BigInt("1000000000000000000"); // 1e18
 const BASE_REWARD_WEI = 50n * WEI_SCALE; // 50 tokens base
@@ -42,12 +52,48 @@ export function calculateNextTrainingAvailable(lastTrainingTimestamp: bigint): b
 }
 
 /**
- * Calcule le timestamp de disponibilité pour unstake
+ * Calcule le timestamp de disponibilité pour unstake (DragmaUnderlings)
  * @param stakedTimestamp Le timestamp du début du staking
  * @returns Le timestamp où le héro pourra être unstake
  */
 export function calculateUnstakeAvailable(stakedTimestamp: bigint): bigint {
   return stakedTimestamp + BigInt(UNSTAKE_COOLDOWN_SECONDS);
+}
+
+/**
+ * Calcule le timestamp de disponibilité pour unstake fishing
+ * @param stakedTimestamp Le timestamp du début du staking fishing
+ * @returns Le timestamp où le héro pourra être unstake
+ */
+export function calculateFishingUnstakeAvailable(stakedTimestamp: bigint): bigint {
+  return stakedTimestamp + BigInt(FISHING_UNSTAKE_COOLDOWN_SECONDS);
+}
+
+/**
+ * Détermine le type de staking fishing basé sur la zone
+ * @param zone La zone de fishing (0, 1, 2)
+ * @returns Le type de staking correspondant
+ */
+export function getFishingStakingType(zone: bigint): string {
+  const zoneNumber = Number(zone);
+  const stakingType = FISHING_ZONE_TO_STAKING_TYPE[zoneNumber];
+  
+  if (!stakingType) {
+    console.warn(`Zone fishing non supportée: ${zone}, utilisation de FISHING_SLIME_BAY par défaut`);
+    return "FISHING_SLIME_BAY";
+  }
+  
+  return stakingType;
+}
+
+/**
+ * Valide qu'une zone fishing est supportée
+ * @param zone La zone à valider
+ * @returns true si la zone est valide
+ */
+export function isValidFishingZone(zone: bigint): boolean {
+  const zoneNumber = Number(zone);
+  return zoneNumber >= 0 && zoneNumber <= 2 && FISHING_ZONE_TO_STAKING_TYPE[zoneNumber] !== undefined;
 }
 
 /**

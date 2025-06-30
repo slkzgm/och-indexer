@@ -62,6 +62,7 @@ networks:
   - name: WeaponRemixer
     address:
     - 0xD33Aa455CCbE93e243B19A1B2Cc6d195FF171911
+    - 0x970ff98f3813a5e710b2df461ecb7d2bc33e9ec6
     handler: src/EventHandlers.ts
     events:
     - event: WeaponMixRequested(uint256[] weaponIds, uint256 cost, uint256 rarity, uint256 requestId)
@@ -88,4 +89,19 @@ networks:
     events:
     - event: WeaponRequested(address indexed user, uint256 tokenId, uint256 qty, uint256 requestId)
     - event: WeaponGenerated(address indexed user, uint256 weaponId, uint256 metadata, uint256 requestId)
+  - name: Items
+    address:
+    - 0x14f926D2751F4bb0200e9b016B6aE4A1E4B207Bd 
+    handler: src/EventHandlers.ts
+    events:
+    - event: TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount)
+    - event: TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] amounts)
+  - name: Fishing
+    address:
+    - 0x826C2ecf3a5707b3a784a9C386d3dd52293F9164
+    handler: src/EventHandlers.ts
+    events:
+    - event: Staked(address owner, uint256 heroId, uint256 zone, uint256 fee)
+    - event: UnstakeRequested(address owner, uint256 heroId, uint256 requestId)
+    - event: Unstaked(address owner, uint256 heroId, uint256 requestId, uint256 zone, uint256 amount, uint256 weaponShardId, uint256 bonusId)
 unordered_multichain_mode: true

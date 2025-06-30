@@ -1,5 +1,6 @@
 import "./Blacksmith";
 import "./DragmaUnderlings";
+import "./Fishing";
 import "./Gacha1155";
 import "./GachaWeaponMachine";
 import "./Gym";
@@ -7,5 +8,6 @@ import "./Hero20";
 import "./Hero721";
 import "./HeroArmory";
 import "./HeroWeaponMachine";
+import "./Items";
 import "./Weapon721";
 import "./WeaponRemixer"; 

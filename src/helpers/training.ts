@@ -8,25 +8,38 @@ import { updateHeroStats } from "./entities";
  * @param oldLevel L'ancien niveau
  * @param newLevel Le nouveau niveau
  * @param timestamp Le timestamp du training
+ * @param preloadedHero Héro pré-chargé (optionnel)
+ * @param preloadedWeapon Arme équipée pré-chargée (optionnel)
  */
 export async function handleHeroTraining(
   context: any,
   heroId: string,
   oldLevel: number,
   newLevel: number,
-  timestamp: bigint
+  timestamp: bigint,
+  preloadedHero?: any | null,
+  preloadedWeapon?: any | null
 ) {
   // Validation : niveau minimum
   const finalLevel = validateHeroLevel(newLevel);
   
-  // PARALLELISATION : Récupère le héro et son arme équipée en parallèle
-  const [hero, equippedWeapon] = await Promise.all([
-    context.Hero.getOrThrow(heroId, `Hero ${heroId} non trouvé pour le training`),
-    // Récupère l'arme équipée en parallèle si elle existe
-    context.Hero.get(heroId).then((h: any) => 
-      h?.equippedWeapon_id ? context.Weapon.get(h.equippedWeapon_id) : null
-    ),
-  ]);
+  let hero: any;
+  let equippedWeapon: any | null;
+
+  if (preloadedHero) {
+    // Utilise les entités pré-chargées (optimisation)
+    hero = preloadedHero;
+    equippedWeapon = preloadedWeapon || null;
+  } else {
+    // Fallback : récupère les entités (mode legacy)
+    [hero, equippedWeapon] = await Promise.all([
+      context.Hero.getOrThrow(heroId, `Hero ${heroId} non trouvé pour le training`),
+      // Récupère l'arme équipée en parallèle si elle existe
+      context.Hero.get(heroId).then((h: any) => 
+        h?.equippedWeapon_id ? context.Weapon.get(h.equippedWeapon_id) : null
+      ),
+    ]);
+  }
 
   // Met à jour le héro avec le nouveau niveau
   const updatedHero = {

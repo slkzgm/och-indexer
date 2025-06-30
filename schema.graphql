@@ -219,6 +219,50 @@ type WeaponRemixer_WeaponMixRequested {
   requestId: BigInt!
 }
 
+type Items_TransferSingle {
+  id: ID!
+  operator: String!
+  from: String!
+  to: String!
+  event_id: BigInt!
+  amount: BigInt!
+}
+
+type Items_TransferBatch {
+  id: ID!
+  operator: String!
+  from: String!
+  to: String!
+  ids: [BigInt!]!
+  amounts: [BigInt!]!
+}
+
+type Fishing_Staked {
+  id: ID!
+  owner: String!
+  heroId: BigInt!
+  zone: BigInt!
+  fee: BigInt!
+}
+
+type Fishing_UnstakeRequested {
+  id: ID!
+  owner: String!
+  heroId: BigInt!
+  requestId: BigInt!
+}
+
+type Fishing_Unstaked {
+  id: ID!
+  owner: String!
+  heroId: BigInt!
+  requestId: BigInt!
+  zone: BigInt!
+  amount: BigInt!
+  weaponShardId: BigInt!
+  bonusId: BigInt!
+}
+
 type Player @entity {
   id: Bytes!
 
@@ -230,6 +274,9 @@ type Player @entity {
 
   # Balances Gacha : [bronze, silver, gold, rainbow] - ordre fixe
   gachaBalances: [BigInt!]! @default(value: "[0, 0, 0, 0]")
+  
+  # Balances Items : [tokenId1, tokenId2, tokenId3] - mapping vers index [0, 1, 2]
+  itemsBalances: [BigInt!]! @default(value: "[0, 0, 0]")
 
   heroes: [Hero!]! @derivedFrom(field: "owner")
   weapons: [Weapon!]! @derivedFrom(field: "owner")
@@ -356,4 +403,7 @@ enum GachaType {
 
 enum StakingType {
   DRAGMA_UNDERLINGS
+  FISHING_SLIME_BAY
+  FISHING_SHROOM_GROTTO
+  FISHING_SKEET_PIER
 }

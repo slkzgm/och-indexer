@@ -3,7 +3,7 @@ import {
   GachaWeaponMachine_WeaponRequested,
   GachaWeaponMachine_WeaponGenerated,
 } from "generated";
-import { createWeaponRequest, getOrCreatePlayer, createWeapon } from "../helpers/entities";
+import { createWeaponRequest, getOrCreatePlayerOptimized, createWeapon } from "../helpers/entities";
 import { parseWeaponMetadata } from "../helpers/calculations";
 
 /**
@@ -12,30 +12,35 @@ import { parseWeaponMetadata } from "../helpers/calculations";
  */
 GachaWeaponMachine.WeaponRequested.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
-    // nothing to preload
-    return {};
+    const { user } = event.params;
+    
+    if (context.isPreload) {
+      // Premier run : crée le Player directement
+      const player = await getOrCreatePlayerOptimized(context, user.toLowerCase());
+      return { player };
+    } else {
+      // Second run : récupération simple (le Player existe déjà)
+      const player = await context.Player.get(user.toLowerCase());
+      return { player };
+    }
   },
 
-  handler: async ({ event, context }: { event: any; context: any }) => {
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { user, tokenId, qty, requestId } = event.params;
     const timestamp = BigInt(event.block.timestamp);
+    const { player } = loaderReturn as { player: any | null };
 
-    // Stocke l'événement brut
-    const entity: GachaWeaponMachine_WeaponRequested = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      user,
-      tokenId,
-      qty,
-      requestId,
-    };
-
-    // PARALLELISATION : Stockage event + création WeaponRequest + player check
+    // PARALLELISATION : Stockage event + création WeaponRequest
+    // Plus besoin de getOrCreatePlayer car déjà fait dans le loader !
     await Promise.all([
       // Stocke l'événement brut
-      context.GachaWeaponMachine_WeaponRequested.set(entity),
-      
-      // S'assure que le player existe
-      getOrCreatePlayer(context, user),
+      context.GachaWeaponMachine_WeaponRequested.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        user,
+        tokenId,
+        qty,
+        requestId,
+      }),
       
       // Crée la WeaponRequest pour tracking
       createWeaponRequest(context, {
@@ -57,41 +62,49 @@ GachaWeaponMachine.WeaponRequested.handlerWithLoader({
  */
 GachaWeaponMachine.WeaponGenerated.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
-    const { requestId } = event.params;
-    const weaponRequest = await context.WeaponRequest.get(requestId.toString());
-    return { weaponRequest };
+    const { requestId, user } = event.params;
+    
+    if (context.isPreload) {
+      // Premier run : charge WeaponRequest et crée Player en parallèle
+      const [weaponRequest, player] = await Promise.all([
+        context.WeaponRequest.get(requestId.toString()),
+        getOrCreatePlayerOptimized(context, user.toLowerCase())
+      ]);
+      return { weaponRequest, player };
+    } else {
+      // Second run : récupération simple
+      const [weaponRequest, player] = await Promise.all([
+        context.WeaponRequest.get(requestId.toString()),
+        context.Player.get(user.toLowerCase())
+      ]);
+      return { weaponRequest, player };
+    }
   },
 
   handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { user, weaponId, metadata, requestId } = event.params;
     const timestamp = BigInt(event.block.timestamp);
 
-    // Stocke l'événement brut
-    const entity: GachaWeaponMachine_WeaponGenerated = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      user,
-      weaponId,
-      metadata,
-      requestId,
-    };
-
     // Parse les métadonnées
     const parsedMetadata = parseWeaponMetadata(metadata);
 
-    const { weaponRequest } = loaderReturn as { weaponRequest: any | null };
+    const { weaponRequest, player } = loaderReturn as { weaponRequest: any | null; player: any | null };
 
     const wr = weaponRequest ?? await context.WeaponRequest.get(requestId.toString());
     if (!wr) {
       console.warn(`WeaponRequest ${requestId} non trouvée pour weapon ${weaponId}`);
     }
 
-    // PARALLELISATION : Stockage event + création Weapon + update request + player check
+    // PARALLELISATION OPTIMISÉE : Plus besoin de getOrCreatePlayer !
     const operations = [
       // Stocke l'événement brut
-      context.GachaWeaponMachine_WeaponGenerated.set(entity),
-      
-      // S'assure que le player existe
-      getOrCreatePlayer(context, user),
+      context.GachaWeaponMachine_WeaponGenerated.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        user,
+        weaponId,
+        metadata,
+        requestId,
+      }),
       
       // Crée la Weapon avec source tracking gacha
       createWeapon(context, {

@@ -3,7 +3,7 @@ import {
   HeroWeaponMachine_WeaponRequested,
   HeroWeaponMachine_WeaponGenerated,
 } from "generated";
-import { createWeaponRequest, getOrCreatePlayer, createWeapon } from "../helpers/entities";
+import { createWeaponRequest, getOrCreatePlayerOptimized, createWeapon } from "../helpers/entities";
 import { parseWeaponMetadata } from "../helpers/calculations";
 
 /**
@@ -12,34 +12,38 @@ import { parseWeaponMetadata } from "../helpers/calculations";
  */
 HeroWeaponMachine.WeaponRequested.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
-    // Pas de lecture nécessaire ici mais on respecte la cohérence
-    return {};
+    const { user } = event.params;
+    
+    if (context.isPreload) {
+      // Premier run : crée le Player directement
+      const player = await getOrCreatePlayerOptimized(context, user.toLowerCase());
+      return { player };
+    } else {
+      // Second run : récupération simple (le Player existe déjà)
+      const player = await context.Player.get(user.toLowerCase());
+      return { player };
+    }
   },
 
-  handler: async ({ event, context }: { event: any; context: any }) => {
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { user, slot, qty, amount, requestId } = event.params;
     const timestamp = BigInt(event.block.timestamp);
-
-    // Stocke l'événement brut
-    const entity: HeroWeaponMachine_WeaponRequested = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      user,
-      slot,
-      qty,
-      amount,
-      requestId,
-    };
+    const { player } = loaderReturn as { player: any | null };
 
     // Calcule le coût par weapon
     const costPerWeapon = amount / qty;
 
-    // PARALLELISATION : Stockage event + création WeaponRequest + player check
+    // PARALLELISATION OPTIMISÉE : Plus besoin de getOrCreatePlayer !
     await Promise.all([
       // Stocke l'événement brut
-      context.HeroWeaponMachine_WeaponRequested.set(entity),
-      
-      // S'assure que le player existe
-      getOrCreatePlayer(context, user),
+      context.HeroWeaponMachine_WeaponRequested.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        user,
+        slot,
+        qty,
+        amount,
+        requestId,
+      }),
       
       // Crée la WeaponRequest pour tracking
       createWeaponRequest(context, {
@@ -63,25 +67,30 @@ HeroWeaponMachine.WeaponRequested.handlerWithLoader({
  */
 HeroWeaponMachine.WeaponGenerated.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
-    const { requestId } = event.params;
-    const weaponRequest = await context.WeaponRequest.get(requestId.toString());
-    return { weaponRequest };
+    const { requestId, user } = event.params;
+    
+    if (context.isPreload) {
+      // Premier run : charge WeaponRequest et crée Player en parallèle
+      const [weaponRequest, player] = await Promise.all([
+        context.WeaponRequest.get(requestId.toString()),
+        getOrCreatePlayerOptimized(context, user.toLowerCase())
+      ]);
+      return { weaponRequest, player };
+    } else {
+      // Second run : récupération simple
+      const [weaponRequest, player] = await Promise.all([
+        context.WeaponRequest.get(requestId.toString()),
+        context.Player.get(user.toLowerCase())
+      ]);
+      return { weaponRequest, player };
+    }
   },
 
   handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { user, weaponId, metadata, requestId } = event.params;
     const timestamp = BigInt(event.block.timestamp);
 
-    const { weaponRequest } = loaderReturn as { weaponRequest: any | null };
-
-    // Stocke l'événement brut
-    const entity: HeroWeaponMachine_WeaponGenerated = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      user,
-      weaponId,
-      metadata,
-      requestId,
-    };
+    const { weaponRequest, player } = loaderReturn as { weaponRequest: any | null; player: any | null };
 
     // Parse les métadonnées
     const parsedMetadata = parseWeaponMetadata(metadata);
@@ -91,13 +100,16 @@ HeroWeaponMachine.WeaponGenerated.handlerWithLoader({
       console.warn(`WeaponRequest ${requestId} non trouvée pour weapon ${weaponId}`);
     }
 
-    // PARALLELISATION : Stockage event + création Weapon + update request + player check
+    // PARALLELISATION OPTIMISÉE : Plus besoin de getOrCreatePlayer !
     const operations = [
       // Stocke l'événement brut
-      context.HeroWeaponMachine_WeaponGenerated.set(entity),
-      
-      // S'assure que le player existe
-      getOrCreatePlayer(context, user),
+      context.HeroWeaponMachine_WeaponGenerated.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        user,
+        weaponId,
+        metadata,
+        requestId,
+      }),
       
       // Crée la Weapon avec source tracking
       createWeapon(context, {

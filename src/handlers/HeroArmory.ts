@@ -13,26 +13,63 @@ HeroArmory.Equipped.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
     const { heroId, weaponId } = event.params;
 
-    // Charge hero et weapon en parallèle
-    const [hero, weapon] = await Promise.all([
-      context.Hero.get(heroId.toString()),
-      context.Weapon.get(weaponId.toString()),
-    ]);
+    if (context.isPreload) {
+      // Premier run : charge toutes les entités nécessaires et fait les mises à jour simples
+      const [hero, weapon] = await Promise.all([
+        context.Hero.get(heroId.toString()),
+        context.Weapon.get(weaponId.toString()),
+      ]);
 
-    // Charge l'ancienne arme si l'info est déjà dispo
-    const oldWeapon = hero?.equippedWeapon_id
-      ? await context.Weapon.get(hero.equippedWeapon_id)
-      : null;
+      // Charge l'ancienne arme si nécessaire
+      const oldWeapon = hero?.equippedWeapon_id
+        ? await context.Weapon.get(hero.equippedWeapon_id)
+        : null;
 
-    return { hero, weapon, oldWeapon };
+      // Déséquipe l'ancienne arme directement dans le loader si elle existe
+      if (oldWeapon) {
+        await context.Weapon.set({
+          ...oldWeapon,
+          equipped: false,
+          equippedHeroId: undefined,
+        });
+      }
+
+      // Équipe la nouvelle arme directement dans le loader
+      if (weapon) {
+        await context.Weapon.set({
+          ...weapon,
+          equipped: true,
+          equippedHeroId: heroId.toString(),
+        });
+      }
+
+      return { hero, weapon, oldWeapon, preUpdated: true };
+    } else {
+      // Second run : récupération simple des entités
+      const [hero, weapon] = await Promise.all([
+        context.Hero.get(heroId.toString()),
+        context.Weapon.get(weaponId.toString()),
+      ]);
+
+      const oldWeapon = hero?.equippedWeapon_id
+        ? await context.Weapon.get(hero.equippedWeapon_id)
+        : null;
+
+      return { hero, weapon, oldWeapon, preUpdated: false };
+    }
   },
 
   handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { heroId, weaponId } = event.params;
 
-    let { hero, weapon, oldWeapon } = loaderReturn as { hero: any | null; weapon: any | null; oldWeapon: any | null };
+    let { hero, weapon, oldWeapon, preUpdated } = loaderReturn as { 
+      hero: any | null; 
+      weapon: any | null; 
+      oldWeapon: any | null;
+      preUpdated: boolean;
+    };
 
-    // Fallbacks manquants ← on les récupère en parallèle pour garder la perf
+    // Fallbacks si nécessaire
     if (!hero || !weapon) {
       const [resolvedHero, resolvedWeapon] = await Promise.all([
         hero ? Promise.resolve(hero) : context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`),
@@ -42,41 +79,48 @@ HeroArmory.Equipped.handlerWithLoader({
       weapon = resolvedWeapon;
     }
 
-    // Si oldWeapon pas encore chargée, on tente une récupération (non bloquante)
-    if (!oldWeapon && hero.equippedWeapon_id) {
-      oldWeapon = await context.Weapon.get(hero.equippedWeapon_id);
+    const operations = [
+      // Stocke toujours l'événement brut
+      context.HeroArmory_Equipped.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        heroId,
+        weaponId,
+      })
+    ];
+
+    // Si les mises à jour n'ont pas été faites dans le loader, les faire maintenant
+    if (!preUpdated) {
+      // Déséquipe l'ancienne arme si elle existe
+      if (oldWeapon) {
+        operations.push(
+          context.Weapon.set({
+            ...oldWeapon,
+            equipped: false,
+            equippedHeroId: undefined,
+          })
+        );
+      }
+
+      // Équipe la nouvelle arme
+      operations.push(
+        context.Weapon.set({
+          ...weapon,
+          equipped: true,
+          equippedHeroId: heroId.toString(),
+        })
+      );
     }
 
-    // Stocke l'événement brut
-    const entity: HeroArmory_Equipped = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      heroId,
-      weaponId,
-    };
-    context.HeroArmory_Equipped.set(entity);
-
-    // Déséquipe l'ancienne arme si elle existe
-    if (oldWeapon) {
-      const updatedOldWeapon = {
-        ...oldWeapon,
-        equipped: false,
-        equippedHeroId: undefined,
-      };
-      context.Weapon.set(updatedOldWeapon);
-    }
-
-    // Met à jour weapon + hero + recalcule stats
-    await Promise.all([
-      context.Weapon.set({
-        ...weapon,
-        equipped: true,
-        equippedHeroId: heroId.toString(),
-      }),
+    // Met à jour le héro et recalcule ses stats (toujours nécessaire)
+    operations.push(
       updateHeroStats(context, {
         ...hero,
         equippedWeapon_id: weaponId.toString(),
-      }, weapon),
-    ]);
+      }, weapon)
+    );
+
+    // Exécute toutes les opérations en parallèle
+    await Promise.all(operations);
   },
 });
 
@@ -88,16 +132,42 @@ HeroArmory.Unequipped.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
     const { heroId, weaponId } = event.params;
 
-    const hero = await context.Hero.get(heroId.toString());
-    const weapon = await context.Weapon.get(weaponId.toString());
+    if (context.isPreload) {
+      // Premier run : charge et met à jour directement
+      const [hero, weapon] = await Promise.all([
+        context.Hero.get(heroId.toString()),
+        context.Weapon.get(weaponId.toString()),
+      ]);
 
-    return { hero, weapon };
+      // Déséquipe l'arme directement dans le loader
+      if (weapon) {
+        await context.Weapon.set({
+          ...weapon,
+          equipped: false,
+          equippedHeroId: undefined,
+        });
+      }
+
+      return { hero, weapon, preUpdated: true };
+    } else {
+      // Second run : récupération simple
+      const [hero, weapon] = await Promise.all([
+        context.Hero.get(heroId.toString()),
+        context.Weapon.get(weaponId.toString()),
+      ]);
+
+      return { hero, weapon, preUpdated: false };
+    }
   },
 
   handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { heroId, weaponId } = event.params;
 
-    let { hero, weapon } = loaderReturn as { hero: any | null; weapon: any | null };
+    let { hero, weapon, preUpdated } = loaderReturn as { 
+      hero: any | null; 
+      weapon: any | null;
+      preUpdated: boolean;
+    };
 
     if (!hero || !weapon) {
       const [resolvedHero, resolvedWeapon] = await Promise.all([
@@ -108,24 +178,32 @@ HeroArmory.Unequipped.handlerWithLoader({
       weapon = resolvedWeapon;
     }
 
-    // Stocke l'événement brut
-    const entity: HeroArmory_Unequipped = {
-      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
-      heroId,
-      weaponId,
-    };
-    context.HeroArmory_Unequipped.set(entity);
-
-    await Promise.all([
-      context.Weapon.set({
-        ...weapon,
-        equipped: false,
-        equippedHeroId: undefined,
+    const operations = [
+      // Stocke l'événement brut
+      context.HeroArmory_Unequipped.set({
+        id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        heroId,
+        weaponId,
       }),
+      
+      // Met à jour les stats du héro (plus d'arme équipée)
       updateHeroStats(context, {
         ...hero,
         equippedWeapon_id: undefined,
-      }, null),
-    ]);
+      }, null)
+    ];
+
+    // Si pas encore déséquipée dans le loader, le faire maintenant
+    if (!preUpdated && weapon) {
+      operations.push(
+        context.Weapon.set({
+          ...weapon,
+          equipped: false,
+          equippedHeroId: undefined,
+        })
+      );
+    }
+
+    await Promise.all(operations);
   },
 }); 
