@@ -1,10 +1,5 @@
 import {
   DragmaUnderlings,
-  DragmaUnderlings_Claimed,
-  DragmaUnderlings_Staked,
-  DragmaUnderlings_Unstaked,
-  DragmaUnderlings_WeaponDurabilityUpdated,
-  DragmaUnderlings_WeaponSharpnessUpdated,
 } from "generated";
 import { calculateUnstakeAvailable } from "../helpers/calculations";
 import { updateWeaponAndHeroStats } from "../helpers/entities";
@@ -44,7 +39,7 @@ DragmaUnderlings.Staked.handlerWithLoader({
         heroId,
       }),
       
-      // Met à jour le héro : staking activé
+      // Met à jour le héro : staking activé + revealed
       context.Hero.set({
         ...existingHero,
         staked: true,
@@ -52,6 +47,7 @@ DragmaUnderlings.Staked.handlerWithLoader({
         stakedTimestamp: timestamp,
         unstakeAvailableTimestamp: calculateUnstakeAvailable(timestamp),
         lastClaimTimestamp: timestamp,
+        revealed: true, // Mark as revealed on first staking
       })
     ]);
   },

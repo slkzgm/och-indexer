@@ -1,4 +1,4 @@
-import { HERO_STAKING_CONTRACTS, ZERO_ADDRESS } from "../constants/index";
+import { HERO_STAKING_CONTRACTS, ZERO_ADDRESS, S1_LEVELING_CONTRACT, S1_ENDGAME_CONTRACT } from "../constants/index";
 import { updatePlayerCounts } from "./player";
 import { getOrCreatePlayer, createHero } from "./entities";
 
@@ -88,6 +88,14 @@ export async function handleHeroTransfer(
     }
   }
 
-  // Si la destination EST un contrat de staking, on ne fait rien
-  // La propriété logique du NFT ne change pas pour notre indexeur
+  // Si la destination est un contrat de staking S1, marquer le héros comme revealed
+  if (to_lc === S1_LEVELING_CONTRACT.toLowerCase() || to_lc === S1_ENDGAME_CONTRACT.toLowerCase()) {
+    const hero = await context.Hero.get(heroId);
+    if (hero && !hero.revealed) {
+      context.Hero.set({
+        ...hero,
+        revealed: true,
+      });
+    }
+  }
 } 

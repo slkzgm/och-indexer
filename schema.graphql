@@ -292,6 +292,8 @@ type Hero @entity {
   lastTrainingTimestamp: BigInt! @default(value: "0")
   nextTrainingCost: BigInt! @default(value: "0")
   nextTrainingAvailable: BigInt! @default(value: "0")
+  
+  revealed: Boolean! @default(value: false)
 
   equippedWeapon: Weapon @oneToOne @index
   damage: BigInt! @default(value: "0")

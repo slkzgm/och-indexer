@@ -88,6 +88,7 @@ export function createHero(
     nextTrainingAvailable?: bigint;
     damage?: bigint;
     staked?: boolean;
+    revealed?: boolean;
   }
 ) {
   // Import dynamique pour éviter les dépendances circulaires
@@ -104,6 +105,7 @@ export function createHero(
     lastTrainingTimestamp: heroData.lastTrainingTimestamp || 0n,
     nextTrainingCost: heroData.nextTrainingCost || calculateTrainingCost(level),
     nextTrainingAvailable: heroData.nextTrainingAvailable || 0n,
+    revealed: heroData.revealed || false,
     damage: heroData.damage || 0n,
     // Rewards fields (default to 0, will be calculated when weapon equipped)
     maxHeroPerDay: 0n,
@@ -338,8 +340,9 @@ export async function setHeroFishingStaked(
     stakedTimestamp: timestamp,
     unstakeAvailableTimestamp: calculateFishingUnstakeAvailable(timestamp),
     lastClaimTimestamp: timestamp,
+    revealed: true, // Mark as revealed on first staking
   };
   
   context.Hero.set(updatedHero);
   return updatedHero;
-} 
+}
