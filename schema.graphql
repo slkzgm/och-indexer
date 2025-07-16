@@ -1,411 +1,615 @@
+# =============================================================================
+# GAME EVENTS SCHEMA
+# =============================================================================
+# This schema defines events and entities for OCH season 2
+# featuring heroes, weapons, crafting, and various game mechanics.
+
+# =============================================================================
+# BLACKSMITH EVENTS
+# =============================================================================
+# Events related to weapon maintenance and enhancement
+
+"""
+Event triggered when a weapon is repaired at the blacksmith
+"""
 type Blacksmith_WeaponRepaired {
   id: ID!
   weaponId: BigInt!
-  amount: BigInt!
+  amount: BigInt! # Amount paid for repair
 }
 
+"""
+Event triggered when a weapon is sharpened at the blacksmith
+"""
 type Blacksmith_WeaponSharpened {
   id: ID!
   weaponId: BigInt!
-  amount: BigInt!
+  amount: BigInt! # Amount paid for sharpening
 }
 
+# =============================================================================
+# DRAGMA UNDERLINGS EVENTS
+# =============================================================================
+# Events related to hero staking and reward claiming system
+
+"""
+Event triggered when a user claims rewards from staked heroes
+"""
 type DragmaUnderlings_Claimed {
   id: ID!
-  user: String!
+  user: String! # User's wallet address
   heroId: BigInt!
-  amount: BigInt!
+  amount: BigInt! # Amount of rewards claimed
 }
 
+"""
+Event triggered when a hero is staked for earning rewards
+"""
 type DragmaUnderlings_Staked {
   id: ID!
-  user: String!
+  user: String! # User's wallet address
   heroId: BigInt!
 }
 
+"""
+Event triggered when a hero is unstaked from the rewards system
+"""
 type DragmaUnderlings_Unstaked {
   id: ID!
-  user: String!
+  user: String! # User's wallet address
   heroId: BigInt!
 }
 
+"""
+Event triggered when a weapon's durability is updated during gameplay
+"""
 type DragmaUnderlings_WeaponDurabilityUpdated {
   id: ID!
-  user: String!
+  user: String! # User's wallet address
   weaponId: BigInt!
   oldDurability: BigInt!
   newDurability: BigInt!
 }
 
+"""
+Event triggered when a weapon's sharpness is updated during gameplay
+"""
 type DragmaUnderlings_WeaponSharpnessUpdated {
   id: ID!
-  user: String!
+  user: String! # User's wallet address
   weaponId: BigInt!
   oldSharpness: BigInt!
   newSharpness: BigInt!
 }
 
+# =============================================================================
+# GACHA EVENTS (ERC1155)
+# =============================================================================
+# Events related to gacha token transfers and management
+
+"""
+Event for batch transfers of gacha tokens (ERC1155)
+"""
 type Gacha1155_TransferBatch {
   id: ID!
-  operator: String!
-  from: String!
-  to: String!
-  ids: [BigInt!]!
-  amounts: [BigInt!]!
+  operator: String! # Address performing the transfer
+  from: String! # Sender address
+  to: String! # Recipient address
+  ids: [BigInt!]! # Array of token IDs transferred
+  amounts: [BigInt!]! # Array of amounts for each token ID
 }
 
+"""
+Event for single transfer of gacha tokens (ERC1155)
+"""
 type Gacha1155_TransferSingle {
   id: ID!
-  operator: String!
-  from: String!
-  to: String!
-  event_id: BigInt!
-  amount: BigInt!
+  operator: String! # Address performing the transfer
+  from: String! # Sender address
+  to: String! # Recipient address
+  event_id: BigInt! # Token ID being transferred
+  amount: BigInt! # Amount transferred
 }
 
+# =============================================================================
+# GACHA WEAPON MACHINE EVENTS
+# =============================================================================
+# Events related to weapon generation from gacha tokens
+
+"""
+Event triggered when a weapon is generated from gacha machine
+"""
 type GachaWeaponMachine_WeaponGenerated {
   id: ID!
-  user: String!
+  user: String! # User's wallet address
   weaponId: BigInt!
-  metadata: BigInt!
-  requestId: BigInt!
+  metadata: BigInt! # Weapon metadata/attributes
+  requestId: BigInt! # Links to the original request
 }
 
+"""
+Event triggered when a weapon generation is requested from gacha machine
+"""
 type GachaWeaponMachine_WeaponRequested {
   id: ID!
-  user: String!
-  tokenId: BigInt!
-  qty: BigInt!
-  requestId: BigInt!
+  user: String! # User's wallet address
+  tokenId: BigInt! # Gacha token ID used
+  qty: BigInt! # Quantity of weapons requested
+  requestId: BigInt! # Unique request identifier
 }
 
+# =============================================================================
+# GYM EVENTS
+# =============================================================================
+# Events related to hero training and level upgrades
+
+"""
+Event triggered when a hero is upgraded using chaos upgrade method
+"""
 type Gym_ChaosUpgraded {
   id: ID!
-  owner: String!
+  owner: String! # Hero owner's wallet address
   heroId: BigInt!
-  season: BigInt!
+  season: BigInt! # Current game season
   oldLevel: BigInt!
   newLevel: BigInt!
-  chances: [BigInt!]!
+  chances: [BigInt!]! # Success chances for each level attempt
 }
 
+"""
+Event triggered when a hero is upgraded using normal upgrade method
+"""
 type Gym_NormalUpgraded {
   id: ID!
-  owner: String!
+  owner: String! # Hero owner's wallet address
   heroId: BigInt!
-  season: BigInt!
+  season: BigInt! # Current game season
   oldLevel: BigInt!
   newLevel: BigInt!
 }
 
+"""
+Event triggered when a hero is upgraded using unknown upgrade method
+"""
 type Gym_UnknownUpgraded {
   id: ID!
-  owner: String!
+  owner: String! # Hero owner's wallet address
   heroId: BigInt!
-  season: BigInt!
+  season: BigInt! # Current game season
   oldLevel: BigInt!
   newLevel: BigInt!
-  chances: [BigInt!]!
+  chances: [BigInt!]! # Success chances for each level attempt
 }
 
+"""
+Event triggered when a hero upgrade is requested
+"""
 type Gym_UpgradeRequested {
   id: ID!
-  season: BigInt!
-  owner: String!
+  season: BigInt! # Current game season
+  owner: String! # Hero owner's wallet address
   heroId: BigInt!
-  levelUp: BigInt!
-  cost: BigInt!
+  levelUp: BigInt! # Number of levels to upgrade
+  cost: BigInt! # Total cost for the upgrade
 }
 
+# =============================================================================
+# HERO TOKEN EVENTS (ERC20 & ERC721)
+# =============================================================================
+# Events related to hero token transfers
+
+"""
+Event for Hero ERC20 token transfers
+"""
 type Hero20_Transfer {
   id: ID!
-  from: String!
-  to: String!
-  amount: BigInt!
+  from: String! # Sender address
+  to: String! # Recipient address
+  amount: BigInt! # Amount transferred
 }
 
+"""
+Event for consecutive Hero NFT transfers (ERC721)
+"""
 type Hero721_ConsecutiveTransfer {
   id: ID!
-  fromTokenId: BigInt!
-  toTokenId: BigInt!
-  from: String!
-  to: String!
+  fromTokenId: BigInt! # Starting token ID
+  toTokenId: BigInt! # Ending token ID
+  from: String! # Sender address
+  to: String! # Recipient address
 }
 
+"""
+Event for single Hero NFT transfer (ERC721)
+"""
 type Hero721_Transfer {
   id: ID!
-  from: String!
-  to: String!
-  tokenId: BigInt!
+  from: String! # Sender address
+  to: String! # Recipient address
+  tokenId: BigInt! # Hero token ID
 }
 
+# =============================================================================
+# HERO ARMORY EVENTS
+# =============================================================================
+# Events related to weapon equipment system
+
+"""
+Event triggered when a weapon is equipped to a hero
+"""
 type HeroArmory_Equipped {
   id: ID!
   heroId: BigInt!
   weaponId: BigInt!
 }
 
+"""
+Event triggered when a weapon is unequipped from a hero
+"""
 type HeroArmory_Unequipped {
   id: ID!
   heroId: BigInt!
   weaponId: BigInt!
 }
 
+# =============================================================================
+# HERO WEAPON MACHINE EVENTS
+# =============================================================================
+# Events related to weapon generation from hero machine
+
+"""
+Event triggered when a weapon is generated from hero machine
+"""
 type HeroWeaponMachine_WeaponGenerated {
   id: ID!
-  user: String!
+  user: String! # User's wallet address
   weaponId: BigInt!
-  metadata: BigInt!
-  requestId: BigInt!
+  metadata: BigInt! # Weapon metadata/attributes
+  requestId: BigInt! # Links to the original request
 }
 
+"""
+Event triggered when a weapon generation is requested from hero machine
+"""
 type HeroWeaponMachine_WeaponRequested {
   id: ID!
-  user: String!
-  slot: BigInt!
-  qty: BigInt!
-  amount: BigInt!
-  requestId: BigInt!
+  user: String! # User's wallet address
+  slot: BigInt! # Equipment slot for the weapon
+  qty: BigInt! # Quantity of weapons requested
+  amount: BigInt! # Total cost paid
+  requestId: BigInt! # Unique request identifier
 }
 
+# =============================================================================
+# WEAPON TOKEN EVENTS (ERC721)
+# =============================================================================
+# Events related to weapon NFT transfers and generation
+
+"""
+Event for consecutive Weapon NFT transfers (ERC721)
+"""
 type Weapon721_ConsecutiveTransfer {
   id: ID!
-  fromTokenId: BigInt!
-  toTokenId: BigInt!
-  from: String!
-  to: String!
+  fromTokenId: BigInt! # Starting token ID
+  toTokenId: BigInt! # Ending token ID
+  from: String! # Sender address
+  to: String! # Recipient address
 }
 
+"""
+Event for single Weapon NFT transfer (ERC721)
+"""
 type Weapon721_Transfer {
   id: ID!
-  from: String!
-  to: String!
-  tokenId: BigInt!
+  from: String! # Sender address
+  to: String! # Recipient address
+  tokenId: BigInt! # Weapon token ID
 }
 
+"""
+Event triggered when weapons are generated/minted
+"""
 type Weapon721_WeaponGenerated {
   id: ID!
-  to: String!
-  qty: BigInt!
+  to: String! # Recipient address
+  qty: BigInt! # Quantity of weapons generated
 }
 
+"""
+Event triggered when weapon metadata is generated
+"""
 type Weapon721_WeaponMetadataGenerated {
   id: ID!
-  event_id: BigInt!
-  metadata: BigInt!
+  event_id: BigInt! # Token ID
+  metadata: BigInt! # Weapon metadata/attributes
 }
 
+# =============================================================================
+# WEAPON REMIXER EVENTS
+# =============================================================================
+# Events related to weapon mixing/combining system
+
+"""
+Event triggered when a legendary weapon mix is requested
+"""
 type WeaponRemixer_LegendaryMixRequested {
   id: ID!
-  weaponIds: [BigInt!]!
-  cost: BigInt!
-  rarity: BigInt!
-  requestId: BigInt!
+  weaponIds: [BigInt!]! # Array of weapon IDs to be mixed
+  cost: BigInt! # Total cost for the mix
+  rarity: BigInt! # Target rarity level
+  requestId: BigInt! # Unique request identifier
 }
 
+"""
+Event triggered when a weapon is generated from remixer
+"""
 type WeaponRemixer_WeaponGenerated {
   id: ID!
-  user: String!
+  user: String! # User's wallet address
   weaponId: BigInt!
-  metadata: BigInt!
-  requestId: BigInt!
+  metadata: BigInt! # Weapon metadata/attributes
+  requestId: BigInt! # Links to the original request
 }
 
+"""
+Event triggered when a weapon mix is requested
+"""
 type WeaponRemixer_WeaponMixRequested {
   id: ID!
-  weaponIds: [BigInt!]!
-  cost: BigInt!
-  rarity: BigInt!
-  requestId: BigInt!
+  weaponIds: [BigInt!]! # Array of weapon IDs to be mixed
+  cost: BigInt! # Total cost for the mix
+  rarity: BigInt! # Target rarity level
+  requestId: BigInt! # Unique request identifier
 }
 
+# =============================================================================
+# ITEMS EVENTS (ERC1155)
+# =============================================================================
+# Events related to game items transfers
+
+"""
+Event for single transfer of game items (ERC1155)
+"""
 type Items_TransferSingle {
   id: ID!
-  operator: String!
-  from: String!
-  to: String!
-  event_id: BigInt!
-  amount: BigInt!
+  operator: String! # Address performing the transfer
+  from: String! # Sender address
+  to: String! # Recipient address
+  event_id: BigInt! # Item ID being transferred
+  amount: BigInt! # Amount transferred
 }
 
+"""
+Event for batch transfers of game items (ERC1155)
+"""
 type Items_TransferBatch {
   id: ID!
-  operator: String!
-  from: String!
-  to: String!
-  ids: [BigInt!]!
-  amounts: [BigInt!]!
+  operator: String! # Address performing the transfer
+  from: String! # Sender address
+  to: String! # Recipient address
+  ids: [BigInt!]! # Array of item IDs transferred
+  amounts: [BigInt!]! # Array of amounts for each item ID
 }
 
+# =============================================================================
+# FISHING EVENTS
+# =============================================================================
+# Events related to fishing mini-game mechanics
+
+"""
+Event triggered when a hero is staked for fishing
+"""
 type Fishing_Staked {
   id: ID!
-  owner: String!
+  owner: String! # Hero owner's wallet address
   heroId: BigInt!
-  zone: BigInt!
-  fee: BigInt!
+  zone: BigInt! # Fishing zone identifier
+  fee: BigInt! # Staking fee paid
 }
 
+"""
+Event triggered when a fishing unstake is requested
+"""
 type Fishing_UnstakeRequested {
   id: ID!
-  owner: String!
+  owner: String! # Hero owner's wallet address
   heroId: BigInt!
-  requestId: BigInt!
+  requestId: BigInt! # Unique request identifier
 }
 
+"""
+Event triggered when a hero is unstaked from fishing
+"""
 type Fishing_Unstaked {
   id: ID!
-  owner: String!
+  owner: String! # Hero owner's wallet address
   heroId: BigInt!
-  requestId: BigInt!
-  zone: BigInt!
-  amount: BigInt!
-  weaponShardId: BigInt!
-  bonusId: BigInt!
+  requestId: BigInt! # Links to the original request
+  zone: BigInt! # Fishing zone identifier
+  amount: BigInt! # Rewards earned
+  weaponShardId: BigInt! # Weapon shard obtained
+  bonusId: BigInt! # Bonus item obtained
 }
 
+# =============================================================================
+# CORE GAME ENTITIES
+# =============================================================================
+
+"""
+Player entity representing a game user and their overall stats
+"""
 type Player @entity {
-  id: Bytes!
+  id: Bytes! # Player's wallet address
 
-  balance: BigInt!
+  balance: BigInt! # Player's token balance
 
-  heroCount: Int! @default(value: "0")
-  weaponCount: Int! @default(value: "0")
-  stakedHeroCount: Int! @default(value: "0")
+  # Inventory counts
+  heroCount: Int! @default(value: "0") # Total number of heroes owned
+  weaponCount: Int! @default(value: "0") # Total number of weapons owned
+  stakedHeroCount: Int! @default(value: "0") # Number of currently staked heroes
 
-  # Balances Gacha : [bronze, silver, gold, rainbow] - ordre fixe
+  # Gacha token balances: [bronze, silver, gold, rainbow] - fixed order
   gachaBalances: [BigInt!]! @default(value: "[0, 0, 0, 0]")
   
-  # Balances Items : [tokenId1, tokenId2, tokenId3] - mapping vers index [0, 1, 2]
+  # Game items balances: [tokenId1, tokenId2, tokenId3] - mapped to indices [0, 1, 2]
   itemsBalances: [BigInt!]! @default(value: "[0, 0, 0]")
 
-  heroes: [Hero!]! @derivedFrom(field: "owner")
-  weapons: [Weapon!]! @derivedFrom(field: "owner")
+  # Relations
+  heroes: [Hero!]! @derivedFrom(field: "owner") # All heroes owned by this player
+  weapons: [Weapon!]! @derivedFrom(field: "owner") # All weapons owned by this player
 }
 
+"""
+Hero entity representing a playable character NFT
+"""
 type Hero @entity {
-  id: String!
-  owner: Player!
-  minter: Bytes!
-  mintedTimestamp: BigInt!
+  id: String! # Hero token ID
+  owner: Player! # Player who owns this hero
+  minter: Bytes! # Address that minted this hero
+  mintedTimestamp: BigInt! # When this hero was minted
 
-  level: Int! @default(value: "1")
-  lastTrainingTimestamp: BigInt! @default(value: "0")
-  nextTrainingCost: BigInt! @default(value: "0")
-  nextTrainingAvailable: BigInt! @default(value: "0")
+  # Character progression
+  level: Int! @default(value: "1") # Current hero level
+  lastTrainingTimestamp: BigInt! @default(value: "0") # Last time hero was trained
+  nextTrainingCost: BigInt! @default(value: "0") # Cost for next training session
+  nextTrainingAvailable: BigInt! @default(value: "0") # When next training is available
   
-  revealed: Boolean! @default(value: false)
+  revealed: Boolean! @default(value: false) # Whether hero attributes are revealed
 
-  equippedWeapon: Weapon @oneToOne @index
-  damage: BigInt! @default(value: "0")
+  # Equipment and combat stats
+  equippedWeapon: Weapon @oneToOne @index # Currently equipped weapon
+  damage: BigInt! @default(value: "0") # Total damage output
 
-  # Rewards calculation (all in wei - 1e18)
+  # Rewards calculation system (all values in wei - 1e18)
   maxHeroPerDay: BigInt! @default(value: "0") # Maximum possible rewards per day
-  baseHeroPerDay: BigInt! @default(value: "0") # Guaranteed 80% of max
+  baseHeroPerDay: BigInt! @default(value: "0") # Guaranteed 80% of max rewards
   bonusHeroPerDay: BigInt! @default(value: "0") # Current sharpness bonus (0-20% of max)
   effectiveHeroPerDay: BigInt! @default(value: "0") # Total daily rewards (base + bonus + 50)
   
-  # Hourly equivalents for convenience
+  # Hourly equivalents for convenience calculations
   maxHeroPerHour: BigInt! @default(value: "0") # maxHeroPerDay / 24
   effectiveHeroPerHour: BigInt! @default(value: "0") # effectiveHeroPerDay / 24
 
-  staked: Boolean! @default(value: false)
-  stakingType: StakingType
-  stakedTimestamp: BigInt
-  unstakeAvailableTimestamp: BigInt
-  lastClaimTimestamp: BigInt
+  # Staking system
+  staked: Boolean! @default(value: false) # Whether hero is currently staked
+  stakingType: StakingType # Type of staking (fishing, dragma, etc.)
+  stakedTimestamp: BigInt # When hero was staked
+  unstakeAvailableTimestamp: BigInt # When hero can be unstaked
+  lastClaimTimestamp: BigInt # Last time rewards were claimed
 }
 
+# =============================================================================
+# ENUMERATIONS
+# =============================================================================
+
+"""
+Defines the different sources from which weapons can be obtained
+"""
 enum WeaponSource {
-  GACHA_MACHINE
-  HERO_MACHINE
-  REMIXER
-  DIRECT_MINT
+  GACHA_MACHINE # Generated from gacha tokens
+  HERO_MACHINE # Generated from hero machine
+  REMIXER # Created by combining other weapons
+  DIRECT_MINT # Directly minted (admin/special events)
 }
 
+"""
+Defines the type of remix operation used to create a weapon
+"""
 enum RemixType {
-  NORMAL
-  LEGENDARY
+  NORMAL # Standard weapon mixing
+  LEGENDARY # Legendary weapon mixing (higher cost/rarity)
 }
 
+"""
+Weapon request tracking entity for managing asynchronous weapon generation
+"""
 type WeaponRequest @entity {
-  id: String! # requestId
+  id: String! # Request ID from blockchain event
   
-  # Source tracking
-  source: WeaponSource! # GACHA_MACHINE, HERO_MACHINE, REMIXER, DIRECT_MINT
+  # Source and basic info
+  source: WeaponSource! # Where this weapon request originated
+  requester: Bytes! # Address that made the request
+  timestamp: BigInt! # When request was made
   
-  # Request data (varies by source)
-  requester: Bytes!
-  timestamp: BigInt!
+  # Gacha machine specific fields
+  gachaTokenId: BigInt # Gacha token ID used (for stats tracking)
+  gachaQty: Int # Quantity requested from gacha
   
-  # Gacha specific
-  gachaTokenId: BigInt # Pour tracking stats gacha
-  gachaQty: Int
+  # Hero machine specific fields
+  heroSlot: BigInt # Equipment slot for hero machine
+  heroQty: Int # Quantity requested from hero machine
+  heroCost: BigInt # Total cost paid
+  heroCostPerWeapon: BigInt # Calculated cost per weapon (cost/qty)
   
-  # Hero machine specific  
-  heroSlot: BigInt
-  heroQty: Int
-  heroCost: BigInt # Total cost
-  heroCostPerWeapon: BigInt # Calculated: cost/qty
+  # Remixer specific fields
+  remixedWeaponIds: [BigInt!] # IDs of weapons that were burned/consumed
+  remixRarity: Int # Target rarity for remix
+  remixType: RemixType # Type of remix (normal/legendary)
   
-  # Remixer specific
-  remixedWeaponIds: [BigInt!] # Weapons burned
-  remixRarity: Int
-  remixType: RemixType # NORMAL, LEGENDARY
-  
-  # Tracking
-  expectedWeapons: Int! # Qty expected
-  generatedWeapons: Int! @default(value: "0") # Counter
-  completed: Boolean! @default(value: false)
+  # Request tracking
+  expectedWeapons: Int! # Number of weapons expected to be generated
+  generatedWeapons: Int! @default(value: "0") # Counter of weapons actually generated
+  completed: Boolean! @default(value: false) # Whether request is fully completed
   
   # Relations
-  generatedWeaponIds: [String!]! # IDs des weapons générées
+  generatedWeaponIds: [String!]! # IDs of weapons generated from this request
 }
 
+"""
+Weapon entity representing a weapon NFT with all its attributes
+"""
 type Weapon @entity {
-  id: String!
-  owner: Player!
-  source: WeaponSource!
+  id: String! # Weapon token ID
+  owner: Player! # Player who owns this weapon
+  source: WeaponSource! # How this weapon was obtained
   rarity: Int! # 0=COMMON, 1=UNCOMMON, 2=RARE, 3=EPIC, 4=HEROIC, 5=LEGENDARY, 6=MYTHIC
-  minter: Bytes!
-  mintedTimestamp: BigInt!
+  minter: Bytes! # Address that minted this weapon
+  mintedTimestamp: BigInt! # When this weapon was minted
 
-  equipped: Boolean! @default(value: false)
-  equippedHeroId: String # ID du héros qui équipe cette arme (null si pas équipée)
-  equippedBy: [Hero!]! @derivedFrom(field: "equippedWeapon")
+  # Equipment status
+  equipped: Boolean! @default(value: false) # Whether weapon is currently equipped
+  equippedHeroId: String # ID of hero that has this weapon equipped (null if not equipped)
+  equippedBy: [Hero!]! @derivedFrom(field: "equippedWeapon") # Hero relation
 
-  weaponType: Int!
+  # Weapon attributes
+  weaponType: Int! # Type/category of weapon
+  sharpness: Int! # Current sharpness level (affects damage)
+  maxSharpness: Int! # Maximum sharpness this weapon can achieve
+  durability: Int! # Current durability (affects usage)
+  maxDurability: Int! # Maximum durability this weapon can have
+  broken: Boolean! @default(value: false) # Whether weapon is broken (0 durability)
 
-  sharpness: Int!
-  maxSharpness: Int!
-  durability: Int!
-  maxDurability: Int!
-  broken: Boolean! @default(value: false)
-
-  # Source tracking
-  requestId: String # Lien vers WeaponRequest (null pour DIRECT_MINT)
+  # Source tracking for analytics
+  requestId: String # Link to WeaponRequest (null for DIRECT_MINT)
   
-  # Gacha specific
-  sourceGachaTokenId: BigInt # Si source = GACHA_MACHINE
+  # Gacha-specific tracking
+  sourceGachaTokenId: BigInt # Gacha token ID used if source = GACHA_MACHINE
   
-  # Hero machine specific
-  sourceHeroCost: BigInt # Si source = HERO_MACHINE
+  # Hero machine-specific tracking
+  sourceHeroCost: BigInt # Cost paid if source = HERO_MACHINE
   
-  # Remixer specific
-  sourceRemixedWeaponIds: [BigInt!] # Si source = REMIXER
-  sourceRemixRarity: Int # Si source = REMIXER
-  sourceRemixType: RemixType # Si source = REMIXER
+  # Remixer-specific tracking
+  sourceRemixedWeaponIds: [BigInt!] # IDs of weapons consumed if source = REMIXER
+  sourceRemixRarity: Int # Target rarity if source = REMIXER
+  sourceRemixType: RemixType # Type of remix if source = REMIXER
 }
 
+"""
+Defines the different types of gacha tokens available
+"""
 enum GachaType {
-  BRONZE
-  SILVER
-  GOLD
-  RAINBOW
+  BRONZE # Bronze gacha tokens (lowest tier)
+  SILVER # Silver gacha tokens
+  GOLD # Gold gacha tokens
+  RAINBOW # Rainbow gacha tokens (highest tier)
 }
 
+"""
+Defines the different types of staking mechanisms available
+"""
 enum StakingType {
-  DRAGMA_UNDERLINGS
-  FISHING_SLIME_BAY
-  FISHING_SHROOM_GROTTO
-  FISHING_SKEET_PIER
+  DRAGMA_UNDERLINGS # Standard hero staking for rewards
+  FISHING_SLIME_BAY # Fishing in Slime Bay zone
+  FISHING_SHROOM_GROTTO # Fishing in Shroom Grotto zone
+  FISHING_SKEET_PIER # Fishing in Skeet Pier zone
 }
