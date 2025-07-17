@@ -504,9 +504,13 @@ type Hero @entity {
   activities: [Activity!]! @derivedFrom(field: "hero") # Historique des activities liées à ce hero
   totalFishingFees: BigInt! @default(value: "0")
   totalFishingRewards: BigInt! @default(value: "0")
+  fishingRewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
   totalFishingShards: Int! @default(value: "0")
+  fishingShardsPerZone: [Int!]! @default(value: "[0,0,0]")
   totalFishingBonuses: Int! @default(value: "0")
+  fishingBonusesPerZone: [Int!]! @default(value: "[0,0,0]")
   totalFishingSessions: Int! @default(value: "0") # Stakes in fishing
+  fishingSessionsPerZone: [Int!]! @default(value: "[0,0,0]")
 }
 
 # =============================================================================
@@ -676,8 +680,11 @@ type FishingGlobalStats @entity {
   totalHeroesPerZone: [Int!]! @default(value: "[0,0,0]") # [zone0,1,2]
   totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0]")
   totalRewardsAmount: BigInt! @default(value: "0")
+  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
   totalShardsWon: Int! @default(value: "0")
+  shardsPerZone: [Int!]! @default(value: "[0,0,0]")
   totalBonuses: Int! @default(value: "0")
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0]")
   lastUpdated: BigInt! @default(value: "0")
 }
 type FishingUserStats @entity {
@@ -686,7 +693,11 @@ type FishingUserStats @entity {
   totalFees: BigInt! @default(value: "0")
   feesPerZone: [BigInt!]! @default(value: "[0,0,0]")
   totalRewardsAmount: BigInt! @default(value: "0")
+  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
   totalShardsWon: Int! @default(value: "0")
+  shardsPerZone: [Int!]! @default(value: "[0,0,0]")
   totalBonuses: Int! @default(value: "0")
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0]")
+  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0]")
   player: Player!
 }

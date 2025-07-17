@@ -34,6 +34,15 @@ DragmaUnderlings.Staked.handlerWithLoader({
     const existingHero = hero ?? await context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`);
 
     // Parallélisation : Stockage event + mise à jour Hero
+    const stakedHero = {
+      ...existingHero,
+      staked: true,
+      stakingType: "DRAGMA_UNDERLINGS" as const,
+      stakedTimestamp: timestamp,
+      unstakeAvailableTimestamp: calculateUnstakeAvailable(timestamp),
+      lastClaimTimestamp: timestamp,
+      revealed: true, // Mark as revealed on first staking
+    };
     await Promise.all([
       // Stocke l'événement brut
       context.DragmaUnderlings_Staked.set({
@@ -41,17 +50,8 @@ DragmaUnderlings.Staked.handlerWithLoader({
         user,
         heroId,
       }),
-      
       // Met à jour le héro : staking activé + revealed
-      context.Hero.set({
-        ...existingHero,
-        staked: true,
-        stakingType: "DRAGMA_UNDERLINGS" as const,
-        stakedTimestamp: timestamp,
-        unstakeAvailableTimestamp: calculateUnstakeAvailable(timestamp),
-        lastClaimTimestamp: timestamp,
-        revealed: true, // Mark as revealed on first staking
-      }),
+      context.Hero.set(stakedHero),
       (async () => {
         if (!existingHero.staked) {
           const global = await getOrCreateDragmaGlobalStats(context);
@@ -63,11 +63,6 @@ DragmaUnderlings.Staked.handlerWithLoader({
           userStats.totalStakes += 1;
           userStats.stakedHeroes += 1;
           context.DragmaUserStats.set(userStats);
-
-          context.Hero.set({
-            ...existingHero,
-            totalStakes: existingHero.totalStakes + 1,
-          });
         }
         await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_STAKE', { heroId: heroId.toString() }, heroId.toString(), 'DragmaUnderlings', 'DRAGMA_UNDERLINGS');
       })()
@@ -75,6 +70,11 @@ DragmaUnderlings.Staked.handlerWithLoader({
     if (!existingHero.staked) {
       await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: 1 });
     }
+    const updatedHeroWithCounts = {
+      ...stakedHero,
+      totalStakes: stakedHero.totalStakes + 1,
+    };
+    context.Hero.set(updatedHeroWithCounts);
   },
 });
 
@@ -103,6 +103,14 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
     const existingHero = hero ?? await context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`);
 
     // Parallélisation optimisée
+    const unstakedHero = {
+      ...existingHero,
+      staked: false,
+      stakingType: undefined,
+      stakedTimestamp: 0n,
+      unstakeAvailableTimestamp: 0n,
+      lastClaimTimestamp: 0n,
+    };
     await Promise.all([
       // Stocke l'événement brut
       context.DragmaUnderlings_Unstaked.set({
@@ -110,21 +118,14 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
         user,
         heroId,
       }),
-      
       // Met à jour le héro : staking désactivé
-      context.Hero.set({
-        ...existingHero,
-        staked: false,
-        stakingType: undefined,
-        stakedTimestamp: 0n,
-        unstakeAvailableTimestamp: 0n,
-        lastClaimTimestamp: 0n,
-      }),
+      context.Hero.set(unstakedHero),
       (async () => {
         if (existingHero.staked) {
           const duration = timestamp - (existingHero.stakedTimestamp || 0n);
           const global = await getOrCreateDragmaGlobalStats(context);
           global.totalUnstakedHeroes += 1;
+          global.totalStakedHeroes -= 1;
           global.lastUpdated = timestamp;
           context.DragmaGlobalStats.set(global);
 
@@ -132,15 +133,10 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
           const prevCount = BigInt(userStats.totalUnstakes);
           const newTotalUnstakes = prevCount + 1n; // Since we're incrementing after
           userStats.totalUnstakes = Number(newTotalUnstakes);
+          userStats.stakedHeroes -= 1;
           const prevTotal = prevCount;
           userStats.averageStakingDuration = prevCount > 0n ? (userStats.averageStakingDuration * prevTotal + duration) / newTotalUnstakes : duration;
           context.DragmaUserStats.set(userStats);
-
-          context.Hero.set({
-            ...existingHero,
-            totalUnstakes: existingHero.totalUnstakes + 1,
-            totalStakingDuration: existingHero.totalStakingDuration + duration,
-          });
         }
         await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_UNSTAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
       })()
@@ -148,6 +144,12 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
     if (existingHero.staked) {
       await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: -1 });
     }
+    const updatedHeroWithCounts = {
+      ...unstakedHero,
+      totalUnstakes: unstakedHero.totalUnstakes + 1,
+      totalStakingDuration: unstakedHero.totalStakingDuration + (timestamp - (existingHero.stakedTimestamp || 0n)),
+    };
+    context.Hero.set(updatedHeroWithCounts);
   },
 });
 

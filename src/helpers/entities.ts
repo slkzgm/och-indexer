@@ -126,9 +126,13 @@ export function createHero(
     totalClaims: 0,
     totalFishingFees: 0n,
     totalFishingRewards: 0n,
+    fishingRewardsPerZone: [0n,0n,0n],
     totalFishingShards: 0,
+    fishingShardsPerZone: [0,0,0],
     totalFishingBonuses: 0,
+    fishingBonusesPerZone: [0,0,0],
     totalFishingSessions: 0,
+    fishingSessionsPerZone: [0,0,0],
   });
 }
 

@@ -42,8 +42,11 @@ export async function getOrCreateFishingGlobalStats(context: any) {
       totalHeroesPerZone: [0,0,0],
       totalFeesPerZone: [0n,0n,0n],
       totalRewardsAmount: 0n,
+      rewardsPerZone: [0n,0n,0n],
       totalShardsWon: 0,
+      shardsPerZone: [0,0,0],
       totalBonuses: 0,
+      bonusesPerZone: [0,0,0],
       lastUpdated: 0n,
     };
     await context.FishingGlobalStats.set(stats);
@@ -59,8 +62,12 @@ export async function getOrCreateFishingUserStats(context: any, userId: string) 
       totalFees: 0n,
       feesPerZone: [0n,0n,0n],
       totalRewardsAmount: 0n,
+      rewardsPerZone: [0n,0n,0n],
       totalShardsWon: 0,
+      shardsPerZone: [0,0,0],
       totalBonuses: 0,
+      bonusesPerZone: [0,0,0],
+      totalSessionsPerZone: [0,0,0],
       player_id: userId,
     };
     await context.FishingUserStats.set(stats);
