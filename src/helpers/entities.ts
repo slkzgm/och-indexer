@@ -124,6 +124,11 @@ export function createHero(
     totalStakes: 0,
     totalUnstakes: 0,
     totalClaims: 0,
+    totalFishingFees: 0n,
+    totalFishingRewards: 0n,
+    totalFishingShards: 0,
+    totalFishingBonuses: 0,
+    totalFishingSessions: 0,
   });
 }
 

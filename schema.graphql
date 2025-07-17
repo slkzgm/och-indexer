@@ -502,6 +502,11 @@ type Hero @entity {
   totalUnstakes: Int! @default(value: "0") # Nombre total d'unstakes
   totalClaims: Int! @default(value: "0") # Nombre total de claims
   activities: [Activity!]! @derivedFrom(field: "hero") # Historique des activities liées à ce hero
+  totalFishingFees: BigInt! @default(value: "0")
+  totalFishingRewards: BigInt! @default(value: "0")
+  totalFishingShards: Int! @default(value: "0")
+  totalFishingBonuses: Int! @default(value: "0")
+  totalFishingSessions: Int! @default(value: "0") # Stakes in fishing
 }
 
 # =============================================================================
@@ -664,4 +669,24 @@ type Activity @entity {
   heroId: String # Optionnel, pour filters per hero (ID du hero impliqué)
   hero: Hero @index # Relation vers le hero (optionnel, basé sur heroId)
   stakingType: StakingType # Optionnel, pour différencier types/zones de staking
+}
+
+type FishingGlobalStats @entity {
+  id: ID! # 'global'
+  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0]") # [zone0,1,2]
+  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  totalRewardsAmount: BigInt! @default(value: "0")
+  totalShardsWon: Int! @default(value: "0")
+  totalBonuses: Int! @default(value: "0")
+  lastUpdated: BigInt! @default(value: "0")
+}
+type FishingUserStats @entity {
+  id: Bytes! # User address
+  heroesPerZone: [Int!]! @default(value: "[0,0,0]")
+  totalFees: BigInt! @default(value: "0")
+  feesPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  totalRewardsAmount: BigInt! @default(value: "0")
+  totalShardsWon: Int! @default(value: "0")
+  totalBonuses: Int! @default(value: "0")
+  player: Player!
 }

@@ -33,4 +33,38 @@ export async function getOrCreateDragmaUserStats(context: any, userId: string) {
   }
   return stats;
 }
+
+export async function getOrCreateFishingGlobalStats(context: any) {
+  let stats = await context.FishingGlobalStats.get('global');
+  if (!stats) {
+    stats = {
+      id: 'global',
+      totalHeroesPerZone: [0,0,0],
+      totalFeesPerZone: [0n,0n,0n],
+      totalRewardsAmount: 0n,
+      totalShardsWon: 0,
+      totalBonuses: 0,
+      lastUpdated: 0n,
+    };
+    await context.FishingGlobalStats.set(stats);
+  }
+  return stats;
+}
+export async function getOrCreateFishingUserStats(context: any, userId: string) {
+  let stats = await context.FishingUserStats.get(userId);
+  if (!stats) {
+    stats = {
+      id: userId,
+      heroesPerZone: [0,0,0],
+      totalFees: 0n,
+      feesPerZone: [0n,0n,0n],
+      totalRewardsAmount: 0n,
+      totalShardsWon: 0,
+      totalBonuses: 0,
+      player_id: userId,
+    };
+    await context.FishingUserStats.set(stats);
+  }
+  return stats;
+}
 // Add more as needed for other contracts 

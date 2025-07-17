@@ -6,6 +6,9 @@ import {
 } from "generated";
 import { setHeroFishingStaked } from "../helpers/entities";
 import { updatePlayerCounts } from "../helpers/player";
+import { getOrCreateFishingGlobalStats, getOrCreateFishingUserStats } from "../helpers/stats";
+import { createActivity } from "../helpers/activity";
+import { getFishingStakingType } from "../helpers/calculations";
 
 /**
  * Handler pour Fishing.Staked
@@ -50,6 +53,28 @@ Fishing.Staked.handlerWithLoader({
     if (!existingHero.staked) {
       await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: 1 });
     }
+
+    // Stats et activité
+    const zoneNum = Number(zone);
+    const global = await getOrCreateFishingGlobalStats(context);
+    global.totalHeroesPerZone[zoneNum] += !existingHero.staked ? 1 : 0;
+    global.totalFeesPerZone[zoneNum] += fee;
+    global.lastUpdated = timestamp;
+    context.FishingGlobalStats.set(global);
+
+    const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
+    userStats.heroesPerZone[zoneNum] += 1;
+    userStats.feesPerZone[zoneNum] += fee;
+    userStats.totalFees += fee;
+    context.FishingUserStats.set(userStats);
+
+    const updatedHero = {...existingHero, totalFishingSessions: existingHero.totalFishingSessions + 1, totalFishingFees: existingHero.totalFishingFees + fee};
+    context.Hero.set(updatedHero);
+
+    const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+    const stakingType = getFishingStakingType(zone);
+    await createActivity(context, id, timestamp, owner, 'FISHING_STAKE', {fee: fee.toString(), zone: zone.toString()}, existingHero.id, 'Fishing', stakingType);
+    await createActivity(context, id, timestamp, owner, 'FISHING_STAKE', {fee: fee.toString(), zone: zone.toString()}, existingHero.id, 'Fishing', stakingType);
   },
 });
 
@@ -139,5 +164,30 @@ Fishing.Unstaked.handlerWithLoader({
     if (existingHero.staked) {
       await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: -1 });
     }
+
+    // Stats et activité
+    const zoneNum = Number(existingHero.zone);
+    const global = await getOrCreateFishingGlobalStats(context);
+    global.totalHeroesPerZone[zoneNum] -= 1;
+    global.totalRewardsAmount += amount;
+    global.totalShardsWon += Number(weaponShardId > 0n);
+    global.totalBonuses += Number(bonusId > 0n);
+    global.lastUpdated = BigInt(event.block.timestamp);
+    context.FishingGlobalStats.set(global);
+
+    const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
+    userStats.heroesPerZone[zoneNum] -= 1;
+    userStats.feesPerZone[zoneNum] += amount;
+    userStats.totalFees += amount;
+    userStats.totalFishingRewards += amount;
+    userStats.totalFishingShards += Number(weaponShardId > 0n);
+    userStats.totalFishingBonuses += Number(bonusId > 0n);
+    context.FishingUserStats.set(userStats);
+
+    const updatedHero = {...existingHero, totalFishingRewards: existingHero.totalFishingRewards + amount, totalFishingShards: existingHero.totalFishingShards + (weaponShardId > 0n ? 1 : 0), totalFishingBonuses: existingHero.totalFishingBonuses + (bonusId > 0n ? 1 : 0)};
+    context.Hero.set(updatedHero);
+
+    const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+    await createActivity(context, id, BigInt(event.block.timestamp), owner, 'FISHING_UNSTAKE', {amount: amount.toString(), weaponShardId: weaponShardId.toString(), bonusId: bonusId.toString()}, existingHero.id, 'Fishing', getFishingStakingType(zone));
   },
 }); 

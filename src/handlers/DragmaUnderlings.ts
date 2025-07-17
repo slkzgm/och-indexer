@@ -69,7 +69,7 @@ DragmaUnderlings.Staked.handlerWithLoader({
             totalStakes: existingHero.totalStakes + 1,
           });
         }
-        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'STAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_STAKE', { heroId: heroId.toString() }, heroId.toString(), 'DragmaUnderlings', 'DRAGMA_UNDERLINGS');
       })()
     ]);
     if (!existingHero.staked) {
@@ -142,7 +142,7 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
             totalStakingDuration: existingHero.totalStakingDuration + duration,
           });
         }
-        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'UNSTAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_UNSTAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
       })()
     ]);
     if (existingHero.staked) {
@@ -208,7 +208,7 @@ DragmaUnderlings.Claimed.handlerWithLoader({
           totalRewardsClaimed: existingHero.totalRewardsClaimed + amount,
           totalClaims: existingHero.totalClaims + 1,
         });
-        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'CLAIM', { heroId: heroId.toString(), amount: amount.toString() }, heroId.toString());
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_CLAIM', { heroId: heroId.toString(), amount: amount.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
       })()
     ]);
   },
