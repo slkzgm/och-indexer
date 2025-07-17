@@ -493,9 +493,15 @@ type Hero @entity {
   # Staking system
   staked: Boolean! @default(value: false) # Whether hero is currently staked
   stakingType: StakingType # Type of staking (fishing, dragma, etc.)
-  stakedTimestamp: BigInt # When hero was staked
-  unstakeAvailableTimestamp: BigInt # When hero can be unstaked
-  lastClaimTimestamp: BigInt # Last time rewards were claimed
+  stakedTimestamp: BigInt! @default(value: "0") # When hero was staked
+  unstakeAvailableTimestamp: BigInt! @default(value: "0") # When hero can be unstaked
+  lastClaimTimestamp: BigInt! @default(value: "0") # Last time rewards were claimed
+  totalRewardsClaimed: BigInt! @default(value: "0") # Total rewards claimed pour ce hero
+  totalStakingDuration: BigInt! @default(value: "0") # Durée totale de staking (en secondes, cumulée sur tous stakes)
+  totalStakes: Int! @default(value: "0") # Nombre total de stakes pour ce hero
+  totalUnstakes: Int! @default(value: "0") # Nombre total d'unstakes
+  totalClaims: Int! @default(value: "0") # Nombre total de claims
+  activities: [Activity!]! @derivedFrom(field: "hero") # Historique des activities liées à ce hero
 }
 
 # =============================================================================
@@ -612,4 +618,50 @@ enum StakingType {
   FISHING_SLIME_BAY # Fishing in Slime Bay zone
   FISHING_SHROOM_GROTTO # Fishing in Shroom Grotto zone
   FISHING_SKEET_PIER # Fishing in Skeet Pier zone
+}
+
+# =============================================================================
+# STATS & METRICS ENTITIES
+# =============================================================================
+
+"""
+Agrégats globaux pour Dragma Underlings
+"""
+type DragmaGlobalStats @entity {
+  id: ID! # Singleton: 'global'
+  totalStakedHeroes: Int! @default(value: "0")
+  totalUnstakedHeroes: Int! @default(value: "0")
+  totalRewardsClaimed: BigInt! @default(value: "0")
+  totalClaims: Int! @default(value: "0")
+  averageClaimAmount: BigInt! @default(value: "0") # Calculé: totalRewards / totalClaims
+  lastUpdated: BigInt! @default(value: "0")
+}
+
+"""
+Stats per user pour Dragma Underlings
+"""
+type DragmaUserStats @entity {
+  id: Bytes! # User address
+  stakedHeroes: Int! @default(value: "0")
+  totalStakes: Int! @default(value: "0")
+  totalUnstakes: Int! @default(value: "0")
+  totalRewardsClaimed: BigInt! @default(value: "0")
+  totalClaims: Int! @default(value: "0")
+  averageStakingDuration: BigInt! @default(value: "0") # En secondes, moyenne
+  player: Player! # Relation vers Player
+}
+
+"""
+Entité pour feed d'activité unifié (extensible à tous contrats)
+"""
+type Activity @entity {
+  id: ID! # Format: chainId_block_logIndex
+  timestamp: BigInt!
+  user: Bytes! # Address impliquée
+  eventType: String! # Ex: 'STAKE', 'UNSTAKE', 'CLAIM', etc.
+  details: String! # JSON stringifié pour détails (ex: {heroId: 123, amount: 456})
+  contract: String! # Ex: 'DragmaUnderlings'
+  heroId: String # Optionnel, pour filters per hero (ID du hero impliqué)
+  hero: Hero @index # Relation vers le hero (optionnel, basé sur heroId)
+  stakingType: StakingType # Optionnel, pour différencier types/zones de staking
 }

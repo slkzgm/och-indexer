@@ -3,6 +3,9 @@ import {
 } from "generated";
 import { calculateUnstakeAvailable } from "../helpers/calculations";
 import { updateWeaponAndHeroStats } from "../helpers/entities";
+import { updatePlayerCounts } from "../helpers/player";
+import { getOrCreateDragmaGlobalStats, getOrCreateDragmaUserStats } from "../helpers/stats";
+import { createActivity } from "../helpers/activity";
 
 /**
  * Handler pour DragmaUnderlings.Staked
@@ -48,8 +51,30 @@ DragmaUnderlings.Staked.handlerWithLoader({
         unstakeAvailableTimestamp: calculateUnstakeAvailable(timestamp),
         lastClaimTimestamp: timestamp,
         revealed: true, // Mark as revealed on first staking
-      })
+      }),
+      (async () => {
+        if (!existingHero.staked) {
+          const global = await getOrCreateDragmaGlobalStats(context);
+          global.totalStakedHeroes += 1;
+          global.lastUpdated = timestamp;
+          context.DragmaGlobalStats.set(global);
+
+          const userStats = await getOrCreateDragmaUserStats(context, user.toLowerCase());
+          userStats.totalStakes += 1;
+          userStats.stakedHeroes += 1;
+          context.DragmaUserStats.set(userStats);
+
+          context.Hero.set({
+            ...existingHero,
+            totalStakes: existingHero.totalStakes + 1,
+          });
+        }
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'STAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
+      })()
     ]);
+    if (!existingHero.staked) {
+      await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: 1 });
+    }
   },
 });
 
@@ -72,6 +97,7 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
 
   handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
     const { user, heroId } = event.params;
+    const timestamp = BigInt(event.block.timestamp);
 
     const { hero } = loaderReturn as { hero: any | null };
     const existingHero = hero ?? await context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`);
@@ -90,11 +116,38 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
         ...existingHero,
         staked: false,
         stakingType: undefined,
-        stakedTimestamp: undefined,
-        unstakeAvailableTimestamp: undefined,
-        lastClaimTimestamp: undefined,
-      })
+        stakedTimestamp: 0n,
+        unstakeAvailableTimestamp: 0n,
+        lastClaimTimestamp: 0n,
+      }),
+      (async () => {
+        if (existingHero.staked) {
+          const duration = timestamp - (existingHero.stakedTimestamp || 0n);
+          const global = await getOrCreateDragmaGlobalStats(context);
+          global.totalUnstakedHeroes += 1;
+          global.lastUpdated = timestamp;
+          context.DragmaGlobalStats.set(global);
+
+          const userStats = await getOrCreateDragmaUserStats(context, user.toLowerCase());
+          const prevCount = BigInt(userStats.totalUnstakes);
+          const newTotalUnstakes = prevCount + 1n; // Since we're incrementing after
+          userStats.totalUnstakes = Number(newTotalUnstakes);
+          const prevTotal = prevCount;
+          userStats.averageStakingDuration = prevCount > 0n ? (userStats.averageStakingDuration * prevTotal + duration) / newTotalUnstakes : duration;
+          context.DragmaUserStats.set(userStats);
+
+          context.Hero.set({
+            ...existingHero,
+            totalUnstakes: existingHero.totalUnstakes + 1,
+            totalStakingDuration: existingHero.totalStakingDuration + duration,
+          });
+        }
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'UNSTAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
+      })()
     ]);
+    if (existingHero.staked) {
+      await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: -1 });
+    }
   },
 });
 
@@ -136,7 +189,27 @@ DragmaUnderlings.Claimed.handlerWithLoader({
       context.Hero.set({
         ...existingHero,
         lastClaimTimestamp: timestamp,
-      })
+      }),
+      (async () => {
+        const global = await getOrCreateDragmaGlobalStats(context);
+        global.totalRewardsClaimed += amount;
+        global.totalClaims += 1;
+        global.averageClaimAmount = global.totalClaims > 0 ? global.totalRewardsClaimed / BigInt(global.totalClaims) : 0n;
+        global.lastUpdated = timestamp;
+        context.DragmaGlobalStats.set(global);
+
+        const userStats = await getOrCreateDragmaUserStats(context, user.toLowerCase());
+        userStats.totalRewardsClaimed += amount;
+        userStats.totalClaims += 1;
+        context.DragmaUserStats.set(userStats);
+
+        context.Hero.set({
+          ...existingHero,
+          totalRewardsClaimed: existingHero.totalRewardsClaimed + amount,
+          totalClaims: existingHero.totalClaims + 1,
+        });
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'CLAIM', { heroId: heroId.toString(), amount: amount.toString() }, heroId.toString());
+      })()
     ]);
   },
 });
@@ -198,6 +271,7 @@ DragmaUnderlings.WeaponDurabilityUpdated.handlerWithLoader({
         durability: newDurabilityNum,
         broken: newDurabilityNum === 0,
       });
+      await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, BigInt(event.block.timestamp), user, 'DURABILITY_UPDATE', { weaponId: weaponId.toString(), oldDurability: oldDurability.toString(), newDurability: newDurability.toString() }, undefined); // Pas de heroId direct, mais optionnel
     }
   },
 });
@@ -253,5 +327,6 @@ DragmaUnderlings.WeaponSharpnessUpdated.handlerWithLoader({
         sharpness: Number(newSharpness),
       }, hero)
     ]);
+    await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, BigInt(event.block.timestamp), user, 'SHARPNESS_UPDATE', { weaponId: weaponId.toString(), oldSharpness: oldSharpness.toString(), newSharpness: newSharpness.toString() }, undefined);
   },
 }); 

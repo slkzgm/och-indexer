@@ -5,6 +5,7 @@ import {
   Fishing_Unstaked,
 } from "generated";
 import { setHeroFishingStaked } from "../helpers/entities";
+import { updatePlayerCounts } from "../helpers/player";
 
 /**
  * Handler pour Fishing.Staked
@@ -46,6 +47,9 @@ Fishing.Staked.handlerWithLoader({
       // Met à jour le héro : staking activé pour fishing avec le bon type selon la zone
       setHeroFishingStaked(context, existingHero, zone, timestamp)
     ]);
+    if (!existingHero.staked) {
+      await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: 1 });
+    }
   },
 });
 
@@ -127,10 +131,13 @@ Fishing.Unstaked.handlerWithLoader({
         ...existingHero,
         staked: false,
         stakingType: undefined,
-        stakedTimestamp: undefined,
-        unstakeAvailableTimestamp: undefined,
-        lastClaimTimestamp: undefined,
+        stakedTimestamp: 0n,
+        unstakeAvailableTimestamp: 0n,
+        lastClaimTimestamp: 0n,
       })
     ]);
+    if (existingHero.staked) {
+      await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: -1 });
+    }
   },
 }); 

@@ -115,6 +115,15 @@ export function createHero(
     maxHeroPerHour: 0n,
     effectiveHeroPerHour: 0n,
     staked: heroData.staked || false,
+    stakingType: undefined,
+    stakedTimestamp: 0n,
+    unstakeAvailableTimestamp: 0n,
+    lastClaimTimestamp: 0n,
+    totalRewardsClaimed: 0n,
+    totalStakingDuration: 0n,
+    totalStakes: 0,
+    totalUnstakes: 0,
+    totalClaims: 0,
   });
 }
 
