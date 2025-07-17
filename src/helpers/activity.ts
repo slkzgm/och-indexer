@@ -13,7 +13,7 @@ export async function createActivity(
   const activity = {
     id,
     timestamp,
-    user,
+    user: user.toLowerCase(),
     eventType,
     details: JSON.stringify(details),
     contract,
