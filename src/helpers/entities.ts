@@ -30,6 +30,7 @@ export async function getOrCreatePlayerOptimized(
     heroCount: 0,
     weaponCount: 0,
     stakedHeroCount: 0,
+    heroesByLevel: Array(101).fill(0),
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
     itemsBalances: [0n, 0n, 0n], // [tokenId1, tokenId2, tokenId3]
     ...overrides, // Override les valeurs si spécifiées
@@ -63,6 +64,7 @@ export async function getOrCreatePlayer(
     heroCount: 0,
     weaponCount: 0,
     stakedHeroCount: 0,
+    heroesByLevel: Array(101).fill(0),
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
     itemsBalances: [0n, 0n, 0n], // [tokenId1, tokenId2, tokenId3]
     ...overrides, // Override les valeurs si spécifiées

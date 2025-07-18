@@ -56,12 +56,16 @@ Fishing.Staked.handlerWithLoader({
     const zoneNum = Number(zone);
     const global = await getOrCreateFishingGlobalStats(context);
     global.totalHeroesPerZone[zoneNum] += !existingHero.staked ? 1 : 0;
+    global.totalHeroes += !existingHero.staked ? 1 : 0;
+    global.heroesByLevel[stakedHero.level] += !existingHero.staked ? 1 : 0;
     global.totalFeesPerZone[zoneNum] += fee;
     global.lastUpdated = timestamp;
     context.FishingGlobalStats.set(global);
 
     const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
     userStats.heroesPerZone[zoneNum] += 1;
+    userStats.totalHeroes += 1;
+    userStats.heroesByLevel[stakedHero.level] += 1;
     userStats.feesPerZone[zoneNum] += fee;
     userStats.totalFees += fee;
     userStats.totalSessionsPerZone[zoneNum] += 1;
@@ -167,6 +171,8 @@ Fishing.Unstaked.handlerWithLoader({
     const zoneNum = Number(zone);
     const global = await getOrCreateFishingGlobalStats(context);
     global.totalHeroesPerZone[zoneNum] -= 1;
+    global.totalHeroes -= 1;
+    global.heroesByLevel[existingHero.level] -= 1;
     global.rewardsPerZone[zoneNum] += amount;
     global.totalRewardsAmount += amount;
     if (weaponShardId > 0n) {
@@ -182,6 +188,8 @@ Fishing.Unstaked.handlerWithLoader({
 
     const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
     userStats.heroesPerZone[zoneNum] -= 1;
+    userStats.totalHeroes -= 1;
+    userStats.heroesByLevel[existingHero.level] -= 1;
     userStats.rewardsPerZone[zoneNum] += amount;
     userStats.totalRewardsAmount += amount;
     if (weaponShardId > 0n) {

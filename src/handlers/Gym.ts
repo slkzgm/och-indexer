@@ -1,11 +1,8 @@
 import {
   Gym,
-  Gym_ChaosUpgraded,
-  Gym_NormalUpgraded,
-  Gym_UnknownUpgraded,
-  Gym_UpgradeRequested,
 } from "generated";
 import { handleHeroTraining } from "../helpers/training";
+import { getOrCreateHeroesGlobalStats } from "../helpers/stats";
 
 /**
  * Handler pour Gym.ChaosUpgraded
@@ -66,6 +63,25 @@ Gym.ChaosUpgraded.handlerWithLoader({
         equippedWeapon // Passe l'arme pré-chargée
       )
     ]);
+
+    // Mise à jour des stats du player après le training
+    const updatedHero = await context.Hero.get(heroId.toString());
+    if (updatedHero) {
+      const player = await context.Player.get(updatedHero.owner_id);
+      if (player && Number(oldLevel) !== updatedHero.level) {
+        player.heroesByLevel[Number(oldLevel)] -= 1;
+        player.heroesByLevel[updatedHero.level] += 1;
+        context.Player.set(player);
+      }
+      // Mise à jour des stats globales
+      if (Number(oldLevel) !== updatedHero.level) {
+        const global = await getOrCreateHeroesGlobalStats(context);
+        global.heroesByLevel[Number(oldLevel)] -= 1;
+        global.heroesByLevel[updatedHero.level] += 1;
+        global.lastUpdated = timestamp;
+        context.HeroesGlobalStats.set(global);
+      }
+    }
   },
 });
 
@@ -125,6 +141,25 @@ Gym.NormalUpgraded.handlerWithLoader({
         equippedWeapon
       )
     ]);
+
+    // Mise à jour des stats du player après le training
+    const updatedHero = await context.Hero.get(heroId.toString());
+    if (updatedHero) {
+      const player = await context.Player.get(updatedHero.owner_id);
+      if (player && Number(oldLevel) !== updatedHero.level) {
+        player.heroesByLevel[Number(oldLevel)] -= 1;
+        player.heroesByLevel[updatedHero.level] += 1;
+        context.Player.set(player);
+      }
+      // Mise à jour des stats globales
+      if (Number(oldLevel) !== updatedHero.level) {
+        const global = await getOrCreateHeroesGlobalStats(context);
+        global.heroesByLevel[Number(oldLevel)] -= 1;
+        global.heroesByLevel[updatedHero.level] += 1;
+        global.lastUpdated = timestamp;
+        context.HeroesGlobalStats.set(global);
+      }
+    }
   },
 });
 
@@ -185,6 +220,25 @@ Gym.UnknownUpgraded.handlerWithLoader({
         equippedWeapon
       )
     ]);
+
+    // Mise à jour des stats du player après le training
+    const updatedHero = await context.Hero.get(heroId.toString());
+    if (updatedHero) {
+      const player = await context.Player.get(updatedHero.owner_id);
+      if (player && Number(oldLevel) !== updatedHero.level) {
+        player.heroesByLevel[Number(oldLevel)] -= 1;
+        player.heroesByLevel[updatedHero.level] += 1;
+        context.Player.set(player);
+      }
+      // Mise à jour des stats globales
+      if (Number(oldLevel) !== updatedHero.level) {
+        const global = await getOrCreateHeroesGlobalStats(context);
+        global.heroesByLevel[Number(oldLevel)] -= 1;
+        global.heroesByLevel[updatedHero.level] += 1;
+        global.lastUpdated = timestamp;
+        context.HeroesGlobalStats.set(global);
+      }
+    }
   },
 });
 

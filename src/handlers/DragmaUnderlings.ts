@@ -56,12 +56,16 @@ DragmaUnderlings.Staked.handlerWithLoader({
         if (!existingHero.staked) {
           const global = await getOrCreateDragmaGlobalStats(context);
           global.totalStakedHeroes += 1;
+          global.currentStakedHeroes += 1;
+          global.heroesByLevel[existingHero.level] += 1;
           global.lastUpdated = timestamp;
           context.DragmaGlobalStats.set(global);
 
           const userStats = await getOrCreateDragmaUserStats(context, user.toLowerCase());
           userStats.totalStakes += 1;
           userStats.stakedHeroes += 1;
+          userStats.currentStakedHeroes += 1;
+          userStats.heroesByLevel[existingHero.level] += 1;
           context.DragmaUserStats.set(userStats);
         }
         await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_STAKE', { heroId: heroId.toString() }, heroId.toString(), 'DragmaUnderlings', 'DRAGMA_UNDERLINGS');
@@ -126,6 +130,8 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
           const global = await getOrCreateDragmaGlobalStats(context);
           global.totalUnstakedHeroes += 1;
           global.totalStakedHeroes -= 1;
+          global.currentStakedHeroes -= 1;
+          global.heroesByLevel[existingHero.level] -= 1;
           global.lastUpdated = timestamp;
           context.DragmaGlobalStats.set(global);
 
@@ -134,6 +140,8 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
           const newTotalUnstakes = prevCount + 1n; // Since we're incrementing after
           userStats.totalUnstakes = Number(newTotalUnstakes);
           userStats.stakedHeroes -= 1;
+          userStats.currentStakedHeroes -= 1;
+          userStats.heroesByLevel[existingHero.level] -= 1;
           const prevTotal = prevCount;
           userStats.averageStakingDuration = prevCount > 0n ? (userStats.averageStakingDuration * prevTotal + duration) / newTotalUnstakes : duration;
           context.DragmaUserStats.set(userStats);

@@ -447,6 +447,7 @@ type Player @entity {
   heroCount: Int! @default(value: "0") # Total number of heroes owned
   weaponCount: Int! @default(value: "0") # Total number of weapons owned
   stakedHeroCount: Int! @default(value: "0") # Number of currently staked heroes
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
 
   # Gacha token balances: [bronze, silver, gold, rainbow] - fixed order
   gachaBalances: [BigInt!]! @default(value: "[0, 0, 0, 0]")
@@ -633,31 +634,58 @@ enum StakingType {
 # STATS & METRICS ENTITIES
 # =============================================================================
 
-"""
-Agrégats globaux pour Dragma Underlings
-"""
 type DragmaGlobalStats @entity {
   id: ID! # Singleton: 'global'
   totalStakedHeroes: Int! @default(value: "0")
+  currentStakedHeroes: Int! @default(value: "0")
   totalUnstakedHeroes: Int! @default(value: "0")
   totalRewardsClaimed: BigInt! @default(value: "0")
   totalClaims: Int! @default(value: "0")
   averageClaimAmount: BigInt! @default(value: "0") # Calculé: totalRewards / totalClaims
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
   lastUpdated: BigInt! @default(value: "0")
 }
-
-"""
-Stats per user pour Dragma Underlings
-"""
 type DragmaUserStats @entity {
   id: Bytes! # User address
   stakedHeroes: Int! @default(value: "0")
+  currentStakedHeroes: Int! @default(value: "0")
   totalStakes: Int! @default(value: "0")
   totalUnstakes: Int! @default(value: "0")
   totalRewardsClaimed: BigInt! @default(value: "0")
   totalClaims: Int! @default(value: "0")
   averageStakingDuration: BigInt! @default(value: "0") # En secondes, moyenne
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
   player: Player! # Relation vers Player
+}
+type FishingGlobalStats @entity {
+  id: ID! # 'global'
+  totalHeroes: Int! @default(value: "0")
+  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0]") # [zone0,1,2]
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
+  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  totalRewardsAmount: BigInt! @default(value: "0")
+  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  totalShardsWon: Int! @default(value: "0")
+  shardsPerZone: [Int!]! @default(value: "[0,0,0]")
+  totalBonuses: Int! @default(value: "0")
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0]")
+  lastUpdated: BigInt! @default(value: "0")
+}
+type FishingUserStats @entity {
+  id: Bytes! # User address
+  totalHeroes: Int! @default(value: "0")
+  heroesPerZone: [Int!]! @default(value: "[0,0,0]")
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
+  totalFees: BigInt! @default(value: "0")
+  feesPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  totalRewardsAmount: BigInt! @default(value: "0")
+  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  totalShardsWon: Int! @default(value: "0")
+  shardsPerZone: [Int!]! @default(value: "[0,0,0]")
+  totalBonuses: Int! @default(value: "0")
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0]")
+  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0]")
+  player: Player!
 }
 
 """
@@ -675,29 +703,12 @@ type Activity @entity {
   stakingType: StakingType # Optionnel, pour différencier types/zones de staking
 }
 
-type FishingGlobalStats @entity {
+# Ajout d'une entité globale pour les stats des héros
+type HeroesGlobalStats @entity {
   id: ID! # 'global'
-  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0]") # [zone0,1,2]
-  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0]")
-  totalRewardsAmount: BigInt! @default(value: "0")
-  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
-  totalShardsWon: Int! @default(value: "0")
-  shardsPerZone: [Int!]! @default(value: "[0,0,0]")
-  totalBonuses: Int! @default(value: "0")
-  bonusesPerZone: [Int!]! @default(value: "[0,0,0]")
+  totalHeroes: Int! @default(value: "0") # Nombre total de héros existants
+  totalMinted: Int! @default(value: "0") # Cumulatif des héros mintés
+  totalBurned: Int! @default(value: "0") # Cumulatif des héros burnés
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution par level (0-100)
   lastUpdated: BigInt! @default(value: "0")
-}
-type FishingUserStats @entity {
-  id: Bytes! # User address
-  heroesPerZone: [Int!]! @default(value: "[0,0,0]")
-  totalFees: BigInt! @default(value: "0")
-  feesPerZone: [BigInt!]! @default(value: "[0,0,0]")
-  totalRewardsAmount: BigInt! @default(value: "0")
-  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
-  totalShardsWon: Int! @default(value: "0")
-  shardsPerZone: [Int!]! @default(value: "[0,0,0]")
-  totalBonuses: Int! @default(value: "0")
-  bonusesPerZone: [Int!]! @default(value: "[0,0,0]")
-  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0]")
-  player: Player!
 }

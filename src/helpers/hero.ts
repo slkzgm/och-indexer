@@ -1,6 +1,6 @@
 import { HERO_STAKING_CONTRACTS, ZERO_ADDRESS, S1_LEVELING_CONTRACT, S1_ENDGAME_CONTRACT } from "../constants/index";
-import { updatePlayerCounts } from "./player";
 import { getOrCreatePlayer, createHero } from "./entities";
+import { getOrCreateHeroesGlobalStats } from "./stats";
 
 /**
  * Gère la logique de transfert pour un Hero NFT.
@@ -34,7 +34,19 @@ export async function handleHeroTransfer(
     const hero = await context.Hero.get(heroId);
     if (hero) {
       // Décrémente le compteur du propriétaire
-      await updatePlayerCounts(context, hero.owner_id, { heroCount: -1 });
+      const player = await context.Player.get(hero.owner_id);
+      if (player) {
+        player.heroCount -= 1;
+        player.heroesByLevel[hero.level] -= 1;
+        context.Player.set(player);
+      }
+      // Mise à jour des stats globales
+      const global = await getOrCreateHeroesGlobalStats(context);
+      global.totalHeroes -= 1;
+      global.totalBurned += 1;
+      global.heroesByLevel[hero.level] -= 1;
+      global.lastUpdated = blockTimestamp || 0n;
+      context.HeroesGlobalStats.set(global);
       context.Hero.deleteUnsafe(heroId);
     }
     return;
@@ -54,7 +66,19 @@ export async function handleHeroTransfer(
     });
 
     // Incrémente le compteur du propriétaire
-    await updatePlayerCounts(context, to_lc, { heroCount: 1 });
+    const player = await context.Player.get(to_lc);
+    if (player) {
+      player.heroCount += 1;
+      player.heroesByLevel[1] += 1; // New heroes start at level 1
+      context.Player.set(player);
+    }
+    // Mise à jour des stats globales
+    const global = await getOrCreateHeroesGlobalStats(context);
+    global.totalHeroes += 1;
+    global.totalMinted += 1;
+    global.heroesByLevel[1] += 1;
+    global.lastUpdated = blockTimestamp || 0n;
+    context.HeroesGlobalStats.set(global);
     return;
   }
 
@@ -82,8 +106,22 @@ export async function handleHeroTransfer(
     } else {
       // Players différents : updates en parallèle
       await Promise.all([
-        updatePlayerCounts(context, oldOwnerId, { heroCount: -1 }),
-        updatePlayerCounts(context, to_lc, { heroCount: 1 })
+        (async () => {
+          const oldPlayer = await context.Player.get(oldOwnerId);
+          if (oldPlayer) {
+            oldPlayer.heroCount -= 1;
+            oldPlayer.heroesByLevel[hero.level] -= 1;
+            context.Player.set(oldPlayer);
+          }
+        })(),
+        (async () => {
+          const newPlayer = await context.Player.get(to_lc);
+          if (newPlayer) {
+            newPlayer.heroCount += 1;
+            newPlayer.heroesByLevel[hero.level] += 1;
+            context.Player.set(newPlayer);
+          }
+        })()
       ]);
     }
   }
