@@ -575,6 +575,7 @@ type WeaponRequest @entity {
   remixedWeaponIds: [BigInt!] # IDs of weapons that were burned/consumed
   remixRarity: Int # Target rarity for remix
   remixType: RemixType # Type of remix (normal/legendary)
+  remixCost: BigInt # Cost for remix requests
   
   # Request tracking
   expectedWeapons: Int! # Number of weapons expected to be generated
@@ -742,6 +743,32 @@ type GymUserStats @entity {
   chancesCountByType: [Int!]! @default(value: "[0,0,0]")
   totalSpent: BigInt! @default(value: "0")
   spentByType: [BigInt!]! @default(value: "[0,0,0]")
+  player: Player!
+}
+
+enum RemixOutcome {
+  FAIL # +0 tier
+  SUCCESS # +1 tier
+  PERFECT # +2 tier
+}
+
+type RemixGlobalStats @entity {
+  id: ID! # 'global'
+  totalRemixes: BigInt! @default(value: "0")
+  remixesByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]")
+  totalSpent: BigInt! @default(value: "0")
+  spentByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]")
+  outcomesByTypeAndRarity: [[[BigInt!]!]!]! @default(value: "[[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]]") 
+  lastUpdated: BigInt! @default(value: "0")
+}
+
+type RemixUserStats @entity {
+  id: Bytes! # User address
+  totalRemixes: BigInt! @default(value: "0")
+  remixesByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]")
+  totalSpent: BigInt! @default(value: "0")
+  spentByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]")
+  outcomesByTypeAndRarity: [[[BigInt!]!]!]! @default(value: "[[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]]") 
   player: Player!
 }
 

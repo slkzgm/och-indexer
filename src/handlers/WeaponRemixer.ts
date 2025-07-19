@@ -6,6 +6,8 @@ import {
 } from "generated";
 import { createWeaponRequest, getOrCreatePlayerOptimized, createWeapon } from "../helpers/entities";
 import { parseWeaponMetadata } from "../helpers/calculations";
+import { getOrCreateRemixGlobalStats, getOrCreateRemixUserStats } from "../helpers/entities";
+import { createActivity } from "../helpers/activity"; // Ajuster le chemin si nécessaire
 
 /**
  * Handler pour WeaponRemixer.WeaponMixRequested
@@ -55,6 +57,7 @@ WeaponRemixer.WeaponMixRequested.handlerWithLoader({
         remixedWeaponIds: weaponIds,
         remixRarity: Number(rarity),
         remixType: "NORMAL",
+        remixCost: cost,
       })
     ]);
   },
@@ -106,6 +109,7 @@ WeaponRemixer.LegendaryMixRequested.handlerWithLoader({
         remixedWeaponIds: weaponIds,
         remixRarity: Number(rarity),
         remixType: "LEGENDARY",
+        remixCost: cost,
       })
     ]);
   },
@@ -192,5 +196,59 @@ WeaponRemixer.WeaponGenerated.handlerWithLoader({
     }
 
     await Promise.all(operations);
+
+    // Logique stats et activity
+    const generatedWeapon = await context.Weapon.get(weaponId.toString());
+
+    if (wr && generatedWeapon) {
+      const numWeapons = wr.remixedWeaponIds.length;
+      if (numWeapons < 2 || numWeapons > 5) return; // Safeguard
+      const numIndex = numWeapons - 2;
+      const sourceRarity = wr.remixRarity;
+      const outcome = generatedWeapon.rarity - sourceRarity;
+      if (outcome < 0 || outcome > 2) return; // Invalid outcome
+      const cost = wr.remixCost || BigInt(0);
+      const userAddr = user.toLowerCase();
+
+      // Global stats
+      const global: any = await getOrCreateRemixGlobalStats(context);
+      global.totalRemixes = global.totalRemixes + BigInt(1);
+      global.remixesByNumWeapons[numIndex] = global.remixesByNumWeapons[numIndex] + BigInt(1);
+      global.totalSpent = global.totalSpent + cost;
+      global.spentByNumWeapons[numIndex] = global.spentByNumWeapons[numIndex] + cost;
+      global.outcomesByTypeAndRarity[numIndex][sourceRarity][outcome] = global.outcomesByTypeAndRarity[numIndex][sourceRarity][outcome] + BigInt(1);
+      global.lastUpdated = timestamp;
+      context.RemixGlobalStats.set(global);
+
+      // User stats
+      const userStats: any = await getOrCreateRemixUserStats(context, userAddr);
+      userStats.totalRemixes = userStats.totalRemixes + BigInt(1);
+      userStats.remixesByNumWeapons[numIndex] = userStats.remixesByNumWeapons[numIndex] + BigInt(1);
+      userStats.totalSpent = userStats.totalSpent + cost;
+      userStats.spentByNumWeapons[numIndex] = userStats.spentByNumWeapons[numIndex] + cost;
+      userStats.outcomesByTypeAndRarity[numIndex][sourceRarity][outcome] = userStats.outcomesByTypeAndRarity[numIndex][sourceRarity][outcome] + BigInt(1);
+      context.RemixUserStats.set(userStats);
+
+      // Activity
+      const details = JSON.stringify({
+        numWeapons: numWeapons,
+        sourceRarity: sourceRarity,
+        outcome: outcome,
+        cost: cost.toString(),
+        generatedWeaponId: weaponId.toString(),
+        remixedWeaponIds: wr.remixedWeaponIds.map((id: bigint) => id.toString()),
+        remixType: wr.remixType // Ajouter le type de remix
+      });
+      await createActivity(
+        context,
+        `${event.chainId}_${event.block.number}_${event.logIndex}`,
+        timestamp,
+        user,
+        'REMIX',
+        details,
+        undefined, // Pas de heroId
+        'WeaponRemixer'
+      );
+    }
   },
 });

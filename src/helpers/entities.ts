@@ -326,6 +326,7 @@ export function createWeaponRequest(
     remixedWeaponIds?: bigint[];
     remixRarity?: number;
     remixType?: string;
+    remixCost?: bigint;
   }
 ) {
   context.WeaponRequest.set({
@@ -346,6 +347,7 @@ export function createWeaponRequest(
     remixedWeaponIds: requestData.remixedWeaponIds || undefined,
     remixRarity: requestData.remixRarity ?? undefined,
     remixType: requestData.remixType || undefined,
+    remixCost: requestData.remixCost || undefined,
   });
 }
 
@@ -379,4 +381,39 @@ export async function setHeroFishingStaked(
   
   context.Hero.set(updatedHero);
   return updatedHero;
+}
+
+export async function getOrCreateRemixGlobalStats(context: any) {
+  let global = await context.RemixGlobalStats.get('global');
+  if (!global) {
+    global = {
+      id: 'global',
+      totalRemixes: BigInt(0),
+      remixesByNumWeapons: [BigInt(0), BigInt(0), BigInt(0), BigInt(0)],
+      totalSpent: BigInt(0),
+      spentByNumWeapons: [BigInt(0), BigInt(0), BigInt(0), BigInt(0)],
+      outcomesByTypeAndRarity: Array.from({length: 4}, () => Array.from({length: 6}, () => [BigInt(0), BigInt(0), BigInt(0)])),
+      lastUpdated: BigInt(0),
+    };
+    context.RemixGlobalStats.set(global);
+  }
+  return global;
+}
+
+export async function getOrCreateRemixUserStats(context: any, userId: string) {
+  let userStats = await context.RemixUserStats.get(userId);
+  if (!userStats) {
+    const player = await context.Player.get(userId) || await getOrCreatePlayerOptimized(context, userId);
+    userStats = {
+      id: userId,
+      totalRemixes: BigInt(0),
+      remixesByNumWeapons: [BigInt(0), BigInt(0), BigInt(0), BigInt(0)],
+      totalSpent: BigInt(0),
+      spentByNumWeapons: [BigInt(0), BigInt(0), BigInt(0), BigInt(0)],
+      outcomesByTypeAndRarity: Array.from({length: 4}, () => Array.from({length: 6}, () => [BigInt(0), BigInt(0), BigInt(0)])),
+      player_id: userId,
+    };
+    context.RemixUserStats.set(userStats);
+  }
+  return userStats;
 }
