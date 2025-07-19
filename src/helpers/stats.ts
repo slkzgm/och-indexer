@@ -98,4 +98,52 @@ export async function getOrCreateHeroesGlobalStats(context: any) {
   }
   return stats;
 }
+
+export async function getOrCreateGymGlobalStats(context: any) {
+  let stats = await context.GymGlobalStats.get('global');
+  if (!stats) {
+    stats = {
+      id: 'global',
+      totalAttemptedTrainings: 0,
+      totalSuccessfulTrainings: 0,
+      totalFailedTrainings: 0,
+      attemptedByType: [0,0,0],
+      successfulByType: [0,0,0],
+      failedByType: [0,0,0],
+      totalOutcomeSumByType: [0n,0n,0n],
+      outcomesCountByType: [Array(11).fill(0), Array(11).fill(0), Array(11).fill(0)],
+      sumOfChancesByType: [Array(11).fill(0n), Array(11).fill(0n), Array(11).fill(0n)],
+      chancesCountByType: [0,0,0],
+      totalSpent: 0n,
+      spentByType: [0n,0n,0n],
+      lastUpdated: 0n,
+    };
+    await context.GymGlobalStats.set(stats);
+  }
+  return stats;
+}
+
+export async function getOrCreateGymUserStats(context: any, userId: string) {
+  let stats = await context.GymUserStats.get(userId);
+  if (!stats) {
+    stats = {
+      id: userId,
+      totalAttemptedTrainings: 0,
+      totalSuccessfulTrainings: 0,
+      totalFailedTrainings: 0,
+      attemptedByType: [0,0,0],
+      successfulByType: [0,0,0],
+      failedByType: [0,0,0],
+      totalOutcomeSumByType: [0n,0n,0n],
+      outcomesCountByType: [Array(11).fill(0), Array(11).fill(0), Array(11).fill(0)],
+      sumOfChancesByType: [Array(11).fill(0n), Array(11).fill(0n), Array(11).fill(0n)],
+      chancesCountByType: [0,0,0],
+      totalSpent: 0n,
+      spentByType: [0n,0n,0n],
+      player_id: userId,
+    };
+    await context.GymUserStats.set(stats);
+  }
+  return stats;
+}
 // Add more as needed for other contracts 

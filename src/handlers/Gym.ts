@@ -3,6 +3,9 @@ import {
 } from "generated";
 import { handleHeroTraining } from "../helpers/training";
 import { getOrCreateHeroesGlobalStats } from "../helpers/stats";
+import { getOrCreateGymGlobalStats, getOrCreateGymUserStats } from "../helpers/stats";
+import { createActivity } from "../helpers/activity";
+import { calculateTrainingCost } from "../helpers/calculations";
 
 /**
  * Handler pour Gym.ChaosUpgraded
@@ -81,7 +84,126 @@ Gym.ChaosUpgraded.handlerWithLoader({
         global.lastUpdated = timestamp;
         context.HeroesGlobalStats.set(global);
       }
+      // Calcul de l'outcome et détermination du succès/échec
+      const outcome = Number(newLevel) - Number(oldLevel);
+      const isSuccess = outcome > 0;
+      const trainingType = 1; // Chaos = 1
+      
+      // Calcul du coût du training
+      const trainingCost = calculateTrainingCost(Number(oldLevel));
+      
+      // Mise à jour des stats de training (type 1 = Chaos)
+      const [gymGlobal, gymUser] = await Promise.all([
+        getOrCreateGymGlobalStats(context),
+        getOrCreateGymUserStats(context, updatedHero.owner_id)
+      ]);
+      
+      // Stats globales
+      gymGlobal.totalAttemptedTrainings += 1;
+      gymGlobal.attemptedByType[trainingType] += 1;
+      gymGlobal.totalSpent += trainingCost;
+      gymGlobal.spentByType[trainingType] += trainingCost;
+      if (isSuccess) {
+        gymGlobal.totalSuccessfulTrainings += 1;
+        gymGlobal.successfulByType[trainingType] += 1;
+      } else {
+        gymGlobal.totalFailedTrainings += 1;
+        gymGlobal.failedByType[trainingType] += 1;
+      }
+      
+      // Calcul des outcomes (Chaos: -5 à +5, donc index 0-10)
+      const outcomeIndex = outcome + 5; // -5 devient 0, +5 devient 10
+      if (outcomeIndex >= 0 && outcomeIndex < 11) {
+        gymGlobal.outcomesCountByType[trainingType][outcomeIndex] += 1;
+        gymGlobal.totalOutcomeSumByType[trainingType] += BigInt(outcome);
+      }
+      
+      // Calcul des chances moyennes
+      if (chances && chances.length > 0) {
+        gymGlobal.sumOfChancesByType[trainingType] = gymGlobal.sumOfChancesByType[trainingType].map((val: bigint, idx: number) => 
+          idx < chances.length ? val + chances[idx] : val
+        );
+        gymGlobal.chancesCountByType[trainingType] += 1;
+      }
+      
+      gymGlobal.lastUpdated = timestamp;
+      context.GymGlobalStats.set(gymGlobal);
+
+      // Stats utilisateur
+      gymUser.totalAttemptedTrainings += 1;
+      gymUser.attemptedByType[trainingType] += 1;
+      gymUser.totalSpent += trainingCost;
+      gymUser.spentByType[trainingType] += trainingCost;
+      if (isSuccess) {
+        gymUser.totalSuccessfulTrainings += 1;
+        gymUser.successfulByType[trainingType] += 1;
+      } else {
+        gymUser.totalFailedTrainings += 1;
+        gymUser.failedByType[trainingType] += 1;
+      }
+      
+      // Calcul des outcomes pour l'utilisateur
+      if (outcomeIndex >= 0 && outcomeIndex < 11) {
+        gymUser.outcomesCountByType[trainingType][outcomeIndex] += 1;
+        gymUser.totalOutcomeSumByType[trainingType] += BigInt(outcome);
+      }
+      
+      // Calcul des chances moyennes pour l'utilisateur
+      if (chances && chances.length > 0) {
+        gymUser.sumOfChancesByType[trainingType] = gymUser.sumOfChancesByType[trainingType].map((val: bigint, idx: number) => 
+          idx < chances.length ? val + chances[idx] : val
+        );
+        gymUser.chancesCountByType[trainingType] += 1;
+      }
+      
+      context.GymUserStats.set(gymUser);
+
+      // Mise à jour du hero
+      const heroUpdates = {
+        ...updatedHero,
+        totalAttemptedTrainings: updatedHero.totalAttemptedTrainings + 1,
+        totalTrainingCost: updatedHero.totalTrainingCost + trainingCost,
+        attemptedByType: updatedHero.attemptedByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val),
+        spentByType: updatedHero.spentByType.map((val: bigint, idx: number) => idx === trainingType ? val + trainingCost : val)
+      };
+      
+      if (isSuccess) {
+        heroUpdates.totalSuccessfulTrainings = updatedHero.totalSuccessfulTrainings + 1;
+        heroUpdates.successfulByType = updatedHero.successfulByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val);
+      } else {
+        heroUpdates.totalFailedTrainings = updatedHero.totalFailedTrainings + 1;
+        heroUpdates.failedByType = updatedHero.failedByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val);
+      }
+      
+      // Calcul des outcomes pour le hero
+      if (outcomeIndex >= 0 && outcomeIndex < 11) {
+        heroUpdates.outcomesCountByType = updatedHero.outcomesCountByType.map((typeArray: number[], typeIdx: number) => 
+          typeIdx === trainingType 
+            ? typeArray.map((val: number, idx: number) => idx === outcomeIndex ? val + 1 : val)
+            : typeArray
+        );
+        heroUpdates.totalOutcomeSumByType = updatedHero.totalOutcomeSumByType.map((val: bigint, idx: number) => 
+          idx === trainingType ? val + BigInt(outcome) : val
+        );
+      }
+      
+      // Calcul des chances moyennes pour le hero
+      if (chances && chances.length > 0) {
+        heroUpdates.sumOfChancesByType = updatedHero.sumOfChancesByType.map((typeArray: bigint[], typeIdx: number) => 
+          typeIdx === trainingType 
+            ? typeArray.map((val: bigint, idx: number) => idx < chances.length ? val + chances[idx] : val)
+            : typeArray
+        );
+        heroUpdates.chancesCountByType = updatedHero.chancesCountByType.map((val: number, idx: number) => 
+          idx === trainingType ? val + 1 : val
+        );
+      }
+      
+      context.Hero.set(heroUpdates);
     }
+    // Create activity
+    const activityId = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+    await createActivity(context, activityId, timestamp, owner, 'TRAINING_UPGRADE', {type: 'Chaos', oldLevel: oldLevel.toString(), newLevel: newLevel.toString(), result: (Number(newLevel) - Number(oldLevel)).toString(), outcome: 'Success', chances: chances.map((c: bigint) => c.toString())}, heroId.toString(), 'Gym', undefined);
   },
 });
 
@@ -159,7 +281,92 @@ Gym.NormalUpgraded.handlerWithLoader({
         global.lastUpdated = timestamp;
         context.HeroesGlobalStats.set(global);
       }
+      // Calcul de l'outcome et détermination du succès/échec
+      const outcome = Number(newLevel) - Number(oldLevel);
+      const isSuccess = outcome > 0;
+      const trainingType = 0; // Normal = 0
+      
+      // Calcul du coût du training
+      const trainingCost = calculateTrainingCost(Number(oldLevel));
+      
+      // Mise à jour des stats de training (type 0 = Normal)
+      const [gymGlobal, gymUser] = await Promise.all([
+        getOrCreateGymGlobalStats(context),
+        getOrCreateGymUserStats(context, updatedHero.owner_id)
+      ]);
+      
+      // Stats globales
+      gymGlobal.totalAttemptedTrainings += 1;
+      gymGlobal.attemptedByType[trainingType] += 1;
+      gymGlobal.totalSpent += trainingCost;
+      gymGlobal.spentByType[trainingType] += trainingCost;
+      if (isSuccess) {
+        gymGlobal.totalSuccessfulTrainings += 1;
+        gymGlobal.successfulByType[trainingType] += 1;
+      } else {
+        gymGlobal.totalFailedTrainings += 1;
+        gymGlobal.failedByType[trainingType] += 1;
+      }
+      
+      // Calcul des outcomes (Normal: +1 seulement, donc index 1)
+      const outcomeIndex = 1; // Normal training donne toujours +1
+      gymGlobal.outcomesCountByType[trainingType][outcomeIndex] += 1;
+      gymGlobal.totalOutcomeSumByType[trainingType] += BigInt(outcome);
+      
+      gymGlobal.lastUpdated = timestamp;
+      context.GymGlobalStats.set(gymGlobal);
+
+      // Stats utilisateur
+      gymUser.totalAttemptedTrainings += 1;
+      gymUser.attemptedByType[trainingType] += 1;
+      gymUser.totalSpent += trainingCost;
+      gymUser.spentByType[trainingType] += trainingCost;
+      if (isSuccess) {
+        gymUser.totalSuccessfulTrainings += 1;
+        gymUser.successfulByType[trainingType] += 1;
+      } else {
+        gymUser.totalFailedTrainings += 1;
+        gymUser.failedByType[trainingType] += 1;
+      }
+      
+      // Calcul des outcomes pour l'utilisateur
+      gymUser.outcomesCountByType[trainingType][outcomeIndex] += 1;
+      gymUser.totalOutcomeSumByType[trainingType] += BigInt(outcome);
+      
+      context.GymUserStats.set(gymUser);
+
+      // Mise à jour du hero
+      const heroUpdates = {
+        ...updatedHero,
+        totalAttemptedTrainings: updatedHero.totalAttemptedTrainings + 1,
+        totalTrainingCost: updatedHero.totalTrainingCost + trainingCost,
+        attemptedByType: updatedHero.attemptedByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val),
+        spentByType: updatedHero.spentByType.map((val: bigint, idx: number) => idx === trainingType ? val + trainingCost : val)
+      };
+      
+      if (isSuccess) {
+        heroUpdates.totalSuccessfulTrainings = updatedHero.totalSuccessfulTrainings + 1;
+        heroUpdates.successfulByType = updatedHero.successfulByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val);
+      } else {
+        heroUpdates.totalFailedTrainings = updatedHero.totalFailedTrainings + 1;
+        heroUpdates.failedByType = updatedHero.failedByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val);
+      }
+      
+      // Calcul des outcomes pour le hero
+      heroUpdates.outcomesCountByType = updatedHero.outcomesCountByType.map((typeArray: number[], typeIdx: number) => 
+        typeIdx === trainingType 
+          ? typeArray.map((val: number, idx: number) => idx === outcomeIndex ? val + 1 : val)
+          : typeArray
+      );
+      heroUpdates.totalOutcomeSumByType = updatedHero.totalOutcomeSumByType.map((val: bigint, idx: number) => 
+        idx === trainingType ? val + BigInt(outcome) : val
+      );
+      
+      context.Hero.set(heroUpdates);
     }
+    // Create activity
+    const activityId = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+    await createActivity(context, activityId, timestamp, owner, 'TRAINING_UPGRADE', {type: 'Normal', oldLevel: oldLevel.toString(), newLevel: newLevel.toString(), result: (Number(newLevel) - Number(oldLevel)).toString(), outcome: 'Success'}, heroId.toString(), 'Gym', undefined);
   },
 });
 
@@ -238,7 +445,126 @@ Gym.UnknownUpgraded.handlerWithLoader({
         global.lastUpdated = timestamp;
         context.HeroesGlobalStats.set(global);
       }
+      // Calcul de l'outcome et détermination du succès/échec
+      const outcome = Number(newLevel) - Number(oldLevel);
+      const isSuccess = outcome > 0;
+      const trainingType = 2; // Unknown = 2
+      
+      // Calcul du coût du training
+      const trainingCost = calculateTrainingCost(Number(oldLevel));
+      
+      // Mise à jour des stats de training (type 2 = Unknown)
+      const [gymGlobal, gymUser] = await Promise.all([
+        getOrCreateGymGlobalStats(context),
+        getOrCreateGymUserStats(context, updatedHero.owner_id)
+      ]);
+      
+      // Stats globales
+      gymGlobal.totalAttemptedTrainings += 1;
+      gymGlobal.attemptedByType[trainingType] += 1;
+      gymGlobal.totalSpent += trainingCost;
+      gymGlobal.spentByType[trainingType] += trainingCost;
+      if (isSuccess) {
+        gymGlobal.totalSuccessfulTrainings += 1;
+        gymGlobal.successfulByType[trainingType] += 1;
+      } else {
+        gymGlobal.totalFailedTrainings += 1;
+        gymGlobal.failedByType[trainingType] += 1;
+      }
+      
+      // Calcul des outcomes (Unknown: -1 à +3, donc index 0-4)
+      const outcomeIndex = outcome + 1; // -1 devient 0, +3 devient 4
+      if (outcomeIndex >= 0 && outcomeIndex < 5) {
+        gymGlobal.outcomesCountByType[trainingType][outcomeIndex] += 1;
+        gymGlobal.totalOutcomeSumByType[trainingType] += BigInt(outcome);
+      }
+      
+      // Calcul des chances moyennes
+      if (chances && chances.length > 0) {
+        gymGlobal.sumOfChancesByType[trainingType] = gymGlobal.sumOfChancesByType[trainingType].map((val: bigint, idx: number) => 
+          idx < chances.length ? val + chances[idx] : val
+        );
+        gymGlobal.chancesCountByType[trainingType] += 1;
+      }
+      
+      gymGlobal.lastUpdated = timestamp;
+      context.GymGlobalStats.set(gymGlobal);
+
+      // Stats utilisateur
+      gymUser.totalAttemptedTrainings += 1;
+      gymUser.attemptedByType[trainingType] += 1;
+      gymUser.totalSpent += trainingCost;
+      gymUser.spentByType[trainingType] += trainingCost;
+      if (isSuccess) {
+        gymUser.totalSuccessfulTrainings += 1;
+        gymUser.successfulByType[trainingType] += 1;
+      } else {
+        gymUser.totalFailedTrainings += 1;
+        gymUser.failedByType[trainingType] += 1;
+      }
+      
+      // Calcul des outcomes pour l'utilisateur
+      if (outcomeIndex >= 0 && outcomeIndex < 5) {
+        gymUser.outcomesCountByType[trainingType][outcomeIndex] += 1;
+        gymUser.totalOutcomeSumByType[trainingType] += BigInt(outcome);
+      }
+      
+      // Calcul des chances moyennes pour l'utilisateur
+      if (chances && chances.length > 0) {
+        gymUser.sumOfChancesByType[trainingType] = gymUser.sumOfChancesByType[trainingType].map((val: bigint, idx: number) => 
+          idx < chances.length ? val + chances[idx] : val
+        );
+        gymUser.chancesCountByType[trainingType] += 1;
+      }
+      
+      context.GymUserStats.set(gymUser);
+
+      // Mise à jour du hero
+      const heroUpdates = {
+        ...updatedHero,
+        totalAttemptedTrainings: updatedHero.totalAttemptedTrainings + 1,
+        totalTrainingCost: updatedHero.totalTrainingCost + trainingCost,
+        attemptedByType: updatedHero.attemptedByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val),
+        spentByType: updatedHero.spentByType.map((val: bigint, idx: number) => idx === trainingType ? val + trainingCost : val)
+      };
+      
+      if (isSuccess) {
+        heroUpdates.totalSuccessfulTrainings = updatedHero.totalSuccessfulTrainings + 1;
+        heroUpdates.successfulByType = updatedHero.successfulByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val);
+      } else {
+        heroUpdates.totalFailedTrainings = updatedHero.totalFailedTrainings + 1;
+        heroUpdates.failedByType = updatedHero.failedByType.map((val: number, idx: number) => idx === trainingType ? val + 1 : val);
+      }
+      
+      // Calcul des outcomes pour le hero
+      if (outcomeIndex >= 0 && outcomeIndex < 5) {
+        heroUpdates.outcomesCountByType = updatedHero.outcomesCountByType.map((typeArray: number[], typeIdx: number) => 
+          typeIdx === trainingType 
+            ? typeArray.map((val: number, idx: number) => idx === outcomeIndex ? val + 1 : val)
+            : typeArray
+        );
+        heroUpdates.totalOutcomeSumByType = updatedHero.totalOutcomeSumByType.map((val: bigint, idx: number) => 
+          idx === trainingType ? val + BigInt(outcome) : val
+        );
+      }
+      
+      // Calcul des chances moyennes pour le hero
+      if (chances && chances.length > 0) {
+        heroUpdates.sumOfChancesByType = updatedHero.sumOfChancesByType.map((typeArray: bigint[], typeIdx: number) => 
+          typeIdx === trainingType 
+            ? typeArray.map((val: bigint, idx: number) => idx < chances.length ? val + chances[idx] : val)
+            : typeArray
+        );
+        heroUpdates.chancesCountByType = updatedHero.chancesCountByType.map((val: number, idx: number) => 
+          idx === trainingType ? val + 1 : val
+        );
+      }
+      
+      context.Hero.set(heroUpdates);
     }
+    // Create activity
+    const activityId = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+    await createActivity(context, activityId, timestamp, owner, 'TRAINING_UPGRADE', {type: 'Unknown', oldLevel: oldLevel.toString(), newLevel: newLevel.toString(), result: (Number(newLevel) - Number(oldLevel)).toString(), outcome: 'Success', chances: chances.map((c: bigint) => c.toString())}, heroId.toString(), 'Gym', undefined);
   },
 });
 
@@ -254,8 +580,9 @@ Gym.UpgradeRequested.handlerWithLoader({
 
   handler: async ({ event, context }: { event: any; context: any }) => {
     const { season, owner, heroId, levelUp, cost } = event.params;
+    const timestamp = BigInt(event.block.timestamp);
 
-    // Stocke l'événement brut - opération simple, pas de parallélisation nécessaire
+    // Stocke l'événement brut
     await context.Gym_UpgradeRequested.set({
       id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
       season,
@@ -265,7 +592,7 @@ Gym.UpgradeRequested.handlerWithLoader({
       cost,
     });
 
-    // Note: On ne fait rien d'autre ici car l'event Request ne confirme pas le succès
-    // Le vrai update se fait dans les handlers *Upgraded
+    // Note: On ne peut pas mettre à jour les stats par type ici car on ne sait pas encore quel type sera utilisé
+    // Les stats par type seront mises à jour dans les handlers Upgraded
   },
 }); 

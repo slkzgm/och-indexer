@@ -512,6 +512,20 @@ type Hero @entity {
   fishingBonusesPerZone: [Int!]! @default(value: "[0,0,0]")
   totalFishingSessions: Int! @default(value: "0") # Stakes in fishing
   fishingSessionsPerZone: [Int!]! @default(value: "[0,0,0]")
+  totalAttemptedTrainings: Int! @default(value: "0")
+  totalSuccessfulTrainings: Int! @default(value: "0")
+  totalFailedTrainings: Int! @default(value: "0")
+  attemptedByType: [Int!]! @default(value: "[0,0,0]")
+  successfulByType: [Int!]! @default(value: "[0,0,0]")
+  failedByType: [Int!]! @default(value: "[0,0,0]")
+  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]")
+  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
+  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
+  chancesCountByType: [Int!]! @default(value: "[0,0,0]")
+  totalSpent: BigInt! @default(value: "0")
+  spentByType: [BigInt!]! @default(value: "[0,0,0]")
+  totalTrainingCost: BigInt! @default(value: "0")
+  trainingCostByType: [BigInt!]! @default(value: "[0,0,0]")
 }
 
 # =============================================================================
@@ -630,6 +644,15 @@ enum StakingType {
   FISHING_SKEET_PIER # Fishing in Skeet Pier zone
 }
 
+"""
+Defines the different types of training methods available
+"""
+enum TrainingType {
+  NORMAL
+  CHAOS
+  UNKNOWN
+}
+
 # =============================================================================
 # STATS & METRICS ENTITIES
 # =============================================================================
@@ -688,6 +711,40 @@ type FishingUserStats @entity {
   player: Player!
 }
 
+type GymGlobalStats @entity {
+  id: ID! # 'global'
+  totalAttemptedTrainings: Int! @default(value: "0")
+  totalSuccessfulTrainings: Int! @default(value: "0")
+  totalFailedTrainings: Int! @default(value: "0")
+  attemptedByType: [Int!]! @default(value: "[0,0,0]")
+  successfulByType: [Int!]! @default(value: "[0,0,0]")
+  failedByType: [Int!]! @default(value: "[0,0,0]")
+  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]")
+  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
+  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
+  chancesCountByType: [Int!]! @default(value: "[0,0,0]")
+  totalSpent: BigInt! @default(value: "0")
+  spentByType: [BigInt!]! @default(value: "[0,0,0]")
+  lastUpdated: BigInt! @default(value: "0")
+}
+
+type GymUserStats @entity {
+  id: Bytes! # User address
+  totalAttemptedTrainings: Int! @default(value: "0")
+  totalSuccessfulTrainings: Int! @default(value: "0")
+  totalFailedTrainings: Int! @default(value: "0")
+  attemptedByType: [Int!]! @default(value: "[0,0,0]")
+  successfulByType: [Int!]! @default(value: "[0,0,0]")
+  failedByType: [Int!]! @default(value: "[0,0,0]")
+  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]")
+  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
+  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
+  chancesCountByType: [Int!]! @default(value: "[0,0,0]")
+  totalSpent: BigInt! @default(value: "0")
+  spentByType: [BigInt!]! @default(value: "[0,0,0]")
+  player: Player!
+}
+
 """
 Entité pour feed d'activité unifié (extensible à tous contrats)
 """
@@ -709,6 +766,6 @@ type HeroesGlobalStats @entity {
   totalHeroes: Int! @default(value: "0") # Nombre total de héros existants
   totalMinted: Int! @default(value: "0") # Cumulatif des héros mintés
   totalBurned: Int! @default(value: "0") # Cumulatif des héros burnés
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution par level (0-100)
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution par level (0-100)
   lastUpdated: BigInt! @default(value: "0")
 }
