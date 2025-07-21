@@ -195,11 +195,6 @@ DragmaUnderlings.Claimed.handlerWithLoader({
         amount,
       }),
       
-      // Met à jour le timestamp du dernier claim
-      context.Hero.set({
-        ...existingHero,
-        lastClaimTimestamp: timestamp,
-      }),
       (async () => {
         const global = await getOrCreateDragmaGlobalStats(context);
         global.totalRewardsClaimed += amount;
@@ -213,8 +208,10 @@ DragmaUnderlings.Claimed.handlerWithLoader({
         userStats.totalClaims += 1;
         context.DragmaUserStats.set(userStats);
 
+        // Mise à jour complète du hero en une seule fois
         context.Hero.set({
           ...existingHero,
+          lastClaimTimestamp: timestamp,
           totalRewardsClaimed: existingHero.totalRewardsClaimed + amount,
           totalClaims: existingHero.totalClaims + 1,
         });
