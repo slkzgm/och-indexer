@@ -540,52 +540,71 @@ type Dragma_WeaponSharpnessUpdated {
 Player entity representing a game user and their overall stats
 """
 type Player @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: Bytes! # Player's wallet address
+  balance: BigInt! # Player's token balance (in wei)
 
-  balance: BigInt! # Player's token balance
-
-  # Inventory counts
+  # =============================================================================
+  # INVENTORY COUNTS
+  # =============================================================================
   heroCount: Int! @default(value: "0") # Total number of heroes owned
   weaponCount: Int! @default(value: "0") # Total number of weapons owned
   stakedHeroCount: Int! @default(value: "0") # Number of currently staked heroes
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution by level (0-100)
 
+  # =============================================================================
+  # TOKEN BALANCES
+  # =============================================================================
   # Gacha token balances: [bronze, silver, gold, rainbow] - fixed order
   gachaBalances: [BigInt!]! @default(value: "[0, 0, 0, 0]")
   
   # Game items balances: [tokenId1, tokenId2, ..., tokenId21] - mapped to indices [0, 1, ..., 20]
   itemsBalances: [BigInt!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
   
-  # Total spending across all game activities
-  totalSpent: BigInt! @default(value: "0") # Total spent on training, fishing, remix, etc.
+  # =============================================================================
+  # ECONOMY TRACKING
+  # =============================================================================
+  totalSpent: BigInt! @default(value: "0") # Total spent across all game activities (training, fishing, remix, etc.)
 
-  # Relations
+  # =============================================================================
+  # RELATIONS
+  # =============================================================================
   heroes: [Hero!]! @derivedFrom(field: "owner") # All heroes owned by this player
   weapons: [Weapon!]! @derivedFrom(field: "owner") # All weapons owned by this player
 }
 
 """
-Hero entity representing a playable character NFT
+Hero entity representing a playable character NFT with progression, staking, and combat capabilities
 """
 type Hero @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: String! # Hero token ID
   owner: Player! # Player who owns this hero
   minter: Bytes! # Address that minted this hero
   mintedTimestamp: BigInt! # When this hero was minted
-
-  # Character progression
-  level: Int! @default(value: "1") # Current hero level
-  lastTrainingTimestamp: BigInt! @default(value: "0") # Last time hero was trained
-  nextTrainingCost: BigInt! @default(value: "0") # Cost for next training session
-  nextTrainingAvailable: BigInt! @default(value: "0") # When next training is available
-  
   revealed: Boolean! @default(value: false) # Whether hero attributes are revealed
 
-  # Equipment and combat stats
-  equippedWeapon: Weapon @oneToOne @index # Currently equipped weapon
-  damage: BigInt! @default(value: "0") # Total damage output
+  # =============================================================================
+  # CHARACTER PROGRESSION
+  # =============================================================================
+  level: Int! @default(value: "1") # Current hero level (1-100)
+  lastTrainingTimestamp: BigInt! @default(value: "0") # Last time hero was trained
+  nextTrainingCost: BigInt! @default(value: "0") # Cost for next training session
+  nextTrainingAvailable: BigInt! @default(value: "0") # When next training is available (24h cooldown)
 
-  # Rewards calculation system (all values in wei - 1e18)
+  # =============================================================================
+  # EQUIPMENT & COMBAT
+  # =============================================================================
+  equippedWeapon: Weapon @oneToOne @index # Currently equipped weapon
+  damage: BigInt! @default(value: "0") # Total damage output (level * weapon coefficient)
+
+  # =============================================================================
+  # REWARDS CALCULATION SYSTEM (all values in wei - 1e18)
+  # =============================================================================
   maxHeroPerDay: BigInt! @default(value: "0") # Maximum possible rewards per day
   baseHeroPerDay: BigInt! @default(value: "0") # Guaranteed 80% of max rewards
   bonusHeroPerDay: BigInt! @default(value: "0") # Current sharpness bonus (0-20% of max)
@@ -595,58 +614,77 @@ type Hero @entity {
   maxHeroPerHour: BigInt! @default(value: "0") # maxHeroPerDay / 24
   effectiveHeroPerHour: BigInt! @default(value: "0") # effectiveHeroPerDay / 24
 
-  # Staking system
+  # =============================================================================
+  # STAKING SYSTEM
+  # =============================================================================
   staked: Boolean! @default(value: false) # Whether hero is currently staked
   stakingType: StakingType # Type of staking (fishing, dragma, etc.)
   stakedTimestamp: BigInt! @default(value: "0") # When hero was staked
-  unstakeAvailableTimestamp: BigInt! @default(value: "0") # When hero can be unstaked
+  unstakeAvailableTimestamp: BigInt! @default(value: "0") # When hero can be unstaked (cooldown)
   lastClaimTimestamp: BigInt! @default(value: "0") # Last time rewards were claimed
-  totalRewardsClaimed: BigInt! @default(value: "0") # Total rewards claimed pour ce hero
-  totalStakingDuration: BigInt! @default(value: "0") # Durée totale de staking (en secondes, cumulée sur tous stakes)
-  totalStakes: Int! @default(value: "0") # Nombre total de stakes pour ce hero
-  totalUnstakes: Int! @default(value: "0") # Nombre total d'unstakes
-  totalClaims: Int! @default(value: "0") # Nombre total de claims
-  activities: [Activity!]! @derivedFrom(field: "hero") # Historique des activities liées à ce hero
-  totalFishingFees: BigInt! @default(value: "0")
-  totalFishingRewards: BigInt! @default(value: "0")
-  fishingRewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalFishingShards: Int! @default(value: "0")
-  fishingShardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  totalFishingBonuses: Int! @default(value: "0")
-  fishingBonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  totalFishingSessions: Int! @default(value: "0") # Stakes in fishing
-  fishingSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  
-  # Death and revival system
-  isDead: Boolean! @default(value: false) # Whether hero is currently dead
+  totalRewardsClaimed: BigInt! @default(value: "0") # Total rewards claimed for this hero
+  totalStakingDuration: BigInt! @default(value: "0") # Total staking duration in seconds (cumulative)
+  totalStakes: Int! @default(value: "0") # Total number of stakes for this hero
+  totalUnstakes: Int! @default(value: "0") # Total number of unstakes
+  totalClaims: Int! @default(value: "0") # Total number of claims
+
+  # =============================================================================
+  # FISHING ACTIVITY STATS
+  # =============================================================================
+  totalFishingFees: BigInt! @default(value: "0") # Total fees paid for fishing
+  totalFishingRewards: BigInt! @default(value: "0") # Total rewards earned from fishing
+  fishingRewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
+  totalFishingShards: Int! @default(value: "0") # Total weapon shards won
+  fishingShardsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Shards won per zone
+  totalFishingBonuses: Int! @default(value: "0") # Total bonus items won
+  fishingBonusesPerZone: [Int!]! @default(value: "[0,0,0,0]") # Bonuses won per zone
+  totalFishingSessions: Int! @default(value: "0") # Total fishing sessions
+  fishingSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Sessions per zone
+
+  # =============================================================================
+  # DEATH & REVIVAL SYSTEM
+  # =============================================================================
+  # General death/revival tracking
+  isDead: Boolean! @default(value: false) # Whether hero is currently dead (prevents staking/training)
   deathsCount: Int! @default(value: "0") # Total number of deaths
   revivalCount: Int! @default(value: "0") # Total number of revivals
   spentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
   
-  # Fishing-specific death/revival stats
+  # Contract-specific death/revival stats
   fishingDeathCount: Int! @default(value: "0") # Deaths in fishing
   fishingRevivalCount: Int! @default(value: "0") # Revivals in fishing
   fishingReviveSpent: BigInt! @default(value: "0") # Cost spent on fishing revivals
-  
-  # Dragma-specific death/revival stats
   dragmaDeathCount: Int! @default(value: "0") # Deaths in dragma
   dragmaRevivalCount: Int! @default(value: "0") # Revivals in dragma
   dragmaReviveSpent: BigInt! @default(value: "0") # Cost spent on dragma revivals
+
+  # =============================================================================
+  # TRAINING STATS
+  # =============================================================================
+  # Overall training statistics
+  totalAttemptedTrainings: Int! @default(value: "0") # Total training attempts
+  totalSuccessfulTrainings: Int! @default(value: "0") # Total successful trainings (level increased)
+  totalFailedTrainings: Int! @default(value: "0") # Total failed trainings (level unchanged)
   
-  totalAttemptedTrainings: Int! @default(value: "0")
-  totalSuccessfulTrainings: Int! @default(value: "0")
-  totalFailedTrainings: Int! @default(value: "0")
-  attemptedByType: [Int!]! @default(value: "[0,0,0]")
-  successfulByType: [Int!]! @default(value: "[0,0,0]")
-  failedByType: [Int!]! @default(value: "[0,0,0]")
-  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]")
-  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
-  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
-  chancesCountByType: [Int!]! @default(value: "[0,0,0]")
-  totalSpent: BigInt! @default(value: "0")
-  spentByType: [BigInt!]! @default(value: "[0,0,0]")
-  totalTrainingCost: BigInt! @default(value: "0")
-  trainingCostByType: [BigInt!]! @default(value: "[0,0,0]")
+  # Training statistics by type [NORMAL, CHAOS, UNKNOWN]
+  attemptedByType: [Int!]! @default(value: "[0,0,0]") # Attempts by training type
+  successfulByType: [Int!]! @default(value: "[0,0,0]") # Successes by training type
+  failedByType: [Int!]! @default(value: "[0,0,0]") # Failures by training type
+  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]") # Sum of level increases by type
+  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]") # Detailed outcome counts by type
+  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]") # Sum of chances by type
+  chancesCountByType: [Int!]! @default(value: "[0,0,0]") # Number of chance records by type
+  
+  # Training economy
+  totalSpent: BigInt! @default(value: "0") # Total cost spent on training
+  spentByType: [BigInt!]! @default(value: "[0,0,0]") # Costs by training type
+  totalTrainingCost: BigInt! @default(value: "0") # Total training cost
+  trainingCostByType: [BigInt!]! @default(value: "[0,0,0]") # Training costs by type
+
+  # =============================================================================
+  # RELATIONS
+  # =============================================================================
+  activities: [Activity!]! @derivedFrom(field: "hero") # Activity history for this hero
 }
 
 # =============================================================================
@@ -672,69 +710,89 @@ enum RemixType {
 }
 
 """
-Weapon request tracking entity for managing asynchronous weapon generation
+Weapon request tracking entity for managing asynchronous weapon generation from various sources
 """
 type WeaponRequest @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: String! # Request ID from blockchain event
-  
-  # Source and basic info
   source: WeaponSource! # Where this weapon request originated
   requester: Bytes! # Address that made the request
   timestamp: BigInt! # When request was made
   
-  # Gacha machine specific fields
+  # =============================================================================
+  # REQUEST TRACKING
+  # =============================================================================
+  expectedWeapons: Int! # Number of weapons expected to be generated
+  generatedWeapons: Int! @default(value: "0") # Counter of weapons actually generated
+  completed: Boolean! @default(value: false) # Whether request is fully completed
+  
+  # =============================================================================
+  # GACHA MACHINE SPECIFIC FIELDS
+  # =============================================================================
   gachaTokenId: BigInt # Gacha token ID used (for stats tracking)
   gachaQty: Int # Quantity requested from gacha
   
-  # Hero machine specific fields
+  # =============================================================================
+  # HERO MACHINE SPECIFIC FIELDS
+  # =============================================================================
   heroSlot: BigInt # Equipment slot for hero machine
   heroQty: Int # Quantity requested from hero machine
   heroCost: BigInt # Total cost paid
   heroCostPerWeapon: BigInt # Calculated cost per weapon (cost/qty)
   
-  # Remixer specific fields
+  # =============================================================================
+  # REMIXER SPECIFIC FIELDS
+  # =============================================================================
   remixedWeaponIds: [BigInt!] # IDs of weapons that were burned/consumed
   remixRarity: Int # Target rarity for remix
   remixType: RemixType # Type of remix (normal/legendary)
   remixCost: BigInt # Cost for remix requests
   
-  # Request tracking
-  expectedWeapons: Int! # Number of weapons expected to be generated
-  generatedWeapons: Int! @default(value: "0") # Counter of weapons actually generated
-  completed: Boolean! @default(value: false) # Whether request is fully completed
-  
-  # Relations
+  # =============================================================================
+  # RELATIONS
+  # =============================================================================
   generatedWeaponIds: [String!]! # IDs of weapons generated from this request
 }
 
 """
-Weapon entity representing a weapon NFT with all its attributes
+Weapon entity representing a weapon NFT with attributes, equipment status, and source tracking
 """
 type Weapon @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: String! # Weapon token ID
   owner: Player! # Player who owns this weapon
-  source: WeaponSource! # How this weapon was obtained
-  rarity: Int! # 0=COMMON, 1=UNCOMMON, 2=RARE, 3=EPIC, 4=HEROIC, 5=LEGENDARY, 6=MYTHIC
   minter: Bytes! # Address that minted this weapon
   mintedTimestamp: BigInt! # When this weapon was minted
 
-  # Equipment status
-  equipped: Boolean! @default(value: false) # Whether weapon is currently equipped
-  equippedHeroId: String # ID of hero that has this weapon equipped (null if not equipped)
-  equippedBy: [Hero!]! @derivedFrom(field: "equippedWeapon") # Hero relation
-
-  # Weapon attributes
+  # =============================================================================
+  # WEAPON ATTRIBUTES
+  # =============================================================================
+  source: WeaponSource! # How this weapon was obtained
+  rarity: Int! # 0=COMMON, 1=UNCOMMON, 2=RARE, 3=EPIC, 4=HEROIC, 5=LEGENDARY, 6=MYTHIC
   weaponType: Int! # Type/category of weapon
-  sharpness: Int! # Current sharpness level (affects damage)
+  sharpness: Int! # Current sharpness level (affects damage and reward bonus)
   maxSharpness: Int! # Maximum sharpness this weapon can achieve
   durability: Int! # Current durability (affects usage)
   maxDurability: Int! # Maximum durability this weapon can have
   broken: Boolean! @default(value: false) # Whether weapon is broken (0 durability)
 
-  # Source tracking for analytics
+  # =============================================================================
+  # EQUIPMENT STATUS
+  # =============================================================================
+  equipped: Boolean! @default(value: false) # Whether weapon is currently equipped
+  equippedHeroId: String # ID of hero that has this weapon equipped (null if not equipped)
+  equippedBy: [Hero!]! @derivedFrom(field: "equippedWeapon") # Hero relation
+
+  # =============================================================================
+  # SOURCE TRACKING FOR ANALYTICS
+  # =============================================================================
   requestId: String # Link to WeaponRequest (null for DIRECT_MINT)
   
-  # Gacha-specific tracking
+  # Gacha machine-specific tracking
   sourceGachaTokenId: BigInt # Gacha token ID used if source = GACHA_MACHINE
   
   # Hero machine-specific tracking
@@ -785,153 +843,275 @@ enum TrainingType {
 # =============================================================================
 
 type DragmaUnderlingsGlobalStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: ID! # Singleton: 'global'
-  totalStakedHeroes: Int! @default(value: "0")
-  currentStakedHeroes: Int! @default(value: "0")
-  totalUnstakedHeroes: Int! @default(value: "0")
-  totalRewardsClaimed: BigInt! @default(value: "0")
-  totalClaims: Int! @default(value: "0")
-  averageClaimAmount: BigInt! @default(value: "0") # Calculé: totalRewards / totalClaims
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
   lastUpdated: BigInt! @default(value: "0")
+  
+  # =============================================================================
+  # STAKING STATISTICS
+  # =============================================================================
+  totalStakedHeroes: Int! @default(value: "0") # Total heroes ever staked
+  currentStakedHeroes: Int! @default(value: "0") # Currently staked heroes
+  totalUnstakedHeroes: Int! @default(value: "0") # Total heroes ever unstaked
+  
+  # =============================================================================
+  # REWARDS STATISTICS
+  # =============================================================================
+  totalRewardsClaimed: BigInt! @default(value: "0") # Total rewards claimed globally
+  totalClaims: Int! @default(value: "0") # Total number of claim events
+  averageClaimAmount: BigInt! @default(value: "0") # Calculated: totalRewards / totalClaims
+  
+  # =============================================================================
+  # HERO DISTRIBUTION
+  # =============================================================================
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution by level (0-100)
 }
+
 type DragmaUnderlingsUserStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: Bytes! # User address
-  stakedHeroes: Int! @default(value: "0")
-  currentStakedHeroes: Int! @default(value: "0")
-  totalStakes: Int! @default(value: "0")
-  totalUnstakes: Int! @default(value: "0")
-  totalRewardsClaimed: BigInt! @default(value: "0")
-  totalClaims: Int! @default(value: "0")
-  averageStakingDuration: BigInt! @default(value: "0") # En secondes, moyenne
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
-  player: Player! # Relation vers Player
+  player: Player! # Relation to Player
+  
+  # =============================================================================
+  # STAKING STATISTICS
+  # =============================================================================
+  stakedHeroes: Int! @default(value: "0") # Total heroes staked by this user
+  currentStakedHeroes: Int! @default(value: "0") # Currently staked heroes
+  totalStakes: Int! @default(value: "0") # Total stake events
+  totalUnstakes: Int! @default(value: "0") # Total unstake events
+  
+  # =============================================================================
+  # REWARDS STATISTICS
+  # =============================================================================
+  totalRewardsClaimed: BigInt! @default(value: "0") # Total rewards claimed by this user
+  totalClaims: Int! @default(value: "0") # Total claim events
+  averageStakingDuration: BigInt! @default(value: "0") # Average staking duration in seconds
+  
+  # =============================================================================
+  # HERO DISTRIBUTION
+  # =============================================================================
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution by level (0-100)
 }
 
 type DragmaGlobalStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: ID! # 'global'
-  totalHeroes: Int! @default(value: "0")
-  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0,0]") # [zone0,1,2,3] - Tails, Legs, Torso, Head
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
-  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalRewardsAmount: BigInt! @default(value: "0")
+  lastUpdated: BigInt! @default(value: "0")
   
+  # =============================================================================
+  # HERO STATISTICS
+  # =============================================================================
+  totalHeroes: Int! @default(value: "0") # Total heroes ever staked for Dragma
+  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0,0]") # [TAILS, LEGS, TORSO, HEAD]
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution by level (0-100)
+  
+  # =============================================================================
+  # ECONOMY STATISTICS
+  # =============================================================================
+  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Total fees paid per zone
+  totalRewardsAmount: BigInt! @default(value: "0") # Total rewards earned
+  
+  # =============================================================================
+  # REWARDS TRACKING
+  # =============================================================================
   # Rewards per zone: [zone0, zone1, zone2, zone3] × [primary, secondary1, secondary2, secondary3, tertiary]
   rewardsPerZone: [[Int!]!]! @default(value: "[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]")
+  totalShardsWon: Int! @default(value: "0") # Total weapon shards won
+  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Shards won per zone
+  totalBonuses: Int! @default(value: "0") # Total bonus items won
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]") # Bonuses won per zone
   
-  totalShardsWon: Int! @default(value: "0")
-  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  totalBonuses: Int! @default(value: "0")
-  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  
-  # Death and revival stats
+  # =============================================================================
+  # DEATH & REVIVAL STATISTICS
+  # =============================================================================
   totalDeaths: Int! @default(value: "0") # Total number of hero deaths
   totalRevivals: Int! @default(value: "0") # Total number of hero revivals
   totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
-  
-  lastUpdated: BigInt! @default(value: "0")
 }
 
 type DragmaUserStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: Bytes! # User address
-  totalHeroes: Int! @default(value: "0")
-  heroesPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
-  totalFees: BigInt! @default(value: "0")
-  feesPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalRewardsAmount: BigInt! @default(value: "0")
+  player: Player! # Relation to Player
   
+  # =============================================================================
+  # HERO STATISTICS
+  # =============================================================================
+  totalHeroes: Int! @default(value: "0") # Total heroes staked by this user
+  heroesPerZone: [Int!]! @default(value: "[0,0,0,0]") # [TAILS, LEGS, TORSO, HEAD]
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution by level (0-100)
+  
+  # =============================================================================
+  # ECONOMY STATISTICS
+  # =============================================================================
+  totalFees: BigInt! @default(value: "0") # Total fees paid by this user
+  feesPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Fees paid per zone
+  totalRewardsAmount: BigInt! @default(value: "0") # Total rewards earned by this user
+  
+  # =============================================================================
+  # REWARDS TRACKING
+  # =============================================================================
   # Rewards per zone: [zone0, zone1, zone2, zone3] × [primary, secondary1, secondary2, secondary3, tertiary]
   rewardsPerZone: [[Int!]!]! @default(value: "[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]")
+  totalShardsWon: Int! @default(value: "0") # Total weapon shards won by this user
+  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Shards won per zone
+  totalBonuses: Int! @default(value: "0") # Total bonus items won by this user
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]") # Bonuses won per zone
+  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Sessions per zone
   
-  totalShardsWon: Int! @default(value: "0")
-  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  totalBonuses: Int! @default(value: "0")
-  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  
-  # Death and revival stats
-  totalDeaths: Int! @default(value: "0") # Total number of hero deaths
-  totalRevivals: Int! @default(value: "0") # Total number of hero revivals
-  totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
-  
-  player: Player!
+  # =============================================================================
+  # DEATH & REVIVAL STATISTICS
+  # =============================================================================
+  totalDeaths: Int! @default(value: "0") # Total number of hero deaths for this user
+  totalRevivals: Int! @default(value: "0") # Total number of hero revivals for this user
+  totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals by this user
 }
 type FishingGlobalStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: ID! # 'global'
-  totalHeroes: Int! @default(value: "0")
-  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0,0]") # [zone0,1,2,3]
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
-  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalRewardsAmount: BigInt! @default(value: "0")
-  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalShardsWon: Int! @default(value: "0")
-  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  totalBonuses: Int! @default(value: "0")
-  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  
-  # Death and revival stats
-  totalDeaths: Int! @default(value: "0") # Total number of hero deaths
-  totalRevivals: Int! @default(value: "0") # Total number of hero revivals
-  totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
-  
   lastUpdated: BigInt! @default(value: "0")
-}
-type FishingUserStats @entity {
-  id: Bytes! # User address
-  totalHeroes: Int! @default(value: "0")
-  heroesPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
-  totalFees: BigInt! @default(value: "0")
-  feesPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalRewardsAmount: BigInt! @default(value: "0")
-  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalShardsWon: Int! @default(value: "0")
-  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  totalBonuses: Int! @default(value: "0")
-  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
-  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]")
   
-  # Death and revival stats
+  # =============================================================================
+  # HERO STATISTICS
+  # =============================================================================
+  totalHeroes: Int! @default(value: "0") # Total heroes ever staked for fishing
+  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0,0]") # [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution by level (0-100)
+  
+  # =============================================================================
+  # ECONOMY STATISTICS
+  # =============================================================================
+  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Total fees paid per zone
+  totalRewardsAmount: BigInt! @default(value: "0") # Total rewards earned
+  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Rewards earned per zone
+  
+  # =============================================================================
+  # REWARDS TRACKING
+  # =============================================================================
+  totalShardsWon: Int! @default(value: "0") # Total weapon shards won
+  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Shards won per zone
+  totalBonuses: Int! @default(value: "0") # Total bonus items won
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]") # Bonuses won per zone
+  
+  # =============================================================================
+  # DEATH & REVIVAL STATISTICS
+  # =============================================================================
   totalDeaths: Int! @default(value: "0") # Total number of hero deaths
   totalRevivals: Int! @default(value: "0") # Total number of hero revivals
   totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
+}
+
+type FishingUserStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
+  id: Bytes! # User address
+  player: Player! # Relation to Player
   
-  player: Player!
+  # =============================================================================
+  # HERO STATISTICS
+  # =============================================================================
+  totalHeroes: Int! @default(value: "0") # Total heroes staked by this user
+  heroesPerZone: [Int!]! @default(value: "[0,0,0,0]") # [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution by level (0-100)
+  
+  # =============================================================================
+  # ECONOMY STATISTICS
+  # =============================================================================
+  totalFees: BigInt! @default(value: "0") # Total fees paid by this user
+  feesPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Fees paid per zone
+  totalRewardsAmount: BigInt! @default(value: "0") # Total rewards earned by this user
+  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Rewards earned per zone
+  
+  # =============================================================================
+  # REWARDS TRACKING
+  # =============================================================================
+  totalShardsWon: Int! @default(value: "0") # Total weapon shards won by this user
+  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Shards won per zone
+  totalBonuses: Int! @default(value: "0") # Total bonus items won by this user
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]") # Bonuses won per zone
+  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Sessions per zone
+  
+  # =============================================================================
+  # DEATH & REVIVAL STATISTICS
+  # =============================================================================
+  totalDeaths: Int! @default(value: "0") # Total number of hero deaths for this user
+  totalRevivals: Int! @default(value: "0") # Total number of hero revivals for this user
+  totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals by this user
 }
 
 type GymGlobalStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: ID! # 'global'
-  totalAttemptedTrainings: Int! @default(value: "0")
-  totalSuccessfulTrainings: Int! @default(value: "0")
-  totalFailedTrainings: Int! @default(value: "0")
-  attemptedByType: [Int!]! @default(value: "[0,0,0]")
-  successfulByType: [Int!]! @default(value: "[0,0,0]")
-  failedByType: [Int!]! @default(value: "[0,0,0]")
-  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]")
-  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
-  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
-  chancesCountByType: [Int!]! @default(value: "[0,0,0]")
-  totalSpent: BigInt! @default(value: "0")
-  spentByType: [BigInt!]! @default(value: "[0,0,0]")
   lastUpdated: BigInt! @default(value: "0")
+  
+  # =============================================================================
+  # TRAINING STATISTICS
+  # =============================================================================
+  totalAttemptedTrainings: Int! @default(value: "0") # Total training attempts
+  totalSuccessfulTrainings: Int! @default(value: "0") # Total successful trainings (level increased)
+  totalFailedTrainings: Int! @default(value: "0") # Total failed trainings (level unchanged)
+  
+  # =============================================================================
+  # TRAINING STATISTICS BY TYPE [NORMAL, CHAOS, UNKNOWN]
+  # =============================================================================
+  attemptedByType: [Int!]! @default(value: "[0,0,0]") # Attempts by training type
+  successfulByType: [Int!]! @default(value: "[0,0,0]") # Successes by training type
+  failedByType: [Int!]! @default(value: "[0,0,0]") # Failures by training type
+  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]") # Sum of level increases by type
+  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]") # Detailed outcome counts by type
+  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]") # Sum of chances by type
+  chancesCountByType: [Int!]! @default(value: "[0,0,0]") # Number of chance records by type
+  
+  # =============================================================================
+  # ECONOMY STATISTICS
+  # =============================================================================
+  totalSpent: BigInt! @default(value: "0") # Total cost spent on training
+  spentByType: [BigInt!]! @default(value: "[0,0,0]") # Costs by training type
 }
 
 type GymUserStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: Bytes! # User address
-  totalAttemptedTrainings: Int! @default(value: "0")
-  totalSuccessfulTrainings: Int! @default(value: "0")
-  totalFailedTrainings: Int! @default(value: "0")
-  attemptedByType: [Int!]! @default(value: "[0,0,0]")
-  successfulByType: [Int!]! @default(value: "[0,0,0]")
-  failedByType: [Int!]! @default(value: "[0,0,0]")
-  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]")
-  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
-  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]")
-  chancesCountByType: [Int!]! @default(value: "[0,0,0]")
-  totalSpent: BigInt! @default(value: "0")
-  spentByType: [BigInt!]! @default(value: "[0,0,0]")
-  player: Player!
+  player: Player! # Relation to Player
+  
+  # =============================================================================
+  # TRAINING STATISTICS
+  # =============================================================================
+  totalAttemptedTrainings: Int! @default(value: "0") # Total training attempts
+  totalSuccessfulTrainings: Int! @default(value: "0") # Total successful trainings (level increased)
+  totalFailedTrainings: Int! @default(value: "0") # Total failed trainings (level unchanged)
+  
+  # =============================================================================
+  # TRAINING STATISTICS BY TYPE [NORMAL, CHAOS, UNKNOWN]
+  # =============================================================================
+  attemptedByType: [Int!]! @default(value: "[0,0,0]") # Attempts by training type
+  successfulByType: [Int!]! @default(value: "[0,0,0]") # Successes by training type
+  failedByType: [Int!]! @default(value: "[0,0,0]") # Failures by training type
+  totalOutcomeSumByType: [BigInt!]! @default(value: "[0,0,0]") # Sum of level increases by type
+  outcomesCountByType: [[Int!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]") # Detailed outcome counts by type
+  sumOfChancesByType: [[BigInt!]!]! @default(value: "[[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0]]") # Sum of chances by type
+  chancesCountByType: [Int!]! @default(value: "[0,0,0]") # Number of chance records by type
+  
+  # =============================================================================
+  # ECONOMY STATISTICS
+  # =============================================================================
+  totalSpent: BigInt! @default(value: "0") # Total cost spent on training
+  spentByType: [BigInt!]! @default(value: "[0,0,0]") # Costs by training type
 }
 
 enum RemixOutcome {
@@ -941,46 +1121,98 @@ enum RemixOutcome {
 }
 
 type RemixGlobalStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: ID! # 'global'
-  totalRemixes: BigInt! @default(value: "0")
-  remixesByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalSpent: BigInt! @default(value: "0")
-  spentByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]")
-  outcomesByTypeAndRarity: [[[BigInt!]!]!]! @default(value: "[[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]]") 
   lastUpdated: BigInt! @default(value: "0")
+  
+  # =============================================================================
+  # REMIX STATISTICS
+  # =============================================================================
+  totalRemixes: BigInt! @default(value: "0") # Total remixes ever performed
+  remixesByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]") # [2 weapons, 3, 4, 5]
+  
+  # =============================================================================
+  # ECONOMY STATISTICS
+  # =============================================================================
+  totalSpent: BigInt! @default(value: "0") # Total cost spent on remixes
+  spentByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]") # Costs by number of weapons
+  
+  # =============================================================================
+  # OUTCOME TRACKING
+  # =============================================================================
+  # 3D array: [numWeapons][rarity][outcome] - First dimension: Number of weapons (2-5) → Index 0-3, Second dimension: Source rarity (0-5) → Index 0-5, Third dimension: Outcome (0-2) → Index 0-2 (FAIL, SUCCESS, PERFECT)
+  outcomesByTypeAndRarity: [[[BigInt!]!]!]! @default(value: "[[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]]")
 }
 
 type RemixUserStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: Bytes! # User address
-  totalRemixes: BigInt! @default(value: "0")
-  remixesByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]")
-  totalSpent: BigInt! @default(value: "0")
-  spentByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]")
-  outcomesByTypeAndRarity: [[[BigInt!]!]!]! @default(value: "[[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]]") 
-  player: Player!
+  player: Player! # Relation to Player
+  
+  # =============================================================================
+  # REMIX STATISTICS
+  # =============================================================================
+  totalRemixes: BigInt! @default(value: "0") # Total remixes performed by this user
+  remixesByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]") # [2 weapons, 3, 4, 5]
+  
+  # =============================================================================
+  # ECONOMY STATISTICS
+  # =============================================================================
+  totalSpent: BigInt! @default(value: "0") # Total cost spent on remixes
+  spentByNumWeapons: [BigInt!]! @default(value: "[0,0,0,0]") # Costs by number of weapons
+  
+  # =============================================================================
+  # OUTCOME TRACKING
+  # =============================================================================
+  # 3D array: [numWeapons][rarity][outcome] - Same indexing as global stats
+  outcomesByTypeAndRarity: [[[BigInt!]!]!]! @default(value: "[[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]], [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]]")
 }
 
 """
-Entité pour feed d'activité unifié (extensible à tous contrats)
+Unified activity feed entity for all game events across all contracts
 """
 type Activity @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: ID! # Format: chainId_block_logIndex
-  timestamp: BigInt!
-  user: Bytes! # Address impliquée
-  eventType: String! # Ex: 'STAKE', 'UNSTAKE', 'CLAIM', etc.
-  details: String! # JSON stringifié pour détails (ex: {heroId: 123, amount: 456})
-  contract: String! # Ex: 'DragmaUnderlings'
-  heroId: String # Optionnel, pour filters per hero (ID du hero impliqué)
-  hero: Hero @index # Relation vers le hero (optionnel, basé sur heroId)
-  stakingType: StakingType # Optionnel, pour différencier types/zones de staking
+  timestamp: BigInt! # Unix timestamp of the event
+  user: Bytes! # Address involved in the event
+  eventType: String! # Event type (e.g., 'STAKE', 'UNSTAKE', 'CLAIM', 'REMIX', 'TRAINING')
+  details: String! # JSON stringified details (e.g., {heroId: 123, amount: 456})
+  contract: String! # Contract name (e.g., 'DragmaUnderlings', 'WeaponRemixer')
+  
+  # =============================================================================
+  # OPTIONAL FILTERS
+  # =============================================================================
+  heroId: String # Optional, for hero-specific filters (ID of hero involved)
+  hero: Hero @index # Relation to hero (optional, based on heroId)
+  stakingType: StakingType # Optional, for staking type differentiation
 }
 
-# Ajout d'une entité globale pour les stats des héros
+"""
+Global statistics entity for hero tracking across the entire game
+"""
 type HeroesGlobalStats @entity {
+  # =============================================================================
+  # BASIC INFO
+  # =============================================================================
   id: ID! # 'global'
-  totalHeroes: Int! @default(value: "0") # Nombre total de héros existants
-  totalMinted: Int! @default(value: "0") # Cumulatif des héros mintés
-  totalBurned: Int! @default(value: "0") # Cumulatif des héros burnés
-  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution par level (0-100)
   lastUpdated: BigInt! @default(value: "0")
+  
+  # =============================================================================
+  # HERO COUNTS
+  # =============================================================================
+  totalHeroes: Int! @default(value: "0") # Total number of heroes in existence
+  totalMinted: Int! @default(value: "0") # Cumulative count of all heroes ever minted
+  totalBurned: Int! @default(value: "0") # Cumulative count of all heroes ever burned
+  
+  # =============================================================================
+  # HERO DISTRIBUTION
+  # =============================================================================
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]") # Distribution by level (0-100)
 }
