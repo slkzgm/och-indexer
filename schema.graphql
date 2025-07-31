@@ -431,6 +431,26 @@ type Fishing_Unstaked {
   bonusId: BigInt! # Bonus item obtained
 }
 
+"""
+Event triggered when a hero dies during fishing
+"""
+type Fishing_Dead {
+  id: ID!
+  owner: String! # Hero owner's wallet address
+  heroId: BigInt!
+  requestId: BigInt! # Links to the original request
+}
+
+"""
+Event triggered when a hero is revived from death
+"""
+type Fishing_Revived {
+  id: ID!
+  owner: String! # Hero owner's wallet address
+  heroId: BigInt!
+  cost: BigInt! # Cost paid for revival
+}
+
 # =============================================================================
 # CORE GAME ENTITIES
 # =============================================================================
@@ -515,6 +535,13 @@ type Hero @entity {
   fishingBonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
   totalFishingSessions: Int! @default(value: "0") # Stakes in fishing
   fishingSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  
+  # Death and revival system
+  isDead: Boolean! @default(value: false) # Whether hero is currently dead
+  deathsCount: Int! @default(value: "0") # Total number of deaths
+  revivalCount: Int! @default(value: "0") # Total number of revivals
+  spentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
+  
   totalAttemptedTrainings: Int! @default(value: "0")
   totalSuccessfulTrainings: Int! @default(value: "0")
   totalFailedTrainings: Int! @default(value: "0")
@@ -697,6 +724,12 @@ type FishingGlobalStats @entity {
   shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
   totalBonuses: Int! @default(value: "0")
   bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  
+  # Death and revival stats
+  totalDeaths: Int! @default(value: "0") # Total number of hero deaths
+  totalRevivals: Int! @default(value: "0") # Total number of hero revivals
+  totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
+  
   lastUpdated: BigInt! @default(value: "0")
 }
 type FishingUserStats @entity {
@@ -713,6 +746,12 @@ type FishingUserStats @entity {
   totalBonuses: Int! @default(value: "0")
   bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
   totalSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  
+  # Death and revival stats
+  totalDeaths: Int! @default(value: "0") # Total number of hero deaths
+  totalRevivals: Int! @default(value: "0") # Total number of hero revivals
+  totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
+  
   player: Player!
 }
 
