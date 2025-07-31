@@ -106,4 +106,16 @@ networks:
     - event: Unstaked(address owner, uint256 heroId, uint256 requestId, uint256 zone, uint256 amount, uint256 weaponShardId, uint256 bonusId)
     - event: Dead(address owner, uint256 heroId, uint256 requestId)
     - event: Revived(address owner, uint256 heroId, uint256 cost)
+  - name: Dragma
+    address:
+    - 0xA651e1918d29e142eAc406374e6BC6abFc5c40e9
+    handler: src/EventHandlers.ts
+    events:
+    - event: Staked(address owner, uint256 heroId, uint256 entryFee, uint256 attackZone)
+    - event: UnstakeRequested(address owner, uint256 heroId, uint256 requestId)
+    - event: Unstake(address owner, uint256 heroId, uint256 requestId, uint256 gachaTokenId, uint256 weaponShardQty, uint256[] primaryRewards, uint256[] secondaryRewards, uint256[] tertiaryRewards)
+    - event: HeroDied(address owner, uint256 heroId)
+    - event: Revived(address owner, uint256 heroId, uint256 fee)
+    - event: WeaponDurabilityUpdated(address user, uint256 weaponId, uint256 oldDurability, uint256 newDurability)
+    - event: WeaponSharpnessUpdated(address user, uint256 weaponId, uint256 oldSharpness, uint256 newSharpness)
 unordered_multichain_mode: true

@@ -4,7 +4,7 @@ import {
 import { calculateUnstakeAvailable } from "../helpers/calculations";
 import { updateWeaponAndHeroStats } from "../helpers/entities";
 import { updatePlayerCounts } from "../helpers/player";
-import { getOrCreateDragmaGlobalStats, getOrCreateDragmaUserStats } from "../helpers/stats";
+import { getOrCreateDragmaUnderlingsGlobalStats, getOrCreateDragmaUnderlingsUserStats } from "../helpers/stats";
 import { createActivity } from "../helpers/activity";
 
 /**
@@ -54,19 +54,19 @@ DragmaUnderlings.Staked.handlerWithLoader({
       context.Hero.set(stakedHero),
       (async () => {
         if (!existingHero.staked) {
-          const global = await getOrCreateDragmaGlobalStats(context);
+          const global = await getOrCreateDragmaUnderlingsGlobalStats(context);
           global.totalStakedHeroes += 1;
           global.currentStakedHeroes += 1;
           global.heroesByLevel[existingHero.level] += 1;
           global.lastUpdated = timestamp;
-          context.DragmaGlobalStats.set(global);
+          context.DragmaUnderlingsGlobalStats.set(global);
 
-          const userStats = await getOrCreateDragmaUserStats(context, user.toLowerCase());
+          const userStats = await getOrCreateDragmaUnderlingsUserStats(context, user.toLowerCase());
           userStats.totalStakes += 1;
           userStats.stakedHeroes += 1;
           userStats.currentStakedHeroes += 1;
           userStats.heroesByLevel[existingHero.level] += 1;
-          context.DragmaUserStats.set(userStats);
+          context.DragmaUnderlingsUserStats.set(userStats);
         }
         await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_STAKE', { heroId: heroId.toString() }, heroId.toString(), 'DragmaUnderlings', 'DRAGMA_UNDERLINGS');
       })()
@@ -127,15 +127,15 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
       (async () => {
         if (existingHero.staked) {
           const duration = timestamp - (existingHero.stakedTimestamp || 0n);
-          const global = await getOrCreateDragmaGlobalStats(context);
+          const global = await getOrCreateDragmaUnderlingsGlobalStats(context);
           global.totalUnstakedHeroes += 1;
           global.totalStakedHeroes -= 1;
           global.currentStakedHeroes -= 1;
           global.heroesByLevel[existingHero.level] -= 1;
           global.lastUpdated = timestamp;
-          context.DragmaGlobalStats.set(global);
+          context.DragmaUnderlingsGlobalStats.set(global);
 
-          const userStats = await getOrCreateDragmaUserStats(context, user.toLowerCase());
+          const userStats = await getOrCreateDragmaUnderlingsUserStats(context, user.toLowerCase());
           const prevCount = BigInt(userStats.totalUnstakes);
           const newTotalUnstakes = prevCount + 1n; // Since we're incrementing after
           userStats.totalUnstakes = Number(newTotalUnstakes);
@@ -144,7 +144,7 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
           userStats.heroesByLevel[existingHero.level] -= 1;
           const prevTotal = prevCount;
           userStats.averageStakingDuration = prevCount > 0n ? (userStats.averageStakingDuration * prevTotal + duration) / newTotalUnstakes : duration;
-          context.DragmaUserStats.set(userStats);
+          context.DragmaUnderlingsUserStats.set(userStats);
         }
         await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_UNSTAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
       })()
@@ -196,17 +196,17 @@ DragmaUnderlings.Claimed.handlerWithLoader({
       }),
       
       (async () => {
-        const global = await getOrCreateDragmaGlobalStats(context);
+        const global = await getOrCreateDragmaUnderlingsGlobalStats(context);
         global.totalRewardsClaimed += amount;
         global.totalClaims += 1;
         global.averageClaimAmount = global.totalClaims > 0 ? global.totalRewardsClaimed / BigInt(global.totalClaims) : 0n;
         global.lastUpdated = timestamp;
-        context.DragmaGlobalStats.set(global);
+        context.DragmaUnderlingsGlobalStats.set(global);
 
-        const userStats = await getOrCreateDragmaUserStats(context, user.toLowerCase());
+        const userStats = await getOrCreateDragmaUnderlingsUserStats(context, user.toLowerCase());
         userStats.totalRewardsClaimed += amount;
         userStats.totalClaims += 1;
-        context.DragmaUserStats.set(userStats);
+        context.DragmaUnderlingsUserStats.set(userStats);
 
         // Mise à jour complète du hero en une seule fois
         context.Hero.set({

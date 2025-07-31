@@ -689,7 +689,7 @@ enum TrainingType {
 # STATS & METRICS ENTITIES
 # =============================================================================
 
-type DragmaGlobalStats @entity {
+type DragmaUnderlingsGlobalStats @entity {
   id: ID! # Singleton: 'global'
   totalStakedHeroes: Int! @default(value: "0")
   currentStakedHeroes: Int! @default(value: "0")
@@ -700,7 +700,7 @@ type DragmaGlobalStats @entity {
   heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
   lastUpdated: BigInt! @default(value: "0")
 }
-type DragmaUserStats @entity {
+type DragmaUnderlingsUserStats @entity {
   id: Bytes! # User address
   stakedHeroes: Int! @default(value: "0")
   currentStakedHeroes: Int! @default(value: "0")

@@ -1,6 +1,6 @@
 // src/helpers/stats.ts
-export async function getOrCreateDragmaGlobalStats(context: any) {
-  let stats = await context.DragmaGlobalStats.get('global');
+export async function getOrCreateDragmaUnderlingsGlobalStats(context: any) {
+  let stats = await context.DragmaUnderlingsGlobalStats.get('global');
   if (!stats) {
     stats = {
       id: 'global',
@@ -13,13 +13,13 @@ export async function getOrCreateDragmaGlobalStats(context: any) {
       heroesByLevel: Array(101).fill(0),
       lastUpdated: 0n,
     };
-    await context.DragmaGlobalStats.set(stats);
+    await context.DragmaUnderlingsGlobalStats.set(stats);
   }
   return stats;
 }
 
-export async function getOrCreateDragmaUserStats(context: any, userId: string) {
-  let stats = await context.DragmaUserStats.get(userId);
+export async function getOrCreateDragmaUnderlingsUserStats(context: any, userId: string) {
+  let stats = await context.DragmaUnderlingsUserStats.get(userId);
   if (!stats) {
     stats = {
       id: userId,
@@ -33,7 +33,7 @@ export async function getOrCreateDragmaUserStats(context: any, userId: string) {
       heroesByLevel: Array(101).fill(0),
       player_id: userId, // Relation to Player
     };
-    await context.DragmaUserStats.set(stats);
+    await context.DragmaUnderlingsUserStats.set(stats);
   }
   return stats;
 }
