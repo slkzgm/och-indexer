@@ -67,6 +67,9 @@ Fishing.Staked.handlerWithLoader({
     userStats.totalFees += fee;
     userStats.totalSessionsPerZone[zoneNum] += 1;
     context.FishingUserStats.set(userStats);
+    
+    // Met à jour le totalSpent du joueur avec les fees de staking
+    await updatePlayerTotalSpent(context, owner, fee);
 
     const updatedHero = {...stakedHero, totalFishingSessions: stakedHero.totalFishingSessions + 1, fishingSessionsPerZone: stakedHero.fishingSessionsPerZone.map((val: number, idx: number) => idx === zoneNum ? val + 1 : val), totalFishingFees: stakedHero.totalFishingFees + fee};
     context.Hero.set(updatedHero);
@@ -244,6 +247,7 @@ Fishing.Dead.handlerWithLoader({
       ...existingHero,
       isDead: true,
       deathsCount: existingHero.deathsCount + 1,
+      fishingDeathCount: existingHero.fishingDeathCount + 1,
     };
     context.Hero.set(deadHero);
 
@@ -302,6 +306,8 @@ Fishing.Revived.handlerWithLoader({
       isDead: false,
       revivalCount: existingHero.revivalCount + 1,
       spentOnRevive: existingHero.spentOnRevive + cost,
+      fishingRevivalCount: existingHero.fishingRevivalCount + 1,
+      fishingReviveSpent: existingHero.fishingReviveSpent + cost,
     };
     context.Hero.set(revivedHero);
 

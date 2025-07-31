@@ -452,6 +452,87 @@ type Fishing_Revived {
 }
 
 # =============================================================================
+# DRAGMA EVENTS
+# =============================================================================
+
+"""
+Event triggered when a hero is staked in Dragma
+"""
+type Dragma_Staked {
+  id: ID!
+  owner: String! # Hero owner's wallet address
+  heroId: BigInt!
+  entryFee: BigInt! # Entry fee paid
+  attackZone: BigInt! # Zone where hero is staked (0-3: Tails, Legs, Torso, Head)
+}
+
+"""
+Event triggered when an unstake is requested in Dragma
+"""
+type Dragma_UnstakeRequested {
+  id: ID!
+  owner: String! # Hero owner's wallet address
+  heroId: BigInt!
+  requestId: BigInt! # Request ID for the unstake
+}
+
+"""
+Event triggered when a hero is unstaked from Dragma with rewards
+"""
+type Dragma_Unstake {
+  id: ID!
+  owner: String! # Hero owner's wallet address
+  heroId: BigInt!
+  requestId: BigInt! # Request ID
+  gachaTokenId: BigInt! # Gacha token ID (0 if none)
+  weaponShardQty: BigInt! # Quantity of weapon shards
+  primaryRewards: [BigInt!]! # Array of primary reward token IDs
+  secondaryRewards: [BigInt!]! # Array of secondary reward token IDs
+  tertiaryRewards: [BigInt!]! # Array of tertiary reward token IDs
+}
+
+"""
+Event triggered when a hero dies in Dragma
+"""
+type Dragma_HeroDied {
+  id: ID!
+  owner: String! # Hero owner's wallet address
+  heroId: BigInt!
+}
+
+"""
+Event triggered when a hero is revived in Dragma
+"""
+type Dragma_Revived {
+  id: ID!
+  owner: String! # Hero owner's wallet address
+  heroId: BigInt!
+  fee: BigInt! # Revival fee
+}
+
+"""
+Event triggered when a weapon's durability is updated in Dragma
+"""
+type Dragma_WeaponDurabilityUpdated {
+  id: ID!
+  user: String! # User's wallet address
+  weaponId: BigInt!
+  oldDurability: BigInt!
+  newDurability: BigInt!
+}
+
+"""
+Event triggered when a weapon's sharpness is updated in Dragma
+"""
+type Dragma_WeaponSharpnessUpdated {
+  id: ID!
+  user: String! # User's wallet address
+  weaponId: BigInt!
+  oldSharpness: BigInt!
+  newSharpness: BigInt!
+}
+
+# =============================================================================
 # CORE GAME ENTITIES
 # =============================================================================
 
@@ -541,6 +622,16 @@ type Hero @entity {
   deathsCount: Int! @default(value: "0") # Total number of deaths
   revivalCount: Int! @default(value: "0") # Total number of revivals
   spentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
+  
+  # Fishing-specific death/revival stats
+  fishingDeathCount: Int! @default(value: "0") # Deaths in fishing
+  fishingRevivalCount: Int! @default(value: "0") # Revivals in fishing
+  fishingReviveSpent: BigInt! @default(value: "0") # Cost spent on fishing revivals
+  
+  # Dragma-specific death/revival stats
+  dragmaDeathCount: Int! @default(value: "0") # Deaths in dragma
+  dragmaRevivalCount: Int! @default(value: "0") # Revivals in dragma
+  dragmaReviveSpent: BigInt! @default(value: "0") # Cost spent on dragma revivals
   
   totalAttemptedTrainings: Int! @default(value: "0")
   totalSuccessfulTrainings: Int! @default(value: "0")
@@ -674,6 +765,10 @@ enum StakingType {
   FISHING_SHROOM_GROTTO # Fishing in Shroom Grotto zone (zone 1)
   FISHING_SKEET_PIER # Fishing in Skeet Pier zone (zone 2)
   FISHING_MAGMA_MIRE # Fishing in Magma Mire zone (zone 3)
+  DRAGMA_TAILS # Dragma in Tails zone (zone 0)
+  DRAGMA_LEGS # Dragma in Legs zone (zone 1)
+  DRAGMA_TORSO # Dragma in Torso zone (zone 2)
+  DRAGMA_HEAD # Dragma in Head zone (zone 3)
 }
 
 """
@@ -711,6 +806,56 @@ type DragmaUnderlingsUserStats @entity {
   averageStakingDuration: BigInt! @default(value: "0") # En secondes, moyenne
   heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
   player: Player! # Relation vers Player
+}
+
+type DragmaGlobalStats @entity {
+  id: ID! # 'global'
+  totalHeroes: Int! @default(value: "0")
+  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0,0]") # [zone0,1,2,3] - Tails, Legs, Torso, Head
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
+  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
+  totalRewardsAmount: BigInt! @default(value: "0")
+  
+  # Rewards per zone: [zone0, zone1, zone2, zone3] × [primary, secondary1, secondary2, secondary3, tertiary]
+  rewardsPerZone: [[Int!]!]! @default(value: "[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]")
+  
+  totalShardsWon: Int! @default(value: "0")
+  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  totalBonuses: Int! @default(value: "0")
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  
+  # Death and revival stats
+  totalDeaths: Int! @default(value: "0") # Total number of hero deaths
+  totalRevivals: Int! @default(value: "0") # Total number of hero revivals
+  totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
+  
+  lastUpdated: BigInt! @default(value: "0")
+}
+
+type DragmaUserStats @entity {
+  id: Bytes! # User address
+  totalHeroes: Int! @default(value: "0")
+  heroesPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
+  totalFees: BigInt! @default(value: "0")
+  feesPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
+  totalRewardsAmount: BigInt! @default(value: "0")
+  
+  # Rewards per zone: [zone0, zone1, zone2, zone3] × [primary, secondary1, secondary2, secondary3, tertiary]
+  rewardsPerZone: [[Int!]!]! @default(value: "[[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]")
+  
+  totalShardsWon: Int! @default(value: "0")
+  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  totalBonuses: Int! @default(value: "0")
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  
+  # Death and revival stats
+  totalDeaths: Int! @default(value: "0") # Total number of hero deaths
+  totalRevivals: Int! @default(value: "0") # Total number of hero revivals
+  totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
+  
+  player: Player!
 }
 type FishingGlobalStats @entity {
   id: ID! # 'global'

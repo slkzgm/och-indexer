@@ -158,4 +158,62 @@ export async function getOrCreateGymUserStats(context: any, userId: string) {
   }
   return stats;
 }
+export async function getOrCreateDragmaGlobalStats(context: any) {
+  let stats = await context.DragmaGlobalStats.get('global');
+  if (!stats) {
+    stats = {
+      id: 'global',
+      totalHeroes: 0,
+      totalHeroesPerZone: [0,0,0,0],
+      heroesByLevel: Array(101).fill(0),
+      totalFeesPerZone: [0n,0n,0n,0n],
+      totalRewardsAmount: 0n,
+      rewardsPerZone: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]], // [zone] × [primary, secondary1, secondary2, secondary3, tertiary]
+      totalShardsWon: 0,
+      shardsPerZone: [0,0,0,0],
+      totalBonuses: 0,
+      bonusesPerZone: [0,0,0,0],
+      
+      // Death and revival stats
+      totalDeaths: 0,
+      totalRevivals: 0,
+      totalSpentOnRevive: 0n,
+      
+      lastUpdated: 0n,
+    };
+    await context.DragmaGlobalStats.set(stats);
+  }
+  return stats;
+}
+
+export async function getOrCreateDragmaUserStats(context: any, userId: string) {
+  let stats = await context.DragmaUserStats.get(userId);
+  if (!stats) {
+    stats = {
+      id: userId,
+      totalHeroes: 0,
+      heroesPerZone: [0,0,0,0],
+      heroesByLevel: Array(101).fill(0),
+      totalFees: 0n,
+      feesPerZone: [0n,0n,0n,0n],
+      totalRewardsAmount: 0n,
+      rewardsPerZone: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]], // [zone] × [primary, secondary1, secondary2, secondary3, tertiary]
+      totalShardsWon: 0,
+      shardsPerZone: [0,0,0,0],
+      totalBonuses: 0,
+      bonusesPerZone: [0,0,0,0],
+      totalSessionsPerZone: [0,0,0,0],
+      
+      // Death and revival stats
+      totalDeaths: 0,
+      totalRevivals: 0,
+      totalSpentOnRevive: 0n,
+      
+      player_id: userId,
+    };
+    await context.DragmaUserStats.set(stats);
+  }
+  return stats;
+}
+
 // Add more as needed for other contracts 

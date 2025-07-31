@@ -124,11 +124,17 @@ type Hero @entity {
 - `stakingType`: Type of staking (DRAGMA_UNDERLINGS, FISHING_*)
 - `unstakeAvailableTimestamp`: `stakedTimestamp + cooldown` (6h for dragma, 12h for fishing)
 - `totalStakingDuration`: Cumulative staking time in seconds
-- `fishingRewardsPerZone`: Array tracking rewards per fishing zone [0,1,2,3]
+- `fishingRewardsPerZone`: Array tracking rewards per fishing zone [SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2), MAGMA_MIRE(3)]
 - `isDead`: Boolean indicating if hero is currently dead (prevents staking/training)
 - `deathsCount`: Total number of times hero has died
 - `revivalCount`: Total number of times hero has been revived
 - `spentOnRevive`: Total cost spent on reviving this hero
+- `fishingDeathCount`: Total number of deaths in fishing
+- `fishingRevivalCount`: Total number of revivals in fishing
+- `fishingReviveSpent`: Total cost spent on fishing revivals
+- `dragmaDeathCount`: Total number of deaths in dragma
+- `dragmaRevivalCount`: Total number of revivals in dragma
+- `dragmaReviveSpent`: Total cost spent on dragma revivals
 - `trainingCostByType`: Array tracking costs per training type [NORMAL, CHAOS, UNKNOWN]
 
 ### Weapon
@@ -227,11 +233,11 @@ type WeaponRequest @entity {
 
 ## Staking & Rewards Entities
 
-### DragmaGlobalStats
-Global statistics for hero staking and reward claiming.
+### DragmaUnderlingsGlobalStats
+Global statistics for Dragma Underlings hero staking and reward claiming.
 
 ```graphql
-type DragmaGlobalStats @entity {
+type DragmaUnderlingsGlobalStats @entity {
   id: ID! # Singleton: 'global'
   totalStakedHeroes: Int! # Total heroes ever staked
   currentStakedHeroes: Int! # Currently staked heroes
@@ -254,11 +260,11 @@ type DragmaGlobalStats @entity {
 - `heroesByLevel`: Array of 101 elements tracking hero distribution by level
 - `lastUpdated`: Timestamp of last update
 
-### DragmaUserStats
-Per-user statistics for hero staking and rewards.
+### DragmaUnderlingsUserStats
+Per-user statistics for Dragma Underlings hero staking and rewards.
 
 ```graphql
-type DragmaUserStats @entity {
+type DragmaUnderlingsUserStats @entity {
   id: Bytes! # User address
   stakedHeroes: Int! # Total heroes staked by this user
   currentStakedHeroes: Int! # Currently staked heroes
@@ -281,6 +287,88 @@ type DragmaUserStats @entity {
 - `totalClaims`: Total number of claim events for this user
 - `averageStakingDuration`: Average staking duration in seconds
 - `heroesByLevel`: Array of 101 elements tracking hero distribution by level
+
+### DragmaGlobalStats
+Global statistics for the new Dragma contract (hero staking with death/revival mechanics).
+
+```graphql
+type DragmaGlobalStats @entity {
+  id: ID! # Singleton: 'global'
+  totalHeroes: Int! # Total heroes ever staked for Dragma
+  totalHeroesPerZone: [Int!]! # [TAILS, LEGS, TORSO, HEAD]
+  heroesByLevel: [Int!]! # Distribution by level (0-100)
+  totalFeesPerZone: [BigInt!]! # Total fees paid per zone
+  totalRewardsAmount: BigInt! # Total rewards earned
+  rewardsPerZone: [[Int!]!]! # [zone] × [primary, secondary1, secondary2, secondary3, tertiary]
+  totalShardsWon: Int! # Total weapon shards won
+  shardsPerZone: [Int!]! # Shards won per zone
+  totalBonuses: Int! # Total bonus items won
+  bonusesPerZone: [Int!]! # Bonuses won per zone
+  totalDeaths: Int! # Total number of deaths
+  totalRevivals: Int! # Total number of revivals
+  totalSpentOnRevive: BigInt! # Total cost spent on revivals
+  totalSessionsPerZone: [Int!]! # Sessions per zone
+  lastUpdated: BigInt!
+}
+```
+
+**Field Details:**
+- `totalHeroes`: Total heroes ever staked for Dragma
+- `totalHeroesPerZone`: Array [TAILS(0), LEGS(1), TORSO(2), HEAD(3)]
+- `heroesByLevel`: Array of 101 elements tracking hero distribution by level
+- `totalFeesPerZone`: Total fees paid per Dragma zone in wei
+- `totalRewardsAmount`: Total rewards earned from Dragma in wei
+- `rewardsPerZone`: Nested array [zone][rewardType] tracking rewards by zone and type
+- `totalShardsWon`: Total weapon shards won from Dragma
+- `shardsPerZone`: Weapon shards won per Dragma zone
+- `totalBonuses`: Total bonus items won from Dragma
+- `bonusesPerZone`: Bonus items won per Dragma zone
+- `totalDeaths`: Total number of deaths in Dragma
+- `totalRevivals`: Total number of revivals in Dragma
+- `totalSpentOnRevive`: Total cost spent on Dragma revivals
+- `totalSessionsPerZone`: Total Dragma sessions per zone
+
+### DragmaUserStats
+Per-user statistics for the new Dragma contract.
+
+```graphql
+type DragmaUserStats @entity {
+  id: Bytes! # User address
+  totalHeroes: Int! # Total heroes staked
+  heroesPerZone: [Int!]! # Heroes staked per zone
+  heroesByLevel: [Int!]! # Distribution by level (0-100)
+  totalFees: BigInt! # Total fees paid
+  feesPerZone: [BigInt!]! # Fees paid per zone
+  totalRewardsAmount: BigInt! # Total rewards earned
+  rewardsPerZone: [[Int!]!]! # [zone] × [primary, secondary1, secondary2, secondary3, tertiary]
+  totalShardsWon: Int! # Total weapon shards won
+  shardsPerZone: [Int!]! # Shards won per zone
+  totalBonuses: Int! # Total bonus items won
+  bonusesPerZone: [Int!]! # Bonuses won per zone
+  totalDeaths: Int! # Total number of deaths
+  totalRevivals: Int! # Total number of revivals
+  totalSpentOnRevive: BigInt! # Total cost spent on revivals
+  totalSessionsPerZone: [Int!]! # Sessions per zone
+  player: Player!
+}
+```
+
+**Field Details:**
+- `totalHeroes`: Total heroes staked by this user for Dragma
+- `heroesPerZone`: Array [TAILS(0), LEGS(1), TORSO(2), HEAD(3)]
+- `heroesByLevel`: Array of 101 elements tracking hero distribution by level
+- `totalFees`: Total fees paid by this user for Dragma in wei
+- `feesPerZone`: Fees paid per Dragma zone in wei
+- `totalRewardsAmount`: Total rewards earned by this user from Dragma in wei
+- `rewardsPerZone`: Nested array [zone][rewardType] tracking rewards by zone and type
+- `totalShardsWon`: Total weapon shards won by this user
+- `shardsPerZone`: Weapon shards won per Dragma zone
+- `totalBonuses`: Total bonus items won by this user
+- `bonusesPerZone`: Bonus items won per Dragma zone
+- `totalDeaths`: Total number of deaths for this user in Dragma
+- `totalRevivals`: Total number of revivals for this user in Dragma
+- `totalSpentOnRevive`: Total cost spent on Dragma revivals by this user
+- `totalSessionsPerZone`: Total Dragma sessions per zone for this user
 
 ## Training Entities
 
@@ -357,7 +445,7 @@ Global statistics for fishing mini-game.
 type FishingGlobalStats @entity {
   id: ID! # 'global'
   totalHeroes: Int! # Total heroes ever staked for fishing
-  totalHeroesPerZone: [Int!]! # [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER]
+  totalHeroesPerZone: [Int!]! # [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
   heroesByLevel: [Int!]! # Distribution by level (0-100)
   totalFeesPerZone: [BigInt!]! # Total fees paid per zone
   totalRewardsAmount: BigInt! # Total rewards earned
@@ -372,7 +460,7 @@ type FishingGlobalStats @entity {
 
 **Field Details:**
 - `totalHeroes`: Total heroes ever staked for fishing
-- `totalHeroesPerZone`: Array [SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2)]
+- `totalHeroesPerZone`: Array [SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2), MAGMA_MIRE(3)]
 - `heroesByLevel`: Array of 101 elements tracking hero distribution by level
 - `totalFeesPerZone`: Total fees paid per fishing zone in wei
 - `totalRewardsAmount`: Total rewards earned from fishing in wei
@@ -406,7 +494,7 @@ type FishingUserStats @entity {
 
 **Field Details:**
 - `totalHeroes`: Total heroes staked by this user for fishing
-- `heroesPerZone`: Array [SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2)]
+- `heroesPerZone`: Array [SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2), MAGMA_MIRE(3)]
 - `heroesByLevel`: Array of 101 elements tracking hero distribution by level
 - `totalFees`: Total fees paid by this user for fishing in wei
 - `feesPerZone`: Fees paid per fishing zone in wei
@@ -532,6 +620,89 @@ The subgraph tracks various event types with detailed information stored as JSON
 }
 ```
 
+#### DRAGMA_STAKE
+**Contract**: `Dragma`  
+**Description**: Hero staked for Dragma rewards with death/revival mechanics
+
+```json
+{
+  "heroId": "123",
+  "zone": "0",
+  "entryFee": "500000000000000000"
+}
+```
+
+#### DRAGMA_UNSTAKE_REQUEST
+**Contract**: `Dragma`  
+**Description**: Unstake requested for Dragma hero
+
+```json
+{
+  "heroId": "123",
+  "requestId": "456"
+}
+```
+
+#### DRAGMA_UNSTAKE
+**Contract**: `Dragma`  
+**Description**: Hero unstaked from Dragma with rewards
+
+```json
+{
+  "heroId": "123",
+  "requestId": "456",
+  "gachaTokenId": "3",
+  "weaponShardQty": "2",
+  "primaryRewards": ["18", "18", "6"],
+  "secondaryRewards": ["7", "8"],
+  "tertiaryRewards": ["5"]
+}
+```
+
+#### DRAGMA_DEATH
+**Contract**: `Dragma`  
+**Description**: Hero died in Dragma
+
+```json
+{
+  "heroId": "123",
+  "zone": "0"
+}
+```
+
+#### DRAGMA_REVIVAL
+**Contract**: `Dragma`  
+**Description**: Hero revived in Dragma
+
+```json
+{
+  "heroId": "123",
+  "cost": "1000000000000000000"
+}
+```
+
+#### FISHING_DEATH
+**Contract**: `Fishing`  
+**Description**: Hero died in fishing
+
+```json
+{
+  "heroId": "123",
+  "zone": "0"
+}
+```
+
+#### FISHING_REVIVAL
+**Contract**: `Fishing`  
+**Description**: Hero revived in fishing
+
+```json
+{
+  "heroId": "123",
+  "cost": "1000000000000000000"
+}
+```
+
 #### FISHING_STAKE
 **Contract**: `Fishing`  
 **Description**: Hero staked for fishing mini-game
@@ -615,7 +786,7 @@ The subgraph tracks various event types with detailed information stored as JSON
 ```
 
 #### DURABILITY_UPDATE
-**Contract**: `DragmaUnderlings`  
+**Contract**: `DragmaUnderlings` / `Dragma`  
 **Description**: Weapon durability updated during gameplay
 
 ```json
@@ -627,7 +798,7 @@ The subgraph tracks various event types with detailed information stored as JSON
 ```
 
 #### SHARPNESS_UPDATE
-**Contract**: `DragmaUnderlings`  
+**Contract**: `DragmaUnderlings` / `Dragma`  
 **Description**: Weapon sharpness updated during gameplay
 
 ```json
@@ -783,12 +954,19 @@ The subgraph tracks various event types with detailed information stored as JSON
 | `DRAGMA_STAKE` | DragmaUnderlings | Hero staked for rewards | ✅ | DRAGMA_UNDERLINGS |
 | `DRAGMA_UNSTAKE` | DragmaUnderlings | Hero unstaked from rewards | ✅ | DRAGMA_UNDERLINGS |
 | `DRAGMA_CLAIM` | DragmaUnderlings | Rewards claimed | ✅ | DRAGMA_UNDERLINGS |
+| `DRAGMA_STAKE` | Dragma | Hero staked for Dragma rewards | ✅ | DRAGMA_* |
+| `DRAGMA_UNSTAKE_REQUEST` | Dragma | Unstake requested | ✅ | DRAGMA_* |
+| `DRAGMA_UNSTAKE` | Dragma | Hero unstaked from Dragma | ✅ | DRAGMA_* |
+| `DRAGMA_DEATH` | Dragma | Hero died in Dragma | ✅ | DRAGMA_* |
+| `DRAGMA_REVIVAL` | Dragma | Hero revived in Dragma | ✅ | DRAGMA_* |
+| `FISHING_DEATH` | Fishing | Hero died in fishing | ✅ | FISHING_* |
+| `FISHING_REVIVAL` | Fishing | Hero revived in fishing | ✅ | FISHING_* |
 | `FISHING_STAKE` | Fishing | Hero staked for fishing | ✅ | FISHING_* |
 | `FISHING_UNSTAKE` | Fishing | Hero unstaked from fishing | ✅ | FISHING_* |
 | `TRAINING_UPGRADE` | Gym | Hero level upgraded | ✅ | - |
 | `REMIX` | WeaponRemixer | Weapons combined | ❌ | - |
-| `DURABILITY_UPDATE` | DragmaUnderlings | Weapon durability changed | ❌ | - |
-| `SHARPNESS_UPDATE` | DragmaUnderlings | Weapon sharpness changed | ❌ | - |
+| `DURABILITY_UPDATE` | DragmaUnderlings/Dragma | Weapon durability changed | ❌ | - |
+| `SHARPNESS_UPDATE` | DragmaUnderlings/Dragma | Weapon sharpness changed | ❌ | - |
 | `EQUIP_WEAPON` | HeroArmory | Weapon equipped | ✅ | - |
 | `UNEQUIP_WEAPON` | HeroArmory | Weapon unequipped | ✅ | - |
 | `HERO_TRANSFER` | Hero721 | Hero NFT transferred | ✅ | - |
@@ -855,6 +1033,11 @@ enum StakingType {
   FISHING_SLIME_BAY # Fishing in Slime Bay zone
   FISHING_SHROOM_GROTTO # Fishing in Shroom Grotto zone
   FISHING_SKEET_PIER # Fishing in Skeet Pier zone
+  FISHING_MAGMA_MIRE # Fishing in Magma Mire zone
+  DRAGMA_TAILS # Dragma in Tails zone
+  DRAGMA_LEGS # Dragma in Legs zone
+  DRAGMA_TORSO # Dragma in Torso zone
+  DRAGMA_HEAD # Dragma in Head zone
 }
 ```
 
@@ -888,8 +1071,10 @@ enum GachaType {
 ### Staking System
 - **Dragma Underlings**: 6-hour unstake cooldown
 - **Fishing**: 12-hour unstake cooldown
+- **Dragma**: 12-hour unstake cooldown
 - **Rewards**: Based on hero level and weapon sharpness
-- **Zones**: SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2)
+- **Fishing Zones**: SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2), MAGMA_MIRE(3)
+- **Dragma Zones**: TAILS(0), LEGS(1), TORSO(2), HEAD(3)
 
 ### Weapon System
 - **Rarities**: COMMON(0) to MYTHIC(6)
@@ -1131,7 +1316,7 @@ Activity details are stored as JSON strings containing relevant event data:
 - **Relations**: Proper entity relationships enable efficient joins
 - **BigInt**: All monetary amounts use BigInt for precision
 - **Defaults**: All arrays have proper default values to avoid null issues
-- **Cooldowns**: Training (24h), Dragma staking (6h), Fishing staking (12h)
+- **Cooldowns**: Training (24h), Dragma Underlings staking (6h), Fishing staking (12h), Dragma staking (12h)
 
 ## Deployment
 
@@ -1141,6 +1326,7 @@ The subgraph is deployed on TheGraph and provides real-time indexing of all game
 
 The subgraph includes handlers for the following contracts:
 - **Blacksmith**: Weapon repair and sharpening
+- **Dragma**: Hero staking and rewards with death/revival mechanics (4 zones: Tails, Legs, Torso, Head)
 - **DragmaUnderlings**: Hero staking and rewards
 - **Fishing**: Fishing mini-game mechanics
 - **Gacha1155**: Gacha token transfers

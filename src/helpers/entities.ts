@@ -146,6 +146,16 @@ export function createHero(
     revivalCount: 0,
     spentOnRevive: 0n,
     
+    // Fishing-specific death/revival stats
+    fishingDeathCount: 0,
+    fishingRevivalCount: 0,
+    fishingReviveSpent: 0n,
+    
+    // Dragma-specific death/revival stats
+    dragmaDeathCount: 0,
+    dragmaRevivalCount: 0,
+    dragmaReviveSpent: 0n,
+    
     totalAttemptedTrainings: 0,
     totalSuccessfulTrainings: 0,
     totalFailedTrainings: 0,
