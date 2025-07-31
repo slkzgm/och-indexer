@@ -7,8 +7,7 @@ import { updatePlayerCounts } from "../helpers/player";
 import { getOrCreateDragmaGlobalStats, getOrCreateDragmaUserStats } from "../helpers/stats";
 import { createActivity } from "../helpers/activity";
 import { updatePlayerTotalSpent } from "../helpers/player";
-import { updateItemsBalance } from "../helpers/items";
-import { updateRewardsPerZone, getStakingTypeForZone } from "../helpers/dragma";
+import { updateRewardsPerZone } from "../helpers/dragma";
 import { calculateDragmaUnstakeAvailable, getDragmaStakingType } from "../helpers/calculations";
 
 /**
@@ -305,6 +304,7 @@ Dragma.HeroDied.handlerWithLoader({
     const deadHero = { 
       ...existingHero, 
       isDead: true, 
+      deathLocation: 'DRAGMA',
       deathsCount: existingHero.deathsCount + 1,
       dragmaDeathCount: existingHero.dragmaDeathCount + 1,
     };
@@ -358,6 +358,7 @@ Dragma.Revived.handlerWithLoader({
     const revivedHero = { 
       ...existingHero, 
       isDead: false, 
+      deathLocation: undefined, // Reset death location when revived
       revivalCount: existingHero.revivalCount + 1,
       spentOnRevive: existingHero.spentOnRevive + fee,
       dragmaRevivalCount: existingHero.dragmaRevivalCount + 1,

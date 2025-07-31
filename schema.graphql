@@ -646,10 +646,11 @@ type Hero @entity {
   # =============================================================================
   # General death/revival tracking
   isDead: Boolean! @default(value: false) # Whether hero is currently dead (prevents staking/training)
+  deathLocation: DeathLocation # Contract where hero died (null if alive or revived)
   deathsCount: Int! @default(value: "0") # Total number of deaths
   revivalCount: Int! @default(value: "0") # Total number of revivals
   spentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
-  
+
   # Contract-specific death/revival stats
   fishingDeathCount: Int! @default(value: "0") # Deaths in fishing
   fishingRevivalCount: Int! @default(value: "0") # Revivals in fishing
@@ -827,6 +828,14 @@ enum StakingType {
   DRAGMA_LEGS # Dragma in Legs zone (zone 1)
   DRAGMA_TORSO # Dragma in Torso zone (zone 2)
   DRAGMA_HEAD # Dragma in Head zone (zone 3)
+}
+
+"""
+Defines the contract where a hero died
+"""
+enum DeathLocation {
+  FISHING # Hero died in Fishing contract
+  DRAGMA # Hero died in Dragma contract
 }
 
 """

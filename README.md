@@ -88,6 +88,7 @@ type Hero @entity {
   
   # Death and revival system
   isDead: Boolean! # Whether hero is currently dead
+  deathLocation: DeathLocation # Contract where hero died (null if alive or revived)
   deathsCount: Int! # Total number of deaths
   revivalCount: Int! # Total number of revivals
   spentOnRevive: BigInt! # Total cost spent on revivals
@@ -126,6 +127,7 @@ type Hero @entity {
 - `totalStakingDuration`: Cumulative staking time in seconds
 - `fishingRewardsPerZone`: Array tracking rewards per fishing zone [SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2), MAGMA_MIRE(3)]
 - `isDead`: Boolean indicating if hero is currently dead (prevents staking/training)
+- `deathLocation`: Contract where hero died (FISHING, DRAGMA, or null if alive/revived)
 - `deathsCount`: Total number of times hero has died
 - `revivalCount`: Total number of times hero has been revived
 - `spentOnRevive`: Total cost spent on reviving this hero
@@ -1057,6 +1059,14 @@ enum GachaType {
   SILVER # Silver gacha tokens
   GOLD # Gold gacha tokens
   RAINBOW # Rainbow gacha tokens (highest tier)
+}
+```
+
+### DeathLocation
+```graphql
+enum DeathLocation {
+  FISHING # Hero died in Fishing contract
+  DRAGMA # Hero died in Dragma contract
 }
 ```
 

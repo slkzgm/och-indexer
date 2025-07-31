@@ -142,6 +142,7 @@ export function createHero(
     
     // Death and revival system
     isDead: false,
+    deathLocation: undefined, // null when alive or revived
     deathsCount: 0,
     revivalCount: 0,
     spentOnRevive: 0n,

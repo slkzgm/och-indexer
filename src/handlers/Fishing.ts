@@ -246,6 +246,7 @@ Fishing.Dead.handlerWithLoader({
     const deadHero = {
       ...existingHero,
       isDead: true,
+      deathLocation: 'FISHING',
       deathsCount: existingHero.deathsCount + 1,
       fishingDeathCount: existingHero.fishingDeathCount + 1,
     };
@@ -304,6 +305,7 @@ Fishing.Revived.handlerWithLoader({
     const revivedHero = {
       ...existingHero,
       isDead: false,
+      deathLocation: undefined, // Reset death location when revived
       revivalCount: existingHero.revivalCount + 1,
       spentOnRevive: existingHero.spentOnRevive + cost,
       fishingRevivalCount: existingHero.fishingRevivalCount + 1,
