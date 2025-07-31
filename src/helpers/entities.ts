@@ -20,6 +20,7 @@ export async function getOrCreatePlayerOptimized(
     stakedHeroCount: number;
     gachaBalances: bigint[];
     itemsBalances: bigint[];
+    totalSpent: bigint;
   }> = {}
 ) {
   const playerId_lc = playerId.toLowerCase();
@@ -32,7 +33,8 @@ export async function getOrCreatePlayerOptimized(
     stakedHeroCount: 0,
     heroesByLevel: Array(101).fill(0),
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-    itemsBalances: [0n, 0n, 0n], // [tokenId1, tokenId2, tokenId3]
+    itemsBalances: Array(21).fill(0n), // [tokenId1, tokenId2, ..., tokenId21]
+    totalSpent: 0n, // Total spent across all game activities
     ...overrides, // Override les valeurs si spécifiées
   });
 }
@@ -54,6 +56,7 @@ export async function getOrCreatePlayer(
     stakedHeroCount: number;
     gachaBalances: bigint[];
     itemsBalances: bigint[];
+    totalSpent: bigint;
   }> = {}
 ) {
   const playerId_lc = playerId.toLowerCase();
@@ -66,7 +69,8 @@ export async function getOrCreatePlayer(
     stakedHeroCount: 0,
     heroesByLevel: Array(101).fill(0),
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-    itemsBalances: [0n, 0n, 0n], // [tokenId1, tokenId2, tokenId3]
+    itemsBalances: Array(21).fill(0n), // [tokenId1, tokenId2, ..., tokenId21]
+    totalSpent: 0n, // Total spent across all game activities
     ...overrides, // Override les valeurs si spécifiées
   });
 }
@@ -128,13 +132,20 @@ export function createHero(
     totalClaims: 0,
     totalFishingFees: 0n,
     totalFishingRewards: 0n,
-    fishingRewardsPerZone: [0n,0n,0n],
+    fishingRewardsPerZone: [0n,0n,0n,0n],
     totalFishingShards: 0,
-    fishingShardsPerZone: [0,0,0],
+    fishingShardsPerZone: [0,0,0,0],
     totalFishingBonuses: 0,
-    fishingBonusesPerZone: [0,0,0],
+    fishingBonusesPerZone: [0,0,0,0],
     totalFishingSessions: 0,
-    fishingSessionsPerZone: [0,0,0],
+    fishingSessionsPerZone: [0,0,0,0],
+    
+    // Death and revival system
+    isDead: false,
+    deathsCount: 0,
+    revivalCount: 0,
+    spentOnRevive: 0n,
+    
     totalAttemptedTrainings: 0,
     totalSuccessfulTrainings: 0,
     totalFailedTrainings: 0,

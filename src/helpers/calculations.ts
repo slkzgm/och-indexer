@@ -18,6 +18,7 @@ const FISHING_ZONE_TO_STAKING_TYPE: Record<number, string> = {
   0: "FISHING_SLIME_BAY",
   1: "FISHING_SHROOM_GROTTO", 
   2: "FISHING_SKEET_PIER",
+  3: "FISHING_MAGMA_MIRE",
 };
 
 // Constants pour les rewards (en wei)
@@ -71,7 +72,7 @@ export function calculateFishingUnstakeAvailable(stakedTimestamp: bigint): bigin
 
 /**
  * Détermine le type de staking fishing basé sur la zone
- * @param zone La zone de fishing (0, 1, 2)
+ * @param zone La zone de fishing (0, 1, 2, 3)
  * @returns Le type de staking correspondant
  */
 export function getFishingStakingType(zone: bigint): string {
@@ -93,7 +94,7 @@ export function getFishingStakingType(zone: bigint): string {
  */
 export function isValidFishingZone(zone: bigint): boolean {
   const zoneNumber = Number(zone);
-  return zoneNumber >= 0 && zoneNumber <= 2 && FISHING_ZONE_TO_STAKING_TYPE[zoneNumber] !== undefined;
+  return zoneNumber >= 0 && zoneNumber <= 3 && FISHING_ZONE_TO_STAKING_TYPE[zoneNumber] !== undefined;
 }
 
 /**

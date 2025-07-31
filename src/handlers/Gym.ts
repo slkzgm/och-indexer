@@ -6,6 +6,7 @@ import { getOrCreateHeroesGlobalStats } from "../helpers/stats";
 import { getOrCreateGymGlobalStats, getOrCreateGymUserStats } from "../helpers/stats";
 import { createActivity } from "../helpers/activity";
 import { calculateTrainingCost } from "../helpers/calculations";
+import { updatePlayerTotalSpent } from "../helpers/player";
 
 /**
  * Handler pour Gym.ChaosUpgraded
@@ -157,6 +158,9 @@ Gym.ChaosUpgraded.handlerWithLoader({
       }
       
       context.GymUserStats.set(gymUser);
+
+      // Met à jour le totalSpent du joueur
+      await updatePlayerTotalSpent(context, updatedHero.owner_id, trainingCost);
 
       // Mise à jour du hero
       const heroUpdates = {
@@ -334,6 +338,9 @@ Gym.NormalUpgraded.handlerWithLoader({
       gymUser.totalOutcomeSumByType[trainingType] += BigInt(outcome);
       
       context.GymUserStats.set(gymUser);
+
+      // Met à jour le totalSpent du joueur
+      await updatePlayerTotalSpent(context, updatedHero.owner_id, trainingCost);
 
       // Mise à jour du hero
       const heroUpdates = {
@@ -518,6 +525,9 @@ Gym.UnknownUpgraded.handlerWithLoader({
       }
       
       context.GymUserStats.set(gymUser);
+
+      // Met à jour le totalSpent du joueur
+      await updatePlayerTotalSpent(context, updatedHero.owner_id, trainingCost);
 
       // Mise à jour du hero
       const heroUpdates = {

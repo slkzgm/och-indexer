@@ -44,15 +44,21 @@ export async function getOrCreateFishingGlobalStats(context: any) {
     stats = {
       id: 'global',
       totalHeroes: 0,
-      totalHeroesPerZone: [0,0,0],
+      totalHeroesPerZone: [0,0,0,0],
       heroesByLevel: Array(101).fill(0),
-      totalFeesPerZone: [0n,0n,0n],
+      totalFeesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
-      rewardsPerZone: [0n,0n,0n],
+      rewardsPerZone: [0n,0n,0n,0n],
       totalShardsWon: 0,
-      shardsPerZone: [0,0,0],
+      shardsPerZone: [0,0,0,0],
       totalBonuses: 0,
-      bonusesPerZone: [0,0,0],
+      bonusesPerZone: [0,0,0,0],
+      
+      // Death and revival stats
+      totalDeaths: 0,
+      totalRevivals: 0,
+      totalSpentOnRevive: 0n,
+      
       lastUpdated: 0n,
     };
     await context.FishingGlobalStats.set(stats);
@@ -65,17 +71,23 @@ export async function getOrCreateFishingUserStats(context: any, userId: string) 
     stats = {
       id: userId,
       totalHeroes: 0,
-      heroesPerZone: [0,0,0],
+      heroesPerZone: [0,0,0,0],
       heroesByLevel: Array(101).fill(0),
       totalFees: 0n,
-      feesPerZone: [0n,0n,0n],
+      feesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
-      rewardsPerZone: [0n,0n,0n],
+      rewardsPerZone: [0n,0n,0n,0n],
       totalShardsWon: 0,
-      shardsPerZone: [0,0,0],
+      shardsPerZone: [0,0,0,0],
       totalBonuses: 0,
-      bonusesPerZone: [0,0,0],
-      totalSessionsPerZone: [0,0,0],
+      bonusesPerZone: [0,0,0,0],
+      totalSessionsPerZone: [0,0,0,0],
+      
+      // Death and revival stats
+      totalDeaths: 0,
+      totalRevivals: 0,
+      totalSpentOnRevive: 0n,
+      
       player_id: userId,
     };
     await context.FishingUserStats.set(stats);

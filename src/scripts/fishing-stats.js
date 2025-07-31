@@ -18,12 +18,14 @@ const STAKING_TYPE_TO_ZONE = {
   'FISHING_SLIME_BAY': 0,
   'FISHING_SHROOM_GROTTO': 1,
   'FISHING_SKEET_PIER': 2,
+  'FISHING_MAGMA_MIRE': 3,
 };
 
 const ZONE_NAMES = {
   0: 'Slime Bay',
   1: 'Shroom Grotto', 
   2: 'Skeet Pier',
+  3: 'Magma Mire',
 };
 
 /**
@@ -167,8 +169,8 @@ function displayStats(heroes, walletAddress = null) {
   console.log(`Total heroes staked: ${totalHeroes.toLocaleString()}\n`);
 
   // Group by zone
-  const heroesByZone = { 0: [], 1: [], 2: [] };
-  const levelDistribution = { total: {}, 0: {}, 1: {}, 2: {} };
+  const heroesByZone = { 0: [], 1: [], 2: [], 3: [] };
+  const levelDistribution = { total: {}, 0: {}, 1: {}, 2: {}, 3: {} };
   let totalLevelSum = 0;
 
   heroes.forEach(hero => {

@@ -1,11 +1,8 @@
 import {
   Fishing,
-  Fishing_Staked,
-  Fishing_UnstakeRequested,
-  Fishing_Unstaked,
 } from "generated";
 import { setHeroFishingStaked } from "../helpers/entities";
-import { updatePlayerCounts } from "../helpers/player";
+import { updatePlayerCounts, updatePlayerTotalSpent } from "../helpers/player";
 import { getOrCreateFishingGlobalStats, getOrCreateFishingUserStats } from "../helpers/stats";
 import { createActivity } from "../helpers/activity";
 import { getFishingStakingType } from "../helpers/calculations";
@@ -207,5 +204,125 @@ Fishing.Unstaked.handlerWithLoader({
 
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
     await createActivity(context, id, BigInt(event.block.timestamp), owner, 'FISHING_UNSTAKE', {amount: amount.toString(), weaponShardId: weaponShardId.toString(), bonusId: bonusId.toString()}, existingHero.id, 'Fishing', getFishingStakingType(zone));
+  },
+}); 
+
+/**
+ * Handler pour Fishing.Dead
+ * Un héro meurt pendant la pêche
+ */
+Fishing.Dead.handlerWithLoader({
+  loader: async ({ event, context }: { event: any; context: any }) => {
+    const { heroId } = event.params;
+    
+    if (context.isPreload) {
+      const hero = await context.Hero.get(heroId.toString());
+      return { hero };
+    } else {
+      const hero = await context.Hero.get(heroId.toString());
+      return { hero };
+    }
+  },
+
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
+    const { owner, heroId, requestId } = event.params;
+    const timestamp = BigInt(event.block.timestamp);
+
+    const { hero } = loaderReturn as { hero: any | null };
+    const existingHero = hero ?? await context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`);
+
+    // Stocke l'événement brut
+    await context.Fishing_Dead.set({
+      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+      owner,
+      heroId,
+      requestId,
+    });
+
+    // Met à jour le héro : marqué comme mort
+    const deadHero = {
+      ...existingHero,
+      isDead: true,
+      deathsCount: existingHero.deathsCount + 1,
+    };
+    context.Hero.set(deadHero);
+
+    // Stats globales
+    const global = await getOrCreateFishingGlobalStats(context);
+    global.totalDeaths += 1;
+    global.lastUpdated = timestamp;
+    context.FishingGlobalStats.set(global);
+
+    // Stats utilisateur
+    const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
+    userStats.totalDeaths += 1;
+    context.FishingUserStats.set(userStats);
+
+    // Activité
+    const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+    await createActivity(context, id, timestamp, owner, 'DEATH', {heroId: heroId.toString()}, existingHero.id, 'Fishing', existingHero.stakingType);
+  },
+});
+
+/**
+ * Handler pour Fishing.Revived
+ * Un héro est ressuscité
+ */
+Fishing.Revived.handlerWithLoader({
+  loader: async ({ event, context }: { event: any; context: any }) => {
+    const { heroId } = event.params;
+    
+    if (context.isPreload) {
+      const hero = await context.Hero.get(heroId.toString());
+      return { hero };
+    } else {
+      const hero = await context.Hero.get(heroId.toString());
+      return { hero };
+    }
+  },
+
+  handler: async ({ event, context, loaderReturn }: { event: any; context: any; loaderReturn: any }) => {
+    const { owner, heroId, cost } = event.params;
+    const timestamp = BigInt(event.block.timestamp);
+
+    const { hero } = loaderReturn as { hero: any | null };
+    const existingHero = hero ?? await context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`);
+
+    // Stocke l'événement brut
+    await context.Fishing_Revived.set({
+      id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
+      owner,
+      heroId,
+      cost,
+    });
+
+    // Met à jour le héro : ressuscité
+    const revivedHero = {
+      ...existingHero,
+      isDead: false,
+      revivalCount: existingHero.revivalCount + 1,
+      spentOnRevive: existingHero.spentOnRevive + cost,
+    };
+    context.Hero.set(revivedHero);
+
+    // Stats globales
+    const global = await getOrCreateFishingGlobalStats(context);
+    global.totalRevivals += 1;
+    global.totalSpentOnRevive += cost;
+    global.lastUpdated = timestamp;
+    context.FishingGlobalStats.set(global);
+
+    // Stats utilisateur
+    const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
+    userStats.totalRevivals += 1;
+    userStats.totalSpentOnRevive += cost;
+    context.FishingUserStats.set(userStats);
+
+    // Met à jour le totalSpent du joueur
+    await updatePlayerTotalSpent(context, owner, cost);
+
+    // Activité
+    const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
+    await createActivity(context, id, timestamp, owner, 'REVIVAL', {heroId: heroId.toString(), cost: cost.toString()}, existingHero.id, 'Fishing', existingHero.stakingType);
   },
 }); 

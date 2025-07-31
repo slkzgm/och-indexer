@@ -8,6 +8,7 @@ import { createWeaponRequest, getOrCreatePlayerOptimized, createWeapon } from ".
 import { parseWeaponMetadata } from "../helpers/calculations";
 import { getOrCreateRemixGlobalStats, getOrCreateRemixUserStats } from "../helpers/entities";
 import { createActivity } from "../helpers/activity"; // Ajuster le chemin si nécessaire
+import { updatePlayerTotalSpent } from "../helpers/player";
 
 /**
  * Handler pour WeaponRemixer.WeaponMixRequested
@@ -228,6 +229,9 @@ WeaponRemixer.WeaponGenerated.handlerWithLoader({
       userStats.spentByNumWeapons[numIndex] = userStats.spentByNumWeapons[numIndex] + cost;
       userStats.outcomesByTypeAndRarity[numIndex][sourceRarity][outcome] = userStats.outcomesByTypeAndRarity[numIndex][sourceRarity][outcome] + BigInt(1);
       context.RemixUserStats.set(userStats);
+
+      // Met à jour le totalSpent du joueur
+      await updatePlayerTotalSpent(context, user, cost);
 
       // Activity
       const details = JSON.stringify({

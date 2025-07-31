@@ -45,4 +45,31 @@ export async function updatePlayerCounts(
   }
 
   context.Player.set(player);
+}
+
+/**
+ * Met à jour le totalSpent d'un joueur
+ * @param context Le contexte du handler
+ * @param playerId L'ID du joueur
+ * @param amountChange Le montant à ajouter (positif) ou soustraire (négatif)
+ */
+export async function updatePlayerTotalSpent(
+  context: any,
+  playerId: string,
+  amountChange: bigint
+) {
+  if (amountChange === 0n) {
+    return;
+  }
+
+  const player = await context.Player.get(playerId.toLowerCase());
+  if (player) {
+    player.totalSpent += amountChange;
+    // Gestion des montants négatifs (peut arriver lors de l'indexing initial)
+    if (player.totalSpent < 0n) {
+      console.log(`TotalSpent négatif détecté pour ${playerId}: ${player.totalSpent}. Mise à 0.`);
+      player.totalSpent = 0n;
+    }
+    context.Player.set(player);
+  }
 } 

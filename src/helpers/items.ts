@@ -1,21 +1,39 @@
 import { getOrCreatePlayer } from "./entities";
 
-// Mapping des IDs Items vers les index dans l'array (token IDs 1, 2, 3)
+// Mapping des IDs Items vers les index dans l'array (token IDs 1 à 21)
 const ITEMS_TYPE_INDEX: Record<string, number> = {
-  "1": 0, // Token ID 1 -> index 0
-  "2": 1, // Token ID 2 -> index 1
-  "3": 2, // Token ID 3 -> index 2
+  "1": 0,   // Token ID 1 -> index 0
+  "2": 1,   // Token ID 2 -> index 1
+  "3": 2,   // Token ID 3 -> index 2
+  "4": 3,   // Token ID 4 -> index 3
+  "5": 4,   // Token ID 5 -> index 4
+  "6": 5,   // Token ID 6 -> index 5
+  "7": 6,   // Token ID 7 -> index 6
+  "8": 7,   // Token ID 8 -> index 7
+  "9": 8,   // Token ID 9 -> index 8
+  "10": 9,  // Token ID 10 -> index 9
+  "11": 10, // Token ID 11 -> index 10
+  "12": 11, // Token ID 12 -> index 11
+  "13": 12, // Token ID 13 -> index 12
+  "14": 13, // Token ID 14 -> index 13
+  "15": 14, // Token ID 15 -> index 14
+  "16": 15, // Token ID 16 -> index 15
+  "17": 16, // Token ID 17 -> index 16
+  "18": 17, // Token ID 18 -> index 17
+  "19": 18, // Token ID 19 -> index 18
+  "20": 19, // Token ID 20 -> index 19
+  "21": 20, // Token ID 21 -> index 20
 };
 
 /**
  * Détermine l'index dans l'array des balances basé sur l'ID Items
  * @param itemId L'ID de l'item Items
- * @returns L'index dans l'array (0-2)
+ * @returns L'index dans l'array (0-20)
  */
 function getItemsIndex(itemId: bigint): number {
   const index = ITEMS_TYPE_INDEX[itemId.toString()];
   if (index === undefined) {
-    console.warn(`ID Items non supporté: ${itemId}, token IDs supportés: 1, 2, 3`);
+    console.warn(`ID Items non supporté: ${itemId}, token IDs supportés: 1-21`);
     return 0; // Default à l'index 0
   }
   return index;

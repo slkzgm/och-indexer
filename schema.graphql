@@ -403,7 +403,7 @@ type Fishing_Staked {
   id: ID!
   owner: String! # Hero owner's wallet address
   heroId: BigInt!
-  zone: BigInt! # Fishing zone identifier
+  zone: BigInt! # Fishing zone identifier (0-3)
   fee: BigInt! # Staking fee paid
 }
 
@@ -425,7 +425,7 @@ type Fishing_Unstaked {
   owner: String! # Hero owner's wallet address
   heroId: BigInt!
   requestId: BigInt! # Links to the original request
-  zone: BigInt! # Fishing zone identifier
+  zone: BigInt! # Fishing zone identifier (0-3)
   amount: BigInt! # Rewards earned
   weaponShardId: BigInt! # Weapon shard obtained
   bonusId: BigInt! # Bonus item obtained
@@ -452,8 +452,11 @@ type Player @entity {
   # Gacha token balances: [bronze, silver, gold, rainbow] - fixed order
   gachaBalances: [BigInt!]! @default(value: "[0, 0, 0, 0]")
   
-  # Game items balances: [tokenId1, tokenId2, tokenId3] - mapped to indices [0, 1, 2]
-  itemsBalances: [BigInt!]! @default(value: "[0, 0, 0]")
+  # Game items balances: [tokenId1, tokenId2, ..., tokenId21] - mapped to indices [0, 1, ..., 20]
+  itemsBalances: [BigInt!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
+  
+  # Total spending across all game activities
+  totalSpent: BigInt! @default(value: "0") # Total spent on training, fishing, remix, etc.
 
   # Relations
   heroes: [Hero!]! @derivedFrom(field: "owner") # All heroes owned by this player
@@ -505,13 +508,13 @@ type Hero @entity {
   activities: [Activity!]! @derivedFrom(field: "hero") # Historique des activities liées à ce hero
   totalFishingFees: BigInt! @default(value: "0")
   totalFishingRewards: BigInt! @default(value: "0")
-  fishingRewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  fishingRewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
   totalFishingShards: Int! @default(value: "0")
-  fishingShardsPerZone: [Int!]! @default(value: "[0,0,0]")
+  fishingShardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
   totalFishingBonuses: Int! @default(value: "0")
-  fishingBonusesPerZone: [Int!]! @default(value: "[0,0,0]")
+  fishingBonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
   totalFishingSessions: Int! @default(value: "0") # Stakes in fishing
-  fishingSessionsPerZone: [Int!]! @default(value: "[0,0,0]")
+  fishingSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]")
   totalAttemptedTrainings: Int! @default(value: "0")
   totalSuccessfulTrainings: Int! @default(value: "0")
   totalFailedTrainings: Int! @default(value: "0")
@@ -640,9 +643,10 @@ Defines the different types of staking mechanisms available
 """
 enum StakingType {
   DRAGMA_UNDERLINGS # Standard hero staking for rewards
-  FISHING_SLIME_BAY # Fishing in Slime Bay zone
-  FISHING_SHROOM_GROTTO # Fishing in Shroom Grotto zone
-  FISHING_SKEET_PIER # Fishing in Skeet Pier zone
+  FISHING_SLIME_BAY # Fishing in Slime Bay zone (zone 0)
+  FISHING_SHROOM_GROTTO # Fishing in Shroom Grotto zone (zone 1)
+  FISHING_SKEET_PIER # Fishing in Skeet Pier zone (zone 2)
+  FISHING_MAGMA_MIRE # Fishing in Magma Mire zone (zone 3)
 }
 
 """
@@ -684,31 +688,31 @@ type DragmaUserStats @entity {
 type FishingGlobalStats @entity {
   id: ID! # 'global'
   totalHeroes: Int! @default(value: "0")
-  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0]") # [zone0,1,2]
+  totalHeroesPerZone: [Int!]! @default(value: "[0,0,0,0]") # [zone0,1,2,3]
   heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
-  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
   totalRewardsAmount: BigInt! @default(value: "0")
-  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
   totalShardsWon: Int! @default(value: "0")
-  shardsPerZone: [Int!]! @default(value: "[0,0,0]")
+  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
   totalBonuses: Int! @default(value: "0")
-  bonusesPerZone: [Int!]! @default(value: "[0,0,0]")
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
   lastUpdated: BigInt! @default(value: "0")
 }
 type FishingUserStats @entity {
   id: Bytes! # User address
   totalHeroes: Int! @default(value: "0")
-  heroesPerZone: [Int!]! @default(value: "[0,0,0]")
+  heroesPerZone: [Int!]! @default(value: "[0,0,0,0]")
   heroesByLevel: [Int!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
   totalFees: BigInt! @default(value: "0")
-  feesPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  feesPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
   totalRewardsAmount: BigInt! @default(value: "0")
-  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0]")
+  rewardsPerZone: [BigInt!]! @default(value: "[0,0,0,0]")
   totalShardsWon: Int! @default(value: "0")
-  shardsPerZone: [Int!]! @default(value: "[0,0,0]")
+  shardsPerZone: [Int!]! @default(value: "[0,0,0,0]")
   totalBonuses: Int! @default(value: "0")
-  bonusesPerZone: [Int!]! @default(value: "[0,0,0]")
-  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0]")
+  bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]")
+  totalSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]")
   player: Player!
 }
 
