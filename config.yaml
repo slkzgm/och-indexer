@@ -104,4 +104,6 @@ networks:
     - event: Staked(address owner, uint256 heroId, uint256 zone, uint256 fee)
     - event: UnstakeRequested(address owner, uint256 heroId, uint256 requestId)
     - event: Unstaked(address owner, uint256 heroId, uint256 requestId, uint256 zone, uint256 amount, uint256 weaponShardId, uint256 bonusId)
+    - event: Dead(address owner, uint256 heroId, uint256 requestId)
+    - event: Revived(address owner, uint256 heroId, uint256 cost)
 unordered_multichain_mode: true
