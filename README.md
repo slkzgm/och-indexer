@@ -131,6 +131,7 @@ type Hero @entity {
 - `deathsCount`: Total number of times hero has died
 - `revivalCount`: Total number of times hero has been revived
 - `spentOnRevive`: Total cost spent on reviving this hero
+- **Note**: When a hero dies, `staked` is set to `false`. After revival, the hero remains unstaked and must be manually restaked.
 - `fishingDeathCount`: Total number of deaths in fishing
 - `fishingRevivalCount`: Total number of revivals in fishing
 - `fishingReviveSpent`: Total cost spent on fishing revivals

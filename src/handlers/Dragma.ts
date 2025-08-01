@@ -305,6 +305,7 @@ Dragma.HeroDied.handlerWithLoader({
       ...existingHero, 
       isDead: true, 
       deathLocation: 'DRAGMA',
+      staked: false, // Un héros mort n'est plus considéré comme staked
       deathsCount: existingHero.deathsCount + 1,
       dragmaDeathCount: existingHero.dragmaDeathCount + 1,
     };
@@ -359,6 +360,7 @@ Dragma.Revived.handlerWithLoader({
       ...existingHero, 
       isDead: false, 
       deathLocation: undefined, // Reset death location when revived
+      staked: false, // Un héros ressuscité reste unstaked, doit être restaké manuellement
       revivalCount: existingHero.revivalCount + 1,
       spentOnRevive: existingHero.spentOnRevive + fee,
       dragmaRevivalCount: existingHero.dragmaRevivalCount + 1,

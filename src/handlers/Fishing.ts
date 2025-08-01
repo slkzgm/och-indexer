@@ -242,11 +242,12 @@ Fishing.Dead.handlerWithLoader({
       requestId,
     });
 
-    // Met à jour le héro : marqué comme mort
+    // Met à jour le héro : marqué comme mort et unstaked
     const deadHero = {
       ...existingHero,
       isDead: true,
       deathLocation: 'FISHING',
+      staked: false, // Un héros mort n'est plus considéré comme staked
       deathsCount: existingHero.deathsCount + 1,
       fishingDeathCount: existingHero.fishingDeathCount + 1,
     };
@@ -301,11 +302,12 @@ Fishing.Revived.handlerWithLoader({
       cost,
     });
 
-    // Met à jour le héro : ressuscité
+    // Met à jour le héro : ressuscité (reste unstaked, doit être restaké manuellement)
     const revivedHero = {
       ...existingHero,
       isDead: false,
       deathLocation: undefined, // Reset death location when revived
+      staked: false, // Un héros ressuscité reste unstaked, doit être restaké manuellement
       revivalCount: existingHero.revivalCount + 1,
       spentOnRevive: existingHero.spentOnRevive + cost,
       fishingRevivalCount: existingHero.fishingRevivalCount + 1,
