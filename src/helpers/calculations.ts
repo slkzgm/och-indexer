@@ -4,17 +4,17 @@
  */
 
 // Constants pour les calculs
-const TRAINING_COOLDOWN_SECONDS = 24 * 60 * 60; // 24h
+const TRAINING_COOLDOWN_SECONDS = 11 * 60 * 60 + 45 * 60; // 11h45
 const MIN_HERO_LEVEL = 1;
 
 // Constants pour DragmaUnderlings staking
 const UNSTAKE_COOLDOWN_SECONDS = 6 * 60 * 60; // 6h
 
 // Constants pour Fishing staking
-const FISHING_UNSTAKE_COOLDOWN_SECONDS = 12 * 60 * 60; // 12h
+const FISHING_UNSTAKE_COOLDOWN_SECONDS = 11 * 60 * 60 + 45 * 60; // 11h45
 
 // Constants pour Dragma staking
-const DRAGMA_UNSTAKE_COOLDOWN_SECONDS = 12 * 60 * 60; // 12h
+const DRAGMA_UNSTAKE_COOLDOWN_SECONDS = 11 * 60 * 60 + 45 * 60; // 11h45
 
 // Mapping des zones fishing vers les StakingType
 const FISHING_ZONE_TO_STAKING_TYPE: Record<number, string> = {

@@ -41,6 +41,8 @@ async function getLegendaryRemixStats() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-hasura-admin-secret': 'hasura_admin_JTlvlXn4qkkdmVwpTIpgzqkiTj2w7reRaIl',
+        'x-hasura-role': 'admin'
       },
       body: JSON.stringify({ query })
     });
@@ -134,5 +136,124 @@ async function getLegendaryRemixStats() {
   }
 }
 
-// Utilisation
+async function inspectIndexer() {
+  const url = "https://graph.onchainsuperheroes.xyz/v1/graphql";
+  
+  const query = `
+    query IntrospectIndexer {
+      __type(name: "query_root") {
+        fields {
+          name
+          type {
+            name
+            kind
+          }
+        }
+      }
+    }
+  `;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-hasura-admin-secret': 'hasura_admin_JTlvlXn4qkkdmVwpTIpgzqkiTj2w7reRaIl',
+        'x-hasura-role': 'admin'
+      },
+      body: JSON.stringify({ query })
+    });
+    
+    const data = await response.json();
+    
+    if (data.errors) {
+      console.error('GraphQL Errors:', data.errors);
+      return;
+    }
+    
+    console.log('Available fields in query_root:');
+    data.data.__type.fields.forEach(field => {
+      console.log(`- ${field.name}: ${field.type.name}`);
+    });
+    
+  } catch (error) {
+    console.error('Error inspecting indexer:', error);
+  }
+}
+
+async function inspectWeaponEntity() {
+  const url = "https://graph.onchainsuperheroes.xyz/v1/graphql";
+  
+  const query = `
+    query InspectWeapon {
+      __type(name: "Weapon") {
+        fields {
+          name
+          type {
+            name
+            kind
+          }
+        }
+      }
+    }
+  `;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-hasura-admin-secret': 'hasura_admin_JTlvlXn4qkkdmVwpTIpgzqkiTj2w7reRaIl',
+        'x-hasura-role': 'admin'
+      },
+      body: JSON.stringify({ query })
+    });
+    
+    const data = await response.json();
+    
+    if (data.errors) {
+      console.error('GraphQL Errors:', data.errors);
+      return;
+    }
+    
+    console.log('Available fields in Weapon entity:');
+    data.data.__type.fields.forEach(field => {
+      console.log(`- ${field.name}: ${field.type.name}`);
+    });
+    
+  } catch (error) {
+    console.error('Error inspecting Weapon entity:', error);
+  }
+}
+
+async function testSimpleQuery() {
+  const url = "https://graph.onchainsuperheroes.xyz/v1/graphql";
+  
+  const query = `
+    query TestQuery {
+      no_queries_available
+    }
+  `;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-hasura-admin-secret': 'hasura_admin_JTlvlXn4qkkdmVwpTIpgzqkiTj2w7reRaIl',
+        'x-hasura-role': 'admin'
+      },
+      body: JSON.stringify({ query })
+    });
+    
+    const data = await response.json();
+    
+    console.log('Response:', JSON.stringify(data, null, 2));
+    
+  } catch (error) {
+    console.error('Error testing query:', error);
+  }
+}
+
+// Test simple query
 getLegendaryRemixStats();
