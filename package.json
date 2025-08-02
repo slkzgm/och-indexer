@@ -11,7 +11,7 @@
     "start": "envio start",
     "test": "pnpm mocha",
     "setup-hasura": "node src/scripts/hasura/setup-hasura.js",
-    "setup-relations": "node src/scripts/hasura/setup-relations-simple.js",
+    "setup-relations": "node src/scripts/hasura/setup-relations.js",
     "setup-public-tables": "node src/scripts/hasura/public-tables.js",
     "delete-relations": "node src/scripts/hasura/delete-relations.js"
   },

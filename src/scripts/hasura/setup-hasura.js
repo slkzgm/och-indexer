@@ -6,7 +6,7 @@ const path = require('path');
 console.log('🚀 Starting Hasura setup...');
 
 const scripts = [
-  'setup-relations-simple.js', // Relations GraphQL (sans contraintes FK)
+  'setup-relations.js', // Relations GraphQL (sans contraintes FK)
   'public-tables.js'           // Rendre les tables publiques
 ];
 
