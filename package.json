@@ -9,7 +9,11 @@
     "codegen": "envio codegen",
     "dev": "envio dev",
     "start": "envio start",
-    "test": "pnpm mocha"
+    "test": "pnpm mocha",
+    "setup-hasura": "node src/scripts/hasura/setup-hasura.js",
+    "setup-relations": "node src/scripts/hasura/setup-relations-simple.js",
+    "setup-public-tables": "node src/scripts/hasura/public-tables.js",
+    "delete-relations": "node src/scripts/hasura/delete-relations.js"
   },
   "devDependencies": {
     "@types/chai": "^4.3.11",

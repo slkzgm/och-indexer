@@ -4,6 +4,47 @@
 
 This subgraph indexes events from the OnChain Heroes Season 2 game, tracking heroes, weapons, staking, training, fishing, and remix mechanics. It provides comprehensive analytics and activity tracking for the game ecosystem.
 
+## Game Mechanics
+
+### Training System
+- **Cooldown**: 11h45 between training sessions (11 * 60 * 60 + 45 * 60 seconds)
+- **Cost Formula**: `(Level * 10000e18) / (69 + Level)`
+- **Types**: NORMAL, CHAOS, UNKNOWN
+- **Outcomes**: Level increase (-5 to +5 levels per training for Chaos, 0-2 for others)
+
+### Staking System
+- **Dragma Underlings**: 6-hour unstake cooldown
+- **Fishing**: 11h45 unstake cooldown
+- **Dragma**: 11h45 unstake cooldown
+- **Rewards**: Based on hero level and weapon sharpness
+- **Fishing Zones**: SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2), MAGMA_MIRE(3)
+- **Dragma Zones**: TAILS(0), LEGS(1), TORSO(2), HEAD(3)
+
+### Weapon System
+- **Rarities**: COMMON(0) to MYTHIC(6)
+- **Coefficients**: [1,2,3,5,8,13,21] for damage calculation
+- **Sharpness**: Affects reward bonus (0-20%)
+- **Durability**: Affects weapon usage
+
+### Remix System
+- **Weapons**: 2-5 weapons can be combined
+- **Outcomes**: FAIL(+0), SUCCESS(+1), PERFECT(+2)
+- **Legendary**: Special remix with 3 legendary weapons
+
+### Death & Revival System
+- **Death**: Heroes can die in Fishing and Dragma contracts
+- **Revival**: Heroes can be revived for a cost
+- **Impact**: Dead heroes cannot be staked or trained until revived
+- **Tracking**: Separate death/revival counts per contract
+
+### Reward Calculation System
+- **Damage Formula**: `level * weaponCoefficient[rarity]`
+- **Max Rewards**: `(Damage × 400 × 1e18) / (20 + Hero Level)`
+- **Base Rewards**: 80% of max rewards (guaranteed)
+- **Sharpness Bonus**: 20% of max rewards, scaled by sharpness ratio
+- **Effective Rewards**: Base + Bonus + 50 wei fixed bonus
+- **Hourly Rates**: Daily rewards divided by 24
+
 ## Core Entities
 
 ### Player
@@ -31,7 +72,7 @@ type Player @entity {
 - `stakedHeroCount`: Currently staked heroes across all staking types
 - `heroesByLevel`: Array of 101 elements tracking hero distribution by level (0-100)
 - `gachaBalances`: Fixed 4-element array for gacha token balances [bronze, silver, gold, rainbow]
-- `itemsBalances`: Fixed 21-element array for game item balances
+- `itemsBalances`: Fixed 21-element array for game item balances [tokenId1, tokenId2, ..., tokenId21]
 - `totalSpent`: Total spent across all game activities (training, fishing, remix, etc.)
 
 ### Hero
@@ -47,8 +88,8 @@ type Hero @entity {
   # Character progression
   level: Int! # Current hero level (1-100)
   lastTrainingTimestamp: BigInt! # Last time hero was trained
-  nextTrainingCost: BigInt! # Cost for next training session
-  nextTrainingAvailable: BigInt! # When next training is available
+  nextTrainingCost: BigInt! # Cost for next training session (calculated using formula)
+  nextTrainingAvailable: BigInt! # When next training is available (11h45 cooldown)
   revealed: Boolean! # Whether hero attributes are revealed
   
   # Equipment and combat stats
@@ -67,10 +108,10 @@ type Hero @entity {
   staked: Boolean! # Whether hero is currently staked
   stakingType: StakingType # Type of staking (fishing, dragma, etc.)
   stakedTimestamp: BigInt! # When hero was staked
-  unstakeAvailableTimestamp: BigInt! # When hero can be unstaked
+  unstakeAvailableTimestamp: BigInt! # When hero can be unstaked (cooldown: 6h for DragmaUnderlings, 11h45 for Fishing/Dragma)
   lastClaimTimestamp: BigInt! # Last time rewards were claimed
   totalRewardsClaimed: BigInt! # Total rewards claimed for this hero
-  totalStakingDuration: BigInt! # Total staking duration in seconds
+  totalStakingDuration: BigInt! # Total staking duration in seconds (cumulative)
   totalStakes: Int! # Total number of stakes for this hero
   totalUnstakes: Int! # Total number of unstakes
   totalClaims: Int! # Total number of claims
@@ -87,8 +128,8 @@ type Hero @entity {
   fishingSessionsPerZone: [Int!]! # Sessions per zone
   
   # Death and revival system
-  isDead: Boolean! # Whether hero is currently dead
-  deathLocation: DeathLocation # Contract where hero died (null if alive or revived)
+  isDead: Boolean! # Whether hero is currently dead (prevents staking/training)
+  deathLocation: DeathLocation # Contract where hero died (FISHING, DRAGMA, or null if alive/revived)
   deathsCount: Int! # Total number of deaths
   revivalCount: Int! # Total number of revivals
   spentOnRevive: BigInt! # Total cost spent on revivals
@@ -115,15 +156,15 @@ type Hero @entity {
 - `level`: Hero level (1-100), affects training cost and rewards
 - `lastTrainingTimestamp`: Unix timestamp of last training
 - `nextTrainingCost`: Calculated using formula: `(Level * 10000e18) / (69 + Level)`
-- `nextTrainingAvailable`: `lastTrainingTimestamp + 24h` (training cooldown)
+- `nextTrainingAvailable`: `lastTrainingTimestamp + 11h45` (training cooldown)
 - `damage`: Calculated as `level * weaponCoefficient[rarity]`
 - `maxHeroPerDay`: Base rewards based on level and weapon rarity
 - `baseHeroPerDay`: 80% of maxHeroPerDay (guaranteed)
 - `bonusHeroPerDay`: Sharpness bonus (0-20% of max)
 - `effectiveHeroPerDay`: Total daily rewards including base 50 wei bonus
 - `staked`: Boolean indicating if hero is currently staked
-- `stakingType`: Type of staking (DRAGMA_UNDERLINGS, FISHING_*)
-- `unstakeAvailableTimestamp`: `stakedTimestamp + cooldown` (6h for dragma, 12h for fishing)
+- `stakingType`: Type of staking (DRAGMA_UNDERLINGS, FISHING_*, DRAGMA_*)
+- `unstakeAvailableTimestamp`: `stakedTimestamp + cooldown` (6h for DragmaUnderlings, 11h45 for Fishing/Dragma)
 - `totalStakingDuration`: Cumulative staking time in seconds
 - `fishingRewardsPerZone`: Array tracking rewards per fishing zone [SLIME_BAY(0), SHROOM_GROTTO(1), SKEET_PIER(2), MAGMA_MIRE(3)]
 - `isDead`: Boolean indicating if hero is currently dead (prevents staking/training)
@@ -187,6 +228,7 @@ type Weapon @entity {
 - `sourceRemixedWeaponIds`: Array of weapon IDs consumed in remix
 - `sourceRemixRarity`: Target rarity for remix operation
 - `sourceRemixType`: Type of remix (NORMAL, LEGENDARY)
+- `equippedHeroId`: ID of hero that has this weapon equipped (null if not equipped)
 
 ### WeaponRequest
 Tracks asynchronous weapon generation requests.
@@ -590,6 +632,12 @@ type Activity @entity {
 
 The subgraph tracks various event types with detailed information stored as JSON strings. Here are all the supported event types and their detail structures:
 
+### Contract Addresses
+- **DragmaUnderlings**: `0xd6C4268BC7252eAd69Da0d801CbAD9508Fc58F85`
+- **Fishing**: `0x826C2ecf3a5707b3a784a9C386d3dd52293F9164`
+- **Dragma**: `0xA651e1918d29e142eAc406374e6BC6abFc5c40e9`
+- **HeroArmory**: `0x036A2598A6752b4986a629964F428680F737DECD`
+
 ### Staking Events
 
 #### DRAGMA_STAKE
@@ -630,8 +678,8 @@ The subgraph tracks various event types with detailed information stored as JSON
 ```json
 {
   "heroId": "123",
-  "zone": "0",
-  "entryFee": "500000000000000000"
+  "entryFee": "500000000000000000",
+  "attackZone": "0"
 }
 ```
 
@@ -668,8 +716,7 @@ The subgraph tracks various event types with detailed information stored as JSON
 
 ```json
 {
-  "heroId": "123",
-  "zone": "0"
+  "heroId": "123"
 }
 ```
 
@@ -690,8 +737,7 @@ The subgraph tracks various event types with detailed information stored as JSON
 
 ```json
 {
-  "heroId": "123",
-  "zone": "0"
+  "heroId": "123"
 }
 ```
 
@@ -738,22 +784,22 @@ The subgraph tracks various event types with detailed information stored as JSON
 **Normal Training:**
 ```json
 {
-  "type": "Normal",
+  "heroId": "456",
   "oldLevel": "5",
   "newLevel": "6",
-  "result": "1",
-  "outcome": "Success"
+  "trainingType": "NORMAL",
+  "cost": "500000000000000000"
 }
 ```
 
 **Chaos Training:**
 ```json
 {
-  "type": "Chaos",
+  "heroId": "456",
   "oldLevel": "5",
   "newLevel": "7",
-  "result": "2",
-  "outcome": "Success",
+  "trainingType": "CHAOS",
+  "cost": "500000000000000000",
   "chances": ["1000", "950", "900", "850", "800", "750", "700", "650", "600", "550", "500"]
 }
 ```
@@ -761,11 +807,11 @@ The subgraph tracks various event types with detailed information stored as JSON
 **Unknown Training:**
 ```json
 {
-  "type": "Unknown",
+  "heroId": "456",
   "oldLevel": "5",
   "newLevel": "6",
-  "result": "1",
-  "outcome": "Success",
+  "trainingType": "UNKNOWN",
+  "cost": "500000000000000000",
   "chances": ["1000", "950", "900", "850", "800"]
 }
 ```
@@ -1170,9 +1216,9 @@ query {
 ### Staking Statistics
 
 ```graphql
-# Global staking stats
+# Global Dragma Underlings stats
 query {
-  dragmaGlobalStats {
+  dragmaUnderlingsGlobalStats {
     totalStakedHeroes
     currentStakedHeroes
     totalRewardsClaimed
@@ -1181,14 +1227,62 @@ query {
   }
 }
 
-# User staking stats
+# User Dragma Underlings stats
 query {
-  dragmaUserStats(id: "0x123...") {
+  dragmaUnderlingsUserStats(id: "0x123...") {
     stakedHeroes
     currentStakedHeroes
     totalRewardsClaimed
     totalClaims
     averageStakingDuration
+  }
+}
+
+# Global Dragma stats
+query {
+  dragmaGlobalStats {
+    totalHeroes
+    totalHeroesPerZone
+    totalFeesPerZone
+    totalRewardsAmount
+    totalDeaths
+    totalRevivals
+  }
+}
+
+# User Dragma stats
+query {
+  dragmaUserStats(id: "0x123...") {
+    totalHeroes
+    heroesPerZone
+    totalFees
+    totalRewardsAmount
+    totalDeaths
+    totalRevivals
+  }
+}
+
+# Global Fishing stats
+query {
+  fishingGlobalStats {
+    totalHeroes
+    totalHeroesPerZone
+    totalFeesPerZone
+    totalRewardsAmount
+    totalDeaths
+    totalRevivals
+  }
+}
+
+# User Fishing stats
+query {
+  fishingUserStats(id: "0x123...") {
+    totalHeroes
+    heroesPerZone
+    totalFees
+    totalRewardsAmount
+    totalDeaths
+    totalRevivals
   }
 }
 ```
@@ -1224,10 +1318,39 @@ query {
   activities(
     where: {
       user: "0x123...",
-      eventType: "TRAINING"
+      eventType: "TRAINING_UPGRADE"
     }
   ) {
     timestamp
+    details
+  }
+}
+
+# Staking activities
+query {
+  activities(
+    where: {
+      user: "0x123...",
+      eventType_in: ["DRAGMA_STAKE", "FISHING_STAKE"]
+    }
+  ) {
+    timestamp
+    eventType
+    details
+    stakingType
+  }
+}
+
+# Death and revival activities
+query {
+  activities(
+    where: {
+      user: "0x123...",
+      eventType_in: ["DRAGMA_DEATH", "FISHING_DEATH", "DRAGMA_REVIVAL", "FISHING_REVIVAL"]
+    }
+  ) {
+    timestamp
+    eventType
     details
   }
 }
@@ -1249,10 +1372,16 @@ query {
       level
       staked
       stakingType
+      isDead
+      deathLocation
       equippedWeapon {
         id
         rarity
         weaponType
+        sharpness
+        maxSharpness
+        durability
+        maxDurability
       }
     }
     weapons {
@@ -1260,6 +1389,7 @@ query {
       rarity
       source
       equipped
+      equippedHeroId
     }
   }
 }
@@ -1268,6 +1398,54 @@ query {
 query {
   heroesGlobalStats {
     heroesByLevel # Distribution 0-100
+  }
+}
+
+# Hero with detailed stats
+query {
+  hero(id: "123") {
+    id
+    level
+    damage
+    staked
+    stakingType
+    isDead
+    deathLocation
+    totalDeaths
+    totalRevivals
+    totalAttemptedTrainings
+    totalSuccessfulTrainings
+    totalFailedTrainings
+    equippedWeapon {
+      id
+      rarity
+      weaponType
+      sharpness
+      maxSharpness
+      durability
+      maxDurability
+    }
+  }
+}
+
+# Weapon with source tracking
+query {
+  weapon(id: "456") {
+    id
+    rarity
+    source
+    weaponType
+    sharpness
+    maxSharpness
+    durability
+    maxDurability
+    equipped
+    equippedHeroId
+    sourceGachaTokenId
+    sourceHeroCost
+    sourceRemixedWeaponIds
+    sourceRemixRarity
+    sourceRemixType
   }
 }
 ```
@@ -1287,6 +1465,14 @@ The training arrays follow the pattern:
 - **Type index**: 0=NORMAL, 1=CHAOS, 2=UNKNOWN
 - **Outcomes**: Detailed breakdown of training results
 - **Chances**: Success probability tracking
+
+### Reward Calculation Details
+- **Damage**: `level * weaponCoefficient[rarity]`
+- **Max Daily**: `(damage * 400 * 1e18) / (20 + level)`
+- **Base Daily**: `maxDaily * 80 / 100` (80% guaranteed)
+- **Sharpness Bonus**: `maxDaily * 20 * sharpness / (100 * maxSharpness)`
+- **Effective Daily**: `base + bonus + 50e18` (fixed bonus)
+- **Hourly Rates**: Daily values divided by 24
 
 ### Activity Details Format
 Activity details are stored as JSON strings containing relevant event data:
@@ -1327,7 +1513,7 @@ Activity details are stored as JSON strings containing relevant event data:
 - **Relations**: Proper entity relationships enable efficient joins
 - **BigInt**: All monetary amounts use BigInt for precision
 - **Defaults**: All arrays have proper default values to avoid null issues
-- **Cooldowns**: Training (24h), Dragma Underlings staking (6h), Fishing staking (12h), Dragma staking (12h)
+- **Cooldowns**: Training (11h45), Dragma Underlings staking (6h), Fishing staking (11h45), Dragma staking (11h45)
 
 ## Deployment
 
@@ -1339,14 +1525,14 @@ The subgraph includes handlers for the following contracts:
 - **Blacksmith**: Weapon repair and sharpening
 - **Dragma**: Hero staking and rewards with death/revival mechanics (4 zones: Tails, Legs, Torso, Head)
 - **DragmaUnderlings**: Hero staking and rewards
-- **Fishing**: Fishing mini-game mechanics
+- **Fishing**: Fishing mini-game mechanics with death/revival system
 - **Gacha1155**: Gacha token transfers
 - **GachaWeaponMachine**: Weapon generation from gacha
-- **Gym**: Hero training and level upgrades
+- **Gym**: Hero training and level upgrades (Normal, Chaos, Unknown types)
 - **Hero20**: Hero token transfers (ERC20)
 - **Hero721**: Hero NFT transfers (ERC721)
 - **HeroArmory**: Weapon equipment system
 - **HeroWeaponMachine**: Weapon generation from hero machine
 - **Items**: Game items transfers (ERC1155)
 - **Weapon721**: Weapon NFT transfers and generation
-- **WeaponRemixer**: Weapon combining/remixing system
+- **WeaponRemixer**: Weapon combining/remixing system (Normal and Legendary types)
