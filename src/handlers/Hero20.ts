@@ -1,5 +1,6 @@
 import { Hero20 } from "generated";
 import { getOrCreatePlayerOptimized } from "../helpers/entities";
+import { updatePlayerBalancesBatch } from "../helpers/player";
 import { ZERO_ADDRESS } from "../constants";
 
 // Passage à handlerWithLoader optimisé avec les nouvelles fonctionnalités
@@ -40,20 +41,34 @@ Hero20.Transfer.handlerWithLoader({
     // Validation : addresses différentes
     if (from.toLowerCase() === to.toLowerCase()) return;
 
-    // Mise à jour des balances : simplification car les Players existent déjà
-    const updates = [];
+    // Préparer les updates de balance en batch
+    const balanceUpdates: Array<{playerId: string, balanceChange: bigint}> = [];
 
     if (from !== ZERO_ADDRESS && sender) {
-      sender.balance -= amount;
-      updates.push(context.Player.set(sender));
+      // Utiliser directement le player du loader
+      sender.balance += -BigInt(amount);
+      if (sender.balance < 0n) {
+        console.log(`Balance négative détectée pour ${from}: ${sender.balance}. Mise à 0.`);
+        sender.balance = 0n;
+      }
     }
 
     if (to !== ZERO_ADDRESS && receiver) {
-      receiver.balance += amount;
-      updates.push(context.Player.set(receiver));
+      // Utiliser directement le player du loader
+      receiver.balance += BigInt(amount);
     }
 
-    // Exécution en parallèle des mises à jour
-    await Promise.all(updates);
+    // Sauvegarder tous les players en une fois
+    const playersToSave = [];
+    if (from !== ZERO_ADDRESS && sender) {
+      playersToSave.push(context.Player.set(sender));
+    }
+    if (to !== ZERO_ADDRESS && receiver) {
+      playersToSave.push(context.Player.set(receiver));
+    }
+    
+    if (playersToSave.length > 0) {
+      await Promise.all(playersToSave);
+    }
   },
 }); 

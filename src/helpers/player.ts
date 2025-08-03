@@ -1,4 +1,4 @@
-import { getOrCreatePlayer } from "./entities";
+import { getOrCreatePlayer, getOrCreatePlayerOptimized } from "./entities";
 
 /**
  * Met à jour la balance du token Hero20 d'un joueur.
@@ -72,4 +72,82 @@ export async function updatePlayerTotalSpent(
     }
     context.Player.set(player);
   }
+} 
+
+/**
+ * Met à jour plusieurs balances de players en une seule fois (optimisé pour le batching)
+ * @param context Le contexte du handler
+ * @param updates Array de {playerId, balanceChange}
+ * @returns Les players mis à jour (pour permettre un seul context.Player.set() à la fin)
+ */
+export async function updatePlayerBalancesBatch(
+  context: any,
+  updates: Array<{playerId: string, balanceChange: bigint}>,
+) {
+  if (updates.length === 0) {
+    return [];
+  }
+
+  const players = [];
+  
+  for (const {playerId, balanceChange} of updates) {
+    if (balanceChange === 0n) continue;
+
+    const player = await getOrCreatePlayerOptimized(context, playerId);
+    const newBalance = player.balance + balanceChange;
+    
+    // Gestion des balances négatives (normal lors de l'indexing initial)
+    if (newBalance < 0n) {
+      console.log(`Balance négative détectée pour ${playerId}: ${player.balance} + ${balanceChange} = ${newBalance}. Mise à 0.`);
+      player.balance = 0n;
+    } else {
+      player.balance = newBalance;
+    }
+    
+    players.push(player);
+  }
+
+  return players;
+} 
+
+/**
+ * Met à jour plusieurs compteurs de players en une seule fois (optimisé pour le batching)
+ * @param context Le contexte du handler
+ * @param updates Array de {playerId, changes}
+ * @returns Les players mis à jour (pour permettre un seul context.Player.set() à la fin)
+ */
+export async function updatePlayerCountsBatch(
+  context: any,
+  updates: Array<{
+    playerId: string;
+    changes: {
+      heroCount?: number;
+      weaponCount?: number;
+      stakedHeroCount?: number;
+    };
+  }>,
+) {
+  if (updates.length === 0) {
+    return [];
+  }
+
+  const players = [];
+  
+  for (const {playerId, changes} of updates) {
+    const player = await getOrCreatePlayerOptimized(context, playerId);
+
+    if (changes.heroCount !== undefined) {
+      player.heroCount += changes.heroCount;
+    }
+    if (changes.weaponCount !== undefined) {
+      player.weaponCount += changes.weaponCount;
+    }
+    if (changes.stakedHeroCount !== undefined) {
+      player.stakedHeroCount += changes.stakedHeroCount;
+    }
+    
+    players.push(player);
+  }
+
+  return players;
 } 

@@ -3,7 +3,7 @@ async function fetchItems() {
   const result: Record<number, string> = {};
   const baseUrl = 'https://api.onchainheroes.xyz/item/';
 
-  for (let id = 1; id <= 21; id++) {
+  for (let id = 1; id <= 100; id++) {
     try {
       const res = await fetch(`${baseUrl}${id}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -1,5 +1,5 @@
 import { WEAPON_STAKING_CONTRACTS, ZERO_ADDRESS } from "../constants/index";
-import { updatePlayerCounts } from "./player";
+import { updatePlayerCounts, updatePlayerCountsBatch } from "./player";
 import { getOrCreatePlayer, createWeapon } from "./entities";
 
 /**
@@ -34,7 +34,9 @@ export async function handleWeaponTransfer(
     const weapon = await context.Weapon.get(weaponId);
     if (weapon) {
       // Décrémente le compteur du propriétaire
-      await updatePlayerCounts(context, weapon.owner_id, { weaponCount: -1 });
+      const countUpdates = [{ playerId: weapon.owner_id, changes: { weaponCount: -1 } }];
+      const updatedPlayers = await updatePlayerCountsBatch(context, countUpdates);
+      await Promise.all(updatedPlayers.map(player => context.Player.set(player)));
       context.Weapon.deleteUnsafe(weaponId);
     }
     return;
@@ -56,7 +58,9 @@ export async function handleWeaponTransfer(
     });
 
     // Incrémente le compteur du propriétaire
-    await updatePlayerCounts(context, to_lc, { weaponCount: 1 });
+    const countUpdates = [{ playerId: to_lc, changes: { weaponCount: 1 } }];
+    const updatedPlayers = await updatePlayerCountsBatch(context, countUpdates);
+    await Promise.all(updatedPlayers.map(player => context.Player.set(player)));
     return;
   }
 
@@ -78,15 +82,18 @@ export async function handleWeaponTransfer(
     weapon.owner_id = to_lc;
     context.Weapon.set(weapon);
 
-    // Met à jour les compteurs en parallèle : -1 pour l'ancien, +1 pour le nouveau
+    // Met à jour les compteurs en batch : -1 pour l'ancien, +1 pour le nouveau
     if (oldOwnerId === to_lc) {
       // Même player : pas de changement de compteur nécessaire
     } else {
-      // Players différents : updates en parallèle
-      await Promise.all([
-        updatePlayerCounts(context, oldOwnerId, { weaponCount: -1 }),
-        updatePlayerCounts(context, to_lc, { weaponCount: 1 })
-      ]);
+      // Players différents : updates en batch
+      const countUpdates = [
+        { playerId: oldOwnerId, changes: { weaponCount: -1 } },
+        { playerId: to_lc, changes: { weaponCount: 1 } }
+      ];
+      
+      const updatedPlayers = await updatePlayerCountsBatch(context, countUpdates);
+      await Promise.all(updatedPlayers.map(player => context.Player.set(player)));
     }
   }
 
