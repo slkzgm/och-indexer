@@ -9,6 +9,7 @@ import { createActivity } from "../helpers/activity";
 import { updatePlayerTotalSpent } from "../helpers/player";
 import { updateRewardsPerZone } from "../helpers/dragma";
 import { calculateDragmaUnstakeAvailable, getDragmaStakingType, getDragmaZoneFromStakingType } from "../helpers/calculations";
+import { updateItemsBalance, updateItemsBalancesBatch } from "../helpers/items";
 
 /**
  * Handler pour Dragma.Staked
@@ -239,28 +240,33 @@ Dragma.Unstaked.handlerWithLoader({
         const player = await getOrCreatePlayer(context, owner);
         let playerUpdated = false;
         
-        // Weapon shards (index 0) - batch avec les autres items
+        // Préparer tous les updates d'items en batch
+        const itemUpdates: Array<{itemId: bigint, amountChange: bigint}> = [];
+        
+        // Weapon shards (token ID 1)
         if (weaponShardQty > 0n) {
-          const weaponShardIndex = 0; // Weapon shards = index 0
-          player.itemsBalances[weaponShardIndex] += weaponShardQty;
+          itemUpdates.push({itemId: 1n, amountChange: weaponShardQty});
           playerUpdated = true;
         }
         
-        // Gacha token - batch avec les autres items
+        // Items rewards
+        const allItemRewards = [...primaryRewards, ...secondaryRewards, ...tertiaryRewards];
+        for (const itemId of allItemRewards) {
+          itemUpdates.push({itemId, amountChange: 1n});
+          playerUpdated = true;
+        }
+        
+        // Appliquer tous les updates d'items en une fois
+        if (itemUpdates.length > 0) {
+          const updatedPlayer = await updateItemsBalancesBatch(context, owner, itemUpdates, player);
+          Object.assign(player, updatedPlayer);
+        }
+        
+        // Gacha token - séparé car pas dans itemsBalances
         if (gachaTokenId > 0n) {
           const gachaIndex = Number(gachaTokenId) - 1; // 1->0, 2->1, 3->2, 4->3
           if (gachaIndex >= 0 && gachaIndex < 4) {
             player.gachaBalances[gachaIndex] += 1n;
-            playerUpdated = true;
-          }
-        }
-        
-        // Items rewards - BATCH OPTIMISÉ
-        const allItemRewards = [...primaryRewards, ...secondaryRewards, ...tertiaryRewards];
-        for (const itemId of allItemRewards) {
-          const itemIndex = Number(itemId) - 1; // Token ID 1-21 -> index 0-20
-          if (itemIndex >= 0 && itemIndex < 21) {
-            player.itemsBalances[itemIndex] += 1n;
             playerUpdated = true;
           }
         }

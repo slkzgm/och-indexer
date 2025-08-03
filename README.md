@@ -59,7 +59,7 @@ type Player @entity {
   stakedHeroCount: Int! # Number of currently staked heroes
   heroesByLevel: [Int!]! # Distribution by level (0-100, 101 elements)
   gachaBalances: [BigInt!]! # [bronze, silver, gold, rainbow] - fixed order
-  itemsBalances: [BigInt!]! # Game items balances [tokenId1, tokenId2, ..., tokenId21]
+  itemsBalances: [BigInt!]! # Game items balances [tokenId1, tokenId2, ..., tokenId100]
   totalSpent: BigInt! # Total spent across all game activities (training, fishing, remix, etc.)
 }
 ```
@@ -72,7 +72,7 @@ type Player @entity {
 - `stakedHeroCount`: Currently staked heroes across all staking types
 - `heroesByLevel`: Array of 101 elements tracking hero distribution by level (0-100)
 - `gachaBalances`: Fixed 4-element array for gacha token balances [bronze, silver, gold, rainbow]
-- `itemsBalances`: Fixed 21-element array for game item balances [tokenId1, tokenId2, ..., tokenId21]
+- `itemsBalances`: Fixed 100-element array for game item balances [tokenId1, tokenId2, ..., tokenId100]
 - `totalSpent`: Total spent across all game activities (training, fishing, remix, etc.)
 
 ### Hero

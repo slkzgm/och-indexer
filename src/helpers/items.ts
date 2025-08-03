@@ -1,42 +1,17 @@
 import { getOrCreatePlayer } from "./entities";
 
-// Mapping des IDs Items vers les index dans l'array (token IDs 1 à 21)
-const ITEMS_TYPE_INDEX: Record<string, number> = {
-  "1": 0,   // Token ID 1 -> index 0
-  "2": 1,   // Token ID 2 -> index 1
-  "3": 2,   // Token ID 3 -> index 2
-  "4": 3,   // Token ID 4 -> index 3
-  "5": 4,   // Token ID 5 -> index 4
-  "6": 5,   // Token ID 6 -> index 5
-  "7": 6,   // Token ID 7 -> index 6
-  "8": 7,   // Token ID 8 -> index 7
-  "9": 8,   // Token ID 9 -> index 8
-  "10": 9,  // Token ID 10 -> index 9
-  "11": 10, // Token ID 11 -> index 10
-  "12": 11, // Token ID 12 -> index 11
-  "13": 12, // Token ID 13 -> index 12
-  "14": 13, // Token ID 14 -> index 13
-  "15": 14, // Token ID 15 -> index 14
-  "16": 15, // Token ID 16 -> index 15
-  "17": 16, // Token ID 17 -> index 16
-  "18": 17, // Token ID 18 -> index 17
-  "19": 18, // Token ID 19 -> index 18
-  "20": 19, // Token ID 20 -> index 19
-  "21": 20, // Token ID 21 -> index 20
-};
-
 /**
  * Détermine l'index dans l'array des balances basé sur l'ID Items
  * @param itemId L'ID de l'item Items
- * @returns L'index dans l'array (0-20)
+ * @returns L'index dans l'array (0-99)
  */
 function getItemsIndex(itemId: bigint): number {
-  const index = ITEMS_TYPE_INDEX[itemId.toString()];
-  if (index === undefined) {
-    console.warn(`ID Items non supporté: ${itemId}, token IDs supportés: 1-21`);
-    return 0; // Default à l'index 0
+  const itemIdNum = Number(itemId);
+  if (itemIdNum >= 1 && itemIdNum <= 100) {
+    return itemIdNum - 1; // Token ID 1 -> index 0, Token ID 100 -> index 99
   }
-  return index;
+  console.warn(`ID Items non supporté: ${itemId}, token IDs supportés: 1-100`);
+  return 0; // Default à l'index 0
 }
 
 /**
@@ -79,4 +54,45 @@ export async function updateItemsBalance(
 
   player.itemsBalances = newBalances;
   context.Player.set(player);
+}
+
+/**
+ * Met à jour plusieurs balances d'items en une seule fois (optimisé pour le batching)
+ * @param context Le contexte du handler
+ * @param playerId L'adresse du joueur
+ * @param updates Array de {itemId, amountChange}
+ * @param preloadedPlayer Optionnel : entité Player déjà chargée
+ * @returns Le player mis à jour (pour permettre un seul context.Player.set() à la fin)
+ */
+export async function updateItemsBalancesBatch(
+  context: any,
+  playerId: string,
+  updates: Array<{itemId: bigint, amountChange: bigint}>,
+  preloadedPlayer?: any,
+) {
+  if (updates.length === 0) {
+    return preloadedPlayer || await getOrCreatePlayer(context, playerId);
+  }
+
+  const player = preloadedPlayer || await getOrCreatePlayer(context, playerId);
+  const newBalances = [...player.itemsBalances];
+
+  for (const {itemId, amountChange} of updates) {
+    if (amountChange === 0n) continue;
+
+    const itemsIndex = getItemsIndex(itemId);
+    const currentBalance = newBalances[itemsIndex];
+    const newBalance = currentBalance + amountChange;
+    
+    // Gestion des balances négatives
+    if (newBalance < 0n) {
+      console.log(`Balance négative Items détectée pour ${playerId}, token ID ${itemsIndex + 1}: ${currentBalance} + ${amountChange} = ${newBalance}. Mise à 0.`);
+      newBalances[itemsIndex] = 0n;
+    } else {
+      newBalances[itemsIndex] = newBalance;
+    }
+  }
+
+  player.itemsBalances = newBalances;
+  return player;
 } 

@@ -560,8 +560,8 @@ type Player @entity {
   # Gacha token balances: [bronze, silver, gold, rainbow] - fixed order
   gachaBalances: [BigInt!]! @default(value: "[0, 0, 0, 0]")
   
-  # Game items balances: [tokenId1, tokenId2, ..., tokenId21] - mapped to indices [0, 1, ..., 20]
-  itemsBalances: [BigInt!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
+  # Game items balances: [tokenId1, tokenId2, ..., tokenId100] - mapped to indices [0, 1, ..., 99]
+  itemsBalances: [BigInt!]! @default(value: "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]")
   
   # =============================================================================
   # ECONOMY TRACKING

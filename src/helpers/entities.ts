@@ -33,7 +33,7 @@ export async function getOrCreatePlayerOptimized(
     stakedHeroCount: 0,
     heroesByLevel: Array(101).fill(0),
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-    itemsBalances: Array(21).fill(0n), // [tokenId1, tokenId2, ..., tokenId21]
+    itemsBalances: Array(100).fill(0n), // [tokenId1, tokenId2, ..., tokenId100]
     totalSpent: 0n, // Total spent across all game activities
     ...overrides, // Override les valeurs si spécifiées
   });
@@ -69,7 +69,7 @@ export async function getOrCreatePlayer(
     stakedHeroCount: 0,
     heroesByLevel: Array(101).fill(0),
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
-    itemsBalances: Array(21).fill(0n), // [tokenId1, tokenId2, ..., tokenId21]
+    itemsBalances: Array(100).fill(0n), // [tokenId1, tokenId2, ..., tokenId100]
     totalSpent: 0n, // Total spent across all game activities
     ...overrides, // Override les valeurs si spécifiées
   });
