@@ -113,7 +113,7 @@ networks:
     events:
     - event: Staked(address owner, uint256 heroId, uint256 entryFee, uint256 attackZone)
     - event: UnstakeRequested(address owner, uint256 heroId, uint256 requestId)
-    - event: Unstake(address owner, uint256 heroId, uint256 requestId, uint256 gachaTokenId, uint256 weaponShardQty, uint256[] primaryRewards, uint256[] secondaryRewards, uint256[] tertiaryRewards)
+    - event: Unstaked(address owner, uint256 heroId, uint256 requestId, uint256 gachaTokenId, uint256 weaponShardQty, uint256[] primaryRewards, uint256[] secondaryRewards, uint256[] tertiaryRewards)
     - event: HeroDied(address owner, uint256 heroId)
     - event: Revived(address owner, uint256 heroId, uint256 fee)
     - event: WeaponDurabilityUpdated(address user, uint256 weaponId, uint256 oldDurability, uint256 newDurability)

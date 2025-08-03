@@ -176,9 +176,11 @@ type Hero @entity {
 - `fishingDeathCount`: Total number of deaths in fishing
 - `fishingRevivalCount`: Total number of revivals in fishing
 - `fishingReviveSpent`: Total cost spent on fishing revivals
+- `fishingDeathPerZone`: Array [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE] tracking deaths by zone
 - `dragmaDeathCount`: Total number of deaths in dragma
 - `dragmaRevivalCount`: Total number of revivals in dragma
 - `dragmaReviveSpent`: Total cost spent on dragma revivals
+- `dragmaDeathPerZone`: Array [TAILS, LEGS, TORSO, HEAD] tracking deaths by zone
 - `trainingCostByType`: Array tracking costs per training type [NORMAL, CHAOS, UNKNOWN]
 
 ### Weapon
@@ -369,9 +371,14 @@ type DragmaGlobalStats @entity {
 - `totalBonuses`: Total bonus items won from Dragma
 - `bonusesPerZone`: Bonus items won per Dragma zone
 - `totalDeaths`: Total number of deaths in Dragma
+- `deathsPerZone`: Array [TAILS, LEGS, TORSO, HEAD] tracking deaths by zone
 - `totalRevivals`: Total number of revivals in Dragma
 - `totalSpentOnRevive`: Total cost spent on Dragma revivals
 - `totalSessionsPerZone`: Total Dragma sessions per zone
+- `totalGachaWon`: Total gacha tokens won
+- `gachaByTokenId`: Array [BRONZE, SILVER, GOLD, RAINBOW] tracking gacha by type
+- `gachaPerZone`: Array [TAILS, LEGS, TORSO, HEAD] tracking gacha by zone
+- `gachaByZoneAndTokenId`: 2D array [zone][tokenId] tracking gacha by zone and type
 
 ### DragmaUserStats
 Per-user statistics for the new Dragma contract.
@@ -411,9 +418,14 @@ type DragmaUserStats @entity {
 - `totalBonuses`: Total bonus items won by this user
 - `bonusesPerZone`: Bonus items won per Dragma zone
 - `totalDeaths`: Total number of deaths for this user in Dragma
+- `deathsPerZone`: Array [TAILS, LEGS, TORSO, HEAD] tracking deaths by zone for this user
 - `totalRevivals`: Total number of revivals for this user in Dragma
 - `totalSpentOnRevive`: Total cost spent on Dragma revivals by this user
 - `totalSessionsPerZone`: Total Dragma sessions per zone for this user
+- `totalGachaWon`: Total gacha tokens won by this user
+- `gachaByTokenId`: Array [BRONZE, SILVER, GOLD, RAINBOW] tracking gacha by type
+- `gachaPerZone`: Array [TAILS, LEGS, TORSO, HEAD] tracking gacha by zone
+- `gachaByZoneAndTokenId`: 2D array [zone][tokenId] tracking gacha by zone and type
 
 ## Training Entities
 
@@ -514,6 +526,10 @@ type FishingGlobalStats @entity {
 - `shardsPerZone`: Weapon shards won per fishing zone
 - `totalBonuses`: Total bonus items won from fishing
 - `bonusesPerZone`: Bonus items won per fishing zone
+- `totalDeaths`: Total number of deaths in fishing
+- `deathsPerZone`: Array [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE] tracking deaths by zone
+- `totalRevivals`: Total number of revivals in fishing
+- `totalSpentOnRevive`: Total cost spent on fishing revivals
 
 ### FishingUserStats
 Per-user statistics for fishing.
@@ -550,6 +566,10 @@ type FishingUserStats @entity {
 - `totalBonuses`: Total bonus items won by this user
 - `bonusesPerZone`: Bonus items won per fishing zone
 - `totalSessionsPerZone`: Total fishing sessions per zone
+- `totalDeaths`: Total number of deaths for this user in fishing
+- `deathsPerZone`: Array [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE] tracking deaths by zone for this user
+- `totalRevivals`: Total number of revivals for this user in fishing
+- `totalSpentOnRevive`: Total cost spent on fishing revivals by this user
 
 ## Remix Entities
 
@@ -1245,7 +1265,13 @@ query {
     totalHeroesPerZone
     totalFeesPerZone
     totalRewardsAmount
+    totalShardsWon
+    totalBonuses
+    totalGachaWon
+    gachaByTokenId # [BRONZE, SILVER, GOLD, RAINBOW]
+    gachaPerZone # [TAILS, LEGS, TORSO, HEAD]
     totalDeaths
+    deathsPerZone # [TAILS, LEGS, TORSO, HEAD]
     totalRevivals
   }
 }
@@ -1257,7 +1283,13 @@ query {
     heroesPerZone
     totalFees
     totalRewardsAmount
+    totalShardsWon
+    totalBonuses
+    totalGachaWon
+    gachaByTokenId # [BRONZE, SILVER, GOLD, RAINBOW]
+    gachaPerZone # [TAILS, LEGS, TORSO, HEAD]
     totalDeaths
+    deathsPerZone # [TAILS, LEGS, TORSO, HEAD]
     totalRevivals
   }
 }
@@ -1269,7 +1301,10 @@ query {
     totalHeroesPerZone
     totalFeesPerZone
     totalRewardsAmount
+    totalShardsWon
+    totalBonuses
     totalDeaths
+    deathsPerZone # [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
     totalRevivals
   }
 }
@@ -1281,7 +1316,10 @@ query {
     heroesPerZone
     totalFees
     totalRewardsAmount
+    totalShardsWon
+    totalBonuses
     totalDeaths
+    deathsPerZone # [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
     totalRevivals
   }
 }

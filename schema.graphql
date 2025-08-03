@@ -479,7 +479,7 @@ type Dragma_UnstakeRequested {
 """
 Event triggered when a hero is unstaked from Dragma with rewards
 """
-type Dragma_Unstake {
+type Dragma_Unstaked {
   id: ID!
   owner: String! # Hero owner's wallet address
   heroId: BigInt!
@@ -655,9 +655,11 @@ type Hero @entity {
   fishingDeathCount: Int! @default(value: "0") # Deaths in fishing
   fishingRevivalCount: Int! @default(value: "0") # Revivals in fishing
   fishingReviveSpent: BigInt! @default(value: "0") # Cost spent on fishing revivals
+  fishingDeathPerZone: [Int!]! @default(value: "[0,0,0,0]") # Deaths per fishing zone [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
   dragmaDeathCount: Int! @default(value: "0") # Deaths in dragma
   dragmaRevivalCount: Int! @default(value: "0") # Revivals in dragma
   dragmaReviveSpent: BigInt! @default(value: "0") # Cost spent on dragma revivals
+  dragmaDeathPerZone: [Int!]! @default(value: "[0,0,0,0]") # Deaths per dragma zone [TAILS, LEGS, TORSO, HEAD]
 
   # =============================================================================
   # TRAINING STATS
@@ -937,9 +939,19 @@ type DragmaGlobalStats @entity {
   bonusesPerZone: [Int!]! @default(value: "[0,0,0,0]") # Bonuses won per zone
   
   # =============================================================================
+  # GACHA TRACKING
+  # =============================================================================
+  totalGachaWon: Int! @default(value: "0") # Total gacha tokens won
+  gachaByTokenId: [Int!]! @default(value: "[0,0,0,0]") # [BRONZE, SILVER, GOLD, RAINBOW]
+  gachaPerZone: [Int!]! @default(value: "[0,0,0,0]") # Gacha won per zone [TAILS, LEGS, TORSO, HEAD]
+  # 3D array: [zone][tokenId] - [zone0, zone1, zone2, zone3] × [BRONZE, SILVER, GOLD, RAINBOW]
+  gachaByZoneAndTokenId: [[Int!]!]! @default(value: "[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]")
+  
+  # =============================================================================
   # DEATH & REVIVAL STATISTICS
   # =============================================================================
   totalDeaths: Int! @default(value: "0") # Total number of hero deaths
+  deathsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Deaths per zone [TAILS, LEGS, TORSO, HEAD]
   totalRevivals: Int! @default(value: "0") # Total number of hero revivals
   totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
 }
@@ -977,9 +989,19 @@ type DragmaUserStats @entity {
   totalSessionsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Sessions per zone
   
   # =============================================================================
+  # GACHA TRACKING
+  # =============================================================================
+  totalGachaWon: Int! @default(value: "0") # Total gacha tokens won by this user
+  gachaByTokenId: [Int!]! @default(value: "[0,0,0,0]") # [BRONZE, SILVER, GOLD, RAINBOW]
+  gachaPerZone: [Int!]! @default(value: "[0,0,0,0]") # Gacha won per zone [TAILS, LEGS, TORSO, HEAD]
+  # 3D array: [zone][tokenId] - [zone0, zone1, zone2, zone3] × [BRONZE, SILVER, GOLD, RAINBOW]
+  gachaByZoneAndTokenId: [[Int!]!]! @default(value: "[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]")
+  
+  # =============================================================================
   # DEATH & REVIVAL STATISTICS
   # =============================================================================
   totalDeaths: Int! @default(value: "0") # Total number of hero deaths for this user
+  deathsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Deaths per zone [TAILS, LEGS, TORSO, HEAD]
   totalRevivals: Int! @default(value: "0") # Total number of hero revivals for this user
   totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals by this user
 }
@@ -1016,6 +1038,7 @@ type FishingGlobalStats @entity {
   # DEATH & REVIVAL STATISTICS
   # =============================================================================
   totalDeaths: Int! @default(value: "0") # Total number of hero deaths
+  deathsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Deaths per zone [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
   totalRevivals: Int! @default(value: "0") # Total number of hero revivals
   totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
 }
@@ -1055,6 +1078,7 @@ type FishingUserStats @entity {
   # DEATH & REVIVAL STATISTICS
   # =============================================================================
   totalDeaths: Int! @default(value: "0") # Total number of hero deaths for this user
+  deathsPerZone: [Int!]! @default(value: "[0,0,0,0]") # Deaths per zone [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
   totalRevivals: Int! @default(value: "0") # Total number of hero revivals for this user
   totalSpentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals by this user
 }

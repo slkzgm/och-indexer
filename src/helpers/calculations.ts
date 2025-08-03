@@ -235,3 +235,45 @@ export function parseWeaponMetadata(metadata: bigint): {
   };
 }
 
+/**
+ * Extrait la zone Dragma à partir du stakingType
+ * @param stakingType Le type de staking (ex: "DRAGMA_TAILS")
+ * @returns Le numéro de zone (0-3) ou 0 par défaut
+ */
+export function getDragmaZoneFromStakingType(stakingType: string | undefined): number {
+  if (!stakingType || !stakingType.startsWith('DRAGMA_')) {
+    return 0;
+  }
+  
+  const zoneName = stakingType.split('_')[1];
+  const zoneMapping: Record<string, number> = {
+    'TAILS': 0,
+    'LEGS': 1,
+    'TORSO': 2,
+    'HEAD': 3,
+  };
+  
+  return zoneMapping[zoneName] || 0;
+}
+
+/**
+ * Extrait la zone Fishing à partir du stakingType
+ * @param stakingType Le type de staking (ex: "FISHING_SLIME_BAY")
+ * @returns Le numéro de zone (0-3) ou 0 par défaut
+ */
+export function getFishingZoneFromStakingType(stakingType: string | undefined): number {
+  if (!stakingType || !stakingType.startsWith('FISHING_')) {
+    return 0;
+  }
+  
+  const zoneName = stakingType.split('_')[1] + '_' + stakingType.split('_')[2];
+  const zoneMapping: Record<string, number> = {
+    'SLIME_BAY': 0,
+    'SHROOM_GROTTO': 1,
+    'SKEET_PIER': 2,
+    'MAGMA_MIRE': 3,
+  };
+  
+  return zoneMapping[zoneName] || 0;
+}
+

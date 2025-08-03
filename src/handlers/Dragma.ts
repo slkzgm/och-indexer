@@ -8,7 +8,7 @@ import { getOrCreateDragmaGlobalStats, getOrCreateDragmaUserStats } from "../hel
 import { createActivity } from "../helpers/activity";
 import { updatePlayerTotalSpent } from "../helpers/player";
 import { updateRewardsPerZone } from "../helpers/dragma";
-import { calculateDragmaUnstakeAvailable, getDragmaStakingType } from "../helpers/calculations";
+import { calculateDragmaUnstakeAvailable, getDragmaStakingType, getDragmaZoneFromStakingType } from "../helpers/calculations";
 
 /**
  * Handler pour Dragma.Staked
@@ -127,10 +127,10 @@ Dragma.UnstakeRequested.handlerWithLoader({
 });
 
 /**
- * Handler pour Dragma.Unstake
+ * Handler pour Dragma.Unstaked
  * Unstake un héro avec rewards
  */
-Dragma.Unstake.handlerWithLoader({
+Dragma.Unstaked.handlerWithLoader({
   loader: async ({ event, context }: { event: any; context: any }) => {
     const { heroId } = event.params;
     
@@ -168,7 +168,7 @@ Dragma.Unstake.handlerWithLoader({
     };
     await Promise.all([
       // Stocke l'événement brut
-      context.Dragma_Unstake.set({
+      context.Dragma_Unstaked.set({
         id: `${event.chainId}_${event.block.number}_${event.logIndex}`,
         owner,
         heroId,
@@ -184,7 +184,7 @@ Dragma.Unstake.handlerWithLoader({
       (async () => {
         if (existingHero.staked) {
           const duration = timestamp - (existingHero.stakedTimestamp || 0n);
-          const zone = Number(existingHero.stakingType?.split('_')[2] || 0);
+          const zone = getDragmaZoneFromStakingType(existingHero.stakingType);
           
           const global = await getOrCreateDragmaGlobalStats(context);
           global.totalHeroes -= 1;
@@ -195,6 +195,17 @@ Dragma.Unstake.handlerWithLoader({
           
           // Met à jour les rewards par zone avec le nouveau système
           global.rewardsPerZone = updateRewardsPerZone(global.rewardsPerZone, zone, [...primaryRewards, ...secondaryRewards, ...tertiaryRewards]);
+          
+          // Track gacha statistics
+          if (gachaTokenId > 0n) {
+            global.totalGachaWon += 1;
+            const gachaIndex = Number(gachaTokenId) - 1; // 1->0, 2->1, 3->2, 4->3
+            if (gachaIndex >= 0 && gachaIndex < 4) {
+              global.gachaByTokenId[gachaIndex] += 1;
+              global.gachaPerZone[zone] += 1;
+              global.gachaByZoneAndTokenId[zone][gachaIndex] += 1;
+            }
+          }
           
           global.lastUpdated = timestamp;
           context.DragmaGlobalStats.set(global);
@@ -209,6 +220,17 @@ Dragma.Unstake.handlerWithLoader({
           
           // Met à jour les rewards par zone avec le nouveau système
           userStats.rewardsPerZone = updateRewardsPerZone(userStats.rewardsPerZone, zone, [...primaryRewards, ...secondaryRewards, ...tertiaryRewards]);
+          
+          // Track gacha statistics for user
+          if (gachaTokenId > 0n) {
+            userStats.totalGachaWon += 1;
+            const gachaIndex = Number(gachaTokenId) - 1; // 1->0, 2->1, 3->2, 4->3
+            if (gachaIndex >= 0 && gachaIndex < 4) {
+              userStats.gachaByTokenId[gachaIndex] += 1;
+              userStats.gachaPerZone[zone] += 1;
+              userStats.gachaByZoneAndTokenId[zone][gachaIndex] += 1;
+            }
+          }
           
           context.DragmaUserStats.set(userStats);
         }
@@ -256,7 +278,7 @@ Dragma.Unstake.handlerWithLoader({
           primaryRewards: primaryRewards.map((id: bigint) => id.toString()),
           secondaryRewards: secondaryRewards.map((id: bigint) => id.toString()),
           tertiaryRewards: tertiaryRewards.map((id: bigint) => id.toString())
-        }, existingHero.id, 'Dragma', existingHero.stakingType);
+        }, existingHero.id, 'DRAGMA', existingHero.stakingType);
       })()
     ]);
     if (existingHero.staked) {
@@ -301,6 +323,8 @@ Dragma.HeroDied.handlerWithLoader({
       heroId,
     });
 
+    const zone = getDragmaZoneFromStakingType(existingHero.stakingType);
+    
     const deadHero = { 
       ...existingHero, 
       isDead: true, 
@@ -309,20 +333,25 @@ Dragma.HeroDied.handlerWithLoader({
       stakingType: undefined, // Reset staking type quand mort
       deathsCount: existingHero.deathsCount + 1,
       dragmaDeathCount: existingHero.dragmaDeathCount + 1,
+      dragmaDeathPerZone: existingHero.dragmaDeathPerZone.map((val: number, idx: number) => 
+        idx === zone ? val + 1 : val
+      ),
     };
     context.Hero.set(deadHero);
 
     const global = await getOrCreateDragmaGlobalStats(context);
     global.totalDeaths += 1;
+    global.deathsPerZone[zone] += 1;
     global.lastUpdated = timestamp;
     context.DragmaGlobalStats.set(global);
 
     const userStats = await getOrCreateDragmaUserStats(context, owner.toLowerCase());
     userStats.totalDeaths += 1;
+    userStats.deathsPerZone[zone] += 1;
     context.DragmaUserStats.set(userStats);
 
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
-    await createActivity(context, id, timestamp, owner, 'DRAGMA_DEATH', {heroId: heroId.toString()}, existingHero.id, 'Dragma', existingHero.stakingType);
+    await createActivity(context, id, timestamp, owner, 'DRAGMA_DEATH', {heroId: heroId.toString()}, existingHero.id, 'DRAGMA', existingHero.stakingType);
   },
 });
 
@@ -385,7 +414,7 @@ Dragma.Revived.handlerWithLoader({
     await updatePlayerTotalSpent(context, owner, fee);
 
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
-    await createActivity(context, id, timestamp, owner, 'DRAGMA_REVIVAL', {heroId: heroId.toString(), fee: fee.toString()}, existingHero.id, 'Dragma', existingHero.stakingType);
+    await createActivity(context, id, timestamp, owner, 'DRAGMA_REVIVAL', {heroId: heroId.toString(), fee: fee.toString()}, existingHero.id, 'DRAGMA', existingHero.stakingType);
   },
 }); 
 

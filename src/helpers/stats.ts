@@ -56,6 +56,7 @@ export async function getOrCreateFishingGlobalStats(context: any) {
       
       // Death and revival stats
       totalDeaths: 0,
+      deathsPerZone: [0,0,0,0], // [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
       totalRevivals: 0,
       totalSpentOnRevive: 0n,
       
@@ -85,6 +86,7 @@ export async function getOrCreateFishingUserStats(context: any, userId: string) 
       
       // Death and revival stats
       totalDeaths: 0,
+      deathsPerZone: [0,0,0,0], // [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
       totalRevivals: 0,
       totalSpentOnRevive: 0n,
       
@@ -174,8 +176,15 @@ export async function getOrCreateDragmaGlobalStats(context: any) {
       totalBonuses: 0,
       bonusesPerZone: [0,0,0,0],
       
+      // Gacha tracking
+      totalGachaWon: 0,
+      gachaByTokenId: [0,0,0,0], // [BRONZE, SILVER, GOLD, RAINBOW]
+      gachaPerZone: [0,0,0,0], // [TAILS, LEGS, TORSO, HEAD]
+      gachaByZoneAndTokenId: [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]], // [zone][tokenId]
+      
       // Death and revival stats
       totalDeaths: 0,
+      deathsPerZone: [0,0,0,0], // [TAILS, LEGS, TORSO, HEAD]
       totalRevivals: 0,
       totalSpentOnRevive: 0n,
       
@@ -204,8 +213,15 @@ export async function getOrCreateDragmaUserStats(context: any, userId: string) {
       bonusesPerZone: [0,0,0,0],
       totalSessionsPerZone: [0,0,0,0],
       
+      // Gacha tracking
+      totalGachaWon: 0,
+      gachaByTokenId: [0,0,0,0], // [BRONZE, SILVER, GOLD, RAINBOW]
+      gachaPerZone: [0,0,0,0], // [TAILS, LEGS, TORSO, HEAD]
+      gachaByZoneAndTokenId: [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]], // [zone][tokenId]
+      
       // Death and revival stats
       totalDeaths: 0,
+      deathsPerZone: [0,0,0,0], // [TAILS, LEGS, TORSO, HEAD]
       totalRevivals: 0,
       totalSpentOnRevive: 0n,
       

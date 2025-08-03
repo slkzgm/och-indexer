@@ -151,11 +151,13 @@ export function createHero(
     fishingDeathCount: 0,
     fishingRevivalCount: 0,
     fishingReviveSpent: 0n,
+    fishingDeathPerZone: [0,0,0,0], // [SLIME_BAY, SHROOM_GROTTO, SKEET_PIER, MAGMA_MIRE]
     
     // Dragma-specific death/revival stats
     dragmaDeathCount: 0,
     dragmaRevivalCount: 0,
     dragmaReviveSpent: 0n,
+    dragmaDeathPerZone: [0,0,0,0], // [TAILS, LEGS, TORSO, HEAD]
     
     totalAttemptedTrainings: 0,
     totalSuccessfulTrainings: 0,

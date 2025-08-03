@@ -5,7 +5,7 @@ import { setHeroFishingStaked } from "../helpers/entities";
 import { updatePlayerCounts, updatePlayerTotalSpent } from "../helpers/player";
 import { getOrCreateFishingGlobalStats, getOrCreateFishingUserStats } from "../helpers/stats";
 import { createActivity } from "../helpers/activity";
-import { getFishingStakingType } from "../helpers/calculations";
+import { getFishingStakingType, getFishingZoneFromStakingType } from "../helpers/calculations";
 
 /**
  * Handler pour Fishing.Staked
@@ -242,6 +242,8 @@ Fishing.Dead.handlerWithLoader({
       requestId,
     });
 
+    const zone = getFishingZoneFromStakingType(existingHero.stakingType);
+    
     // Met à jour le héro : marqué comme mort et unstaked
     const deadHero = {
       ...existingHero,
@@ -251,18 +253,23 @@ Fishing.Dead.handlerWithLoader({
       stakingType: undefined, // Reset staking type quand mort
       deathsCount: existingHero.deathsCount + 1,
       fishingDeathCount: existingHero.fishingDeathCount + 1,
+      fishingDeathPerZone: existingHero.fishingDeathPerZone.map((val: number, idx: number) => 
+        idx === zone ? val + 1 : val
+      ),
     };
     context.Hero.set(deadHero);
 
     // Stats globales
     const global = await getOrCreateFishingGlobalStats(context);
     global.totalDeaths += 1;
+    global.deathsPerZone[zone] += 1;
     global.lastUpdated = timestamp;
     context.FishingGlobalStats.set(global);
 
     // Stats utilisateur
     const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
     userStats.totalDeaths += 1;
+    userStats.deathsPerZone[zone] += 1;
     context.FishingUserStats.set(userStats);
 
     // Activité
