@@ -61,6 +61,7 @@ Dragma.Staked.handlerWithLoader({
           global.totalHeroes += 1;
           global.totalHeroesPerZone[Number(attackZone)] += 1;
           global.heroesByLevel[existingHero.level] += 1;
+          global.heroesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           global.totalFeesPerZone[Number(attackZone)] += entryFee;
           global.lastUpdated = timestamp;
           context.DragmaGlobalStats.set(global);
@@ -69,6 +70,7 @@ Dragma.Staked.handlerWithLoader({
           userStats.totalHeroes += 1;
           userStats.heroesPerZone[Number(attackZone)] += 1;
           userStats.heroesByLevel[existingHero.level] += 1;
+          userStats.heroesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           userStats.totalFees += entryFee;
           userStats.feesPerZone[Number(attackZone)] += entryFee;
           userStats.totalSessionsPerZone[Number(attackZone)] += 1;
@@ -191,6 +193,7 @@ Dragma.Unstaked.handlerWithLoader({
           global.totalHeroes -= 1;
           global.totalHeroesPerZone[zone] -= 1;
           global.heroesByLevel[existingHero.level] -= 1;
+          global.heroesByLevelPerZone[zone][existingHero.level] -= 1;
           global.totalRewardsAmount += totalRewardsWithGacha;
           global.totalShardsWon += Number(weaponShardQty);
           
@@ -215,6 +218,7 @@ Dragma.Unstaked.handlerWithLoader({
           userStats.totalHeroes -= 1;
           userStats.heroesPerZone[zone] -= 1;
           userStats.heroesByLevel[existingHero.level] -= 1;
+          userStats.heroesByLevelPerZone[zone][existingHero.level] -= 1;
           userStats.totalRewardsAmount += totalRewardsWithGacha;
           userStats.totalShardsWon += Number(weaponShardQty);
           userStats.totalUnstakes += 1;

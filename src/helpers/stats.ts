@@ -1,4 +1,5 @@
 // src/helpers/stats.ts
+
 export async function getOrCreateDragmaUnderlingsGlobalStats(context: any) {
   let stats = await context.DragmaUnderlingsGlobalStats.get('global');
   if (!stats) {
@@ -168,6 +169,7 @@ export async function getOrCreateDragmaGlobalStats(context: any) {
       totalHeroes: 0,
       totalHeroesPerZone: [0,0,0,0],
       heroesByLevel: Array(101).fill(0),
+      heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-100]
       totalFeesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
       rewardsPerZone: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]], // [zone] × [primary, secondary1, secondary2, secondary3, tertiary]
@@ -203,6 +205,7 @@ export async function getOrCreateDragmaUserStats(context: any, userId: string) {
       totalHeroes: 0,
       heroesPerZone: [0,0,0,0],
       heroesByLevel: Array(101).fill(0),
+      heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-100]
       totalFees: 0n,
       feesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
