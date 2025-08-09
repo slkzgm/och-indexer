@@ -52,9 +52,17 @@ Fishing.Staked.handlerWithLoader({
     // Stats et activité
     const zoneNum = Number(zone);
     const global = await getOrCreateFishingGlobalStats(context);
-    global.totalHeroesPerZone[zoneNum] += !existingHero.staked ? 1 : 0;
-    global.totalHeroes += !existingHero.staked ? 1 : 0;
-    global.heroesByLevel[stakedHero.level] += !existingHero.staked ? 1 : 0;
+    if (!existingHero.staked) {
+      global.totalHeroesPerZone[zoneNum] += 1;
+      global.totalHeroes += 1;
+      global.currentActiveStaked += 1;
+      global.currentActiveStakedPerZone[zoneNum] += 1;
+      global.totalStakes += 1;
+      global.heroesByLevel[stakedHero.level] += 1;
+      global.heroesByLevelPerZone[zoneNum][stakedHero.level] += 1;
+      global.stakesByLevelPerZone[zoneNum][stakedHero.level] += 1;
+      global.currentActiveByLevelPerZone[zoneNum][stakedHero.level] += 1;
+    }
     global.totalFeesPerZone[zoneNum] += fee;
     global.lastUpdated = timestamp;
     context.FishingGlobalStats.set(global);
@@ -62,7 +70,13 @@ Fishing.Staked.handlerWithLoader({
     const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
     userStats.heroesPerZone[zoneNum] += 1;
     userStats.totalHeroes += 1;
+    userStats.currentActiveStaked += 1;
+    userStats.currentActiveStakedPerZone[zoneNum] += 1;
+    userStats.totalStakes += 1;
     userStats.heroesByLevel[stakedHero.level] += 1;
+    userStats.heroesByLevelPerZone[zoneNum][stakedHero.level] += 1;
+    userStats.stakesByLevelPerZone[zoneNum][stakedHero.level] += 1;
+    userStats.currentActiveByLevelPerZone[zoneNum][stakedHero.level] += 1;
     userStats.feesPerZone[zoneNum] += fee;
     userStats.totalFees += fee;
     userStats.totalSessionsPerZone[zoneNum] += 1;
@@ -172,7 +186,16 @@ Fishing.Unstaked.handlerWithLoader({
     const global = await getOrCreateFishingGlobalStats(context);
     global.totalHeroesPerZone[zoneNum] -= 1;
     global.totalHeroes -= 1;
+    global.currentActiveStaked -= 1;
+    global.currentActiveStakedPerZone[zoneNum] -= 1;
+    global.totalUnstakes += 1;
+    global.completedSessions += 1;
+    global.completedSessionsPerZone[zoneNum] += 1;
     global.heroesByLevel[existingHero.level] -= 1;
+    global.heroesByLevelPerZone[zoneNum][existingHero.level] -= 1;
+    global.unstakesByLevelPerZone[zoneNum][existingHero.level] += 1;
+    global.completedByLevelPerZone[zoneNum][existingHero.level] += 1;
+    global.currentActiveByLevelPerZone[zoneNum][existingHero.level] -= 1;
     global.rewardsPerZone[zoneNum] += amount;
     global.totalRewardsAmount += amount;
     if (weaponShardId > 0n) {
@@ -189,7 +212,16 @@ Fishing.Unstaked.handlerWithLoader({
     const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
     userStats.heroesPerZone[zoneNum] -= 1;
     userStats.totalHeroes -= 1;
+    userStats.currentActiveStaked -= 1;
+    userStats.currentActiveStakedPerZone[zoneNum] -= 1;
+    userStats.totalUnstakes += 1;
+    userStats.completedSessions += 1;
+    userStats.completedSessionsPerZone[zoneNum] += 1;
     userStats.heroesByLevel[existingHero.level] -= 1;
+    userStats.heroesByLevelPerZone[zoneNum][existingHero.level] -= 1;
+    userStats.unstakesByLevelPerZone[zoneNum][existingHero.level] += 1;
+    userStats.completedByLevelPerZone[zoneNum][existingHero.level] += 1;
+    userStats.currentActiveByLevelPerZone[zoneNum][existingHero.level] -= 1;
     userStats.rewardsPerZone[zoneNum] += amount;
     userStats.totalRewardsAmount += amount;
     if (weaponShardId > 0n) {
@@ -249,6 +281,7 @@ Fishing.Dead.handlerWithLoader({
       ...existingHero,
       isDead: true,
       deathLocation: 'FISHING',
+      lastDeathZone: zone,
       staked: false, // Un héros mort n'est plus considéré comme staked
       stakingType: undefined, // Reset staking type quand mort
       deathsCount: existingHero.deathsCount + 1,
@@ -259,8 +292,20 @@ Fishing.Dead.handlerWithLoader({
     };
     context.Hero.set(deadHero);
 
-    // Stats globales
+    // Stats globales: if hero was staked, decrement current counts first
     const global = await getOrCreateFishingGlobalStats(context);
+    if (existingHero.staked) {
+      // Move from active to dead without changing totalHeroes
+      global.currentActiveStaked -= 1;
+      global.currentActiveStakedPerZone[zone] -= 1;
+      global.heroesByLevel[existingHero.level] -= 1;
+      global.heroesByLevelPerZone[zone][existingHero.level] -= 1;
+      global.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
+      await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: -1 });
+    }
+    global.currentDeadByLevelPerZone[zone][existingHero.level] += 1;
+    global.currentDeadHeroes += 1;
+    global.currentDeadHeroesPerZone[zone] += 1;
     global.totalDeaths += 1;
     global.deathsPerZone[zone] += 1;
     global.lastUpdated = timestamp;
@@ -268,6 +313,18 @@ Fishing.Dead.handlerWithLoader({
 
     // Stats utilisateur
     const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
+    if (existingHero.staked) {
+      userStats.heroesPerZone[zone] -= 1;
+      userStats.totalHeroes -= 1;
+      userStats.currentActiveStaked -= 1;
+      userStats.currentActiveStakedPerZone[zone] -= 1;
+      userStats.heroesByLevel[existingHero.level] -= 1;
+      userStats.heroesByLevelPerZone[zone][existingHero.level] -= 1;
+      userStats.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
+    }
+    userStats.currentDeadByLevelPerZone[zone][existingHero.level] += 1;
+    userStats.currentDeadHeroes += 1;
+    userStats.currentDeadHeroesPerZone[zone] += 1;
     userStats.totalDeaths += 1;
     userStats.deathsPerZone[zone] += 1;
     context.FishingUserStats.set(userStats);
@@ -328,6 +385,16 @@ Fishing.Revived.handlerWithLoader({
     const global = await getOrCreateFishingGlobalStats(context);
     global.totalRevivals += 1;
     global.totalSpentOnRevive += cost;
+    if (existingHero.deathLocation === 'FISHING') {
+      const zone = typeof existingHero.lastDeathZone === 'number' ? existingHero.lastDeathZone : getFishingZoneFromStakingType(existingHero.stakingType);
+      global.currentDeadHeroes = Math.max(0, (global.currentDeadHeroes || 0) - 1);
+      if (typeof zone === 'number' && zone >= 0 && zone < 4) {
+        global.currentDeadHeroesPerZone[zone] = Math.max(0, global.currentDeadHeroesPerZone[zone] - 1);
+        if (global.currentDeadByLevelPerZone) {
+          global.currentDeadByLevelPerZone[zone][existingHero.level] = Math.max(0, global.currentDeadByLevelPerZone[zone][existingHero.level] - 1);
+        }
+      }
+    }
     global.lastUpdated = timestamp;
     context.FishingGlobalStats.set(global);
 
@@ -335,6 +402,16 @@ Fishing.Revived.handlerWithLoader({
     const userStats = await getOrCreateFishingUserStats(context, owner.toLowerCase());
     userStats.totalRevivals += 1;
     userStats.totalSpentOnRevive += cost;
+    if (existingHero.deathLocation === 'FISHING') {
+      const zone = typeof existingHero.lastDeathZone === 'number' ? existingHero.lastDeathZone : getFishingZoneFromStakingType(existingHero.stakingType);
+      userStats.currentDeadHeroes = Math.max(0, (userStats.currentDeadHeroes || 0) - 1);
+      if (typeof zone === 'number' && zone >= 0 && zone < 4) {
+        userStats.currentDeadHeroesPerZone[zone] = Math.max(0, userStats.currentDeadHeroesPerZone[zone] - 1);
+        if (userStats.currentDeadByLevelPerZone) {
+          userStats.currentDeadByLevelPerZone[zone][existingHero.level] = Math.max(0, userStats.currentDeadByLevelPerZone[zone][existingHero.level] - 1);
+        }
+      }
+    }
     context.FishingUserStats.set(userStats);
 
     // Met à jour le totalSpent du joueur

@@ -58,10 +58,18 @@ Dragma.Staked.handlerWithLoader({
       (async () => {
         if (!existingHero.staked) {
           const global = await getOrCreateDragmaGlobalStats(context);
+          // Current active staked (alive)
           global.totalHeroes += 1;
           global.totalHeroesPerZone[Number(attackZone)] += 1;
+          global.currentActiveStaked += 1;
+          global.currentActiveStakedPerZone[Number(attackZone)] += 1;
+          // Totals
+          global.totalStakes += 1;
           global.heroesByLevel[existingHero.level] += 1;
           global.heroesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
+          // Per zone/level counters
+          global.stakesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
+          global.currentActiveByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           global.totalFeesPerZone[Number(attackZone)] += entryFee;
           global.lastUpdated = timestamp;
           context.DragmaGlobalStats.set(global);
@@ -69,8 +77,13 @@ Dragma.Staked.handlerWithLoader({
           const userStats = await getOrCreateDragmaUserStats(context, owner.toLowerCase());
           userStats.totalHeroes += 1;
           userStats.heroesPerZone[Number(attackZone)] += 1;
+          userStats.currentActiveStaked += 1;
+          userStats.currentActiveStakedPerZone[Number(attackZone)] += 1;
+          userStats.totalStakes += 1;
           userStats.heroesByLevel[existingHero.level] += 1;
           userStats.heroesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
+          userStats.stakesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
+          userStats.currentActiveByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           userStats.totalFees += entryFee;
           userStats.feesPerZone[Number(attackZone)] += entryFee;
           userStats.totalSessionsPerZone[Number(attackZone)] += 1;
@@ -190,10 +203,20 @@ Dragma.Unstaked.handlerWithLoader({
           const zone = getDragmaZoneFromStakingType(existingHero.stakingType);
           
           const global = await getOrCreateDragmaGlobalStats(context);
+          // Current active staked (alive)
           global.totalHeroes -= 1;
           global.totalHeroesPerZone[zone] -= 1;
+          global.currentActiveStaked -= 1;
+          global.currentActiveStakedPerZone[zone] -= 1;
+          // Totals
+          global.totalUnstakes += 1;
+          global.completedSessions += 1;
+          global.completedSessionsPerZone[zone] += 1;
           global.heroesByLevel[existingHero.level] -= 1;
           global.heroesByLevelPerZone[zone][existingHero.level] -= 1;
+          global.unstakesByLevelPerZone[zone][existingHero.level] += 1;
+          global.completedByLevelPerZone[zone][existingHero.level] += 1;
+          global.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
           global.totalRewardsAmount += totalRewardsWithGacha;
           global.totalShardsWon += Number(weaponShardQty);
           
@@ -217,11 +240,18 @@ Dragma.Unstaked.handlerWithLoader({
           const userStats = await getOrCreateDragmaUserStats(context, owner.toLowerCase());
           userStats.totalHeroes -= 1;
           userStats.heroesPerZone[zone] -= 1;
+          userStats.currentActiveStaked -= 1;
+          userStats.currentActiveStakedPerZone[zone] -= 1;
+          userStats.totalUnstakes += 1;
+          userStats.completedSessions += 1;
+          userStats.completedSessionsPerZone[zone] += 1;
           userStats.heroesByLevel[existingHero.level] -= 1;
           userStats.heroesByLevelPerZone[zone][existingHero.level] -= 1;
+          userStats.unstakesByLevelPerZone[zone][existingHero.level] += 1;
+          userStats.completedByLevelPerZone[zone][existingHero.level] += 1;
+          userStats.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
           userStats.totalRewardsAmount += totalRewardsWithGacha;
           userStats.totalShardsWon += Number(weaponShardQty);
-          userStats.totalUnstakes += 1;
           
           // Met à jour les rewards par zone avec le nouveau système
           userStats.rewardsPerZone = updateRewardsPerZone(userStats.rewardsPerZone, zone, [...primaryRewards, ...secondaryRewards, ...tertiaryRewards]);
@@ -339,6 +369,7 @@ Dragma.HeroDied.handlerWithLoader({
       ...existingHero, 
       isDead: true, 
       deathLocation: 'DRAGMA',
+      lastDeathZone: zone,
       staked: false, // Un héros mort n'est plus considéré comme staked
       stakingType: undefined, // Reset staking type quand mort
       deathsCount: existingHero.deathsCount + 1,
@@ -350,12 +381,45 @@ Dragma.HeroDied.handlerWithLoader({
     context.Hero.set(deadHero);
 
     const global = await getOrCreateDragmaGlobalStats(context);
+    if (existingHero.staked) {
+      // Move from active to dead, keep totalHeroes unchanged
+      global.currentActiveStaked -= 1;
+      global.currentActiveStakedPerZone[zone] -= 1;
+      global.heroesByLevel[existingHero.level] -= 1;
+      global.heroesByLevelPerZone[zone][existingHero.level] -= 1;
+      if (global.currentActiveByLevelPerZone) {
+        global.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
+      }
+      await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: -1 });
+    }
+    global.currentDeadHeroes += 1;
+    global.currentDeadHeroesPerZone[zone] += 1;
+    if (global.currentDeadByLevelPerZone) {
+      global.currentDeadByLevelPerZone[zone][existingHero.level] += 1;
+    }
     global.totalDeaths += 1;
     global.deathsPerZone[zone] += 1;
     global.lastUpdated = timestamp;
     context.DragmaGlobalStats.set(global);
 
     const userStats = await getOrCreateDragmaUserStats(context, owner.toLowerCase());
+    if (existingHero.staked) {
+      // Move from active to dead for this user, totals unchanged
+      userStats.totalHeroes -= 1;
+      userStats.heroesPerZone[zone] -= 1;
+      userStats.currentActiveStaked -= 1;
+      userStats.currentActiveStakedPerZone[zone] -= 1;
+      userStats.heroesByLevel[existingHero.level] -= 1;
+      userStats.heroesByLevelPerZone[zone][existingHero.level] -= 1;
+      if (userStats.currentActiveByLevelPerZone) {
+        userStats.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
+      }
+    }
+    userStats.currentDeadHeroes += 1;
+    userStats.currentDeadHeroesPerZone[zone] += 1;
+    if (userStats.currentDeadByLevelPerZone) {
+      userStats.currentDeadByLevelPerZone[zone][existingHero.level] += 1;
+    }
     userStats.totalDeaths += 1;
     userStats.deathsPerZone[zone] += 1;
     context.DragmaUserStats.set(userStats);
@@ -412,12 +476,34 @@ Dragma.Revived.handlerWithLoader({
     const global = await getOrCreateDragmaGlobalStats(context);
     global.totalRevivals += 1;
     global.totalSpentOnRevive += fee;
+    // If revived from Dragma, decrement current dead counts
+    if (existingHero.deathLocation === 'DRAGMA') {
+      const zone = typeof existingHero.lastDeathZone === 'number' ? existingHero.lastDeathZone : getDragmaZoneFromStakingType(existingHero.stakingType);
+      global.currentDeadHeroes = Math.max(0, (global.currentDeadHeroes || 0) - 1);
+      if (typeof zone === 'number' && zone >= 0 && zone < 4) {
+        global.currentDeadHeroesPerZone[zone] = Math.max(0, global.currentDeadHeroesPerZone[zone] - 1);
+        if (global.currentDeadByLevelPerZone) {
+          // Use hero.level at death time (approximate with current level)
+          global.currentDeadByLevelPerZone[zone][existingHero.level] = Math.max(0, global.currentDeadByLevelPerZone[zone][existingHero.level] - 1);
+        }
+      }
+    }
     global.lastUpdated = timestamp;
     context.DragmaGlobalStats.set(global);
 
     const userStats = await getOrCreateDragmaUserStats(context, owner.toLowerCase());
     userStats.totalRevivals += 1;
     userStats.totalSpentOnRevive += fee;
+    if (existingHero.deathLocation === 'DRAGMA') {
+      const zone = typeof existingHero.lastDeathZone === 'number' ? existingHero.lastDeathZone : getDragmaZoneFromStakingType(existingHero.stakingType);
+      userStats.currentDeadHeroes = Math.max(0, (userStats.currentDeadHeroes || 0) - 1);
+      if (typeof zone === 'number' && zone >= 0 && zone < 4) {
+        userStats.currentDeadHeroesPerZone[zone] = Math.max(0, userStats.currentDeadHeroesPerZone[zone] - 1);
+        if (userStats.currentDeadByLevelPerZone) {
+          userStats.currentDeadByLevelPerZone[zone][existingHero.level] = Math.max(0, userStats.currentDeadByLevelPerZone[zone][existingHero.level] - 1);
+        }
+      }
+    }
     context.DragmaUserStats.set(userStats);
 
     // Met à jour le totalSpent du joueur
