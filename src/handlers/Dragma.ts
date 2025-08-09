@@ -10,6 +10,7 @@ import { updatePlayerTotalSpent } from "../helpers/player";
 import { updateRewardsPerZone } from "../helpers/dragma";
 import { calculateDragmaUnstakeAvailable, getDragmaStakingType, getDragmaZoneFromStakingType } from "../helpers/calculations";
 import { updateItemsBalance, updateItemsBalancesBatch } from "../helpers/items";
+import { ensureHeroRevealed } from "../helpers/hero";
 
 /**
  * Handler pour Dragma.Staked
@@ -36,7 +37,7 @@ Dragma.Staked.handlerWithLoader({
     const existingHero = hero ?? await context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`);
 
     // Parallélisation optimisée
-    const stakedHero = {
+    let stakedHero = {
       ...existingHero,
       staked: true,
       stakingType: getDragmaStakingType(attackZone),
@@ -44,6 +45,8 @@ Dragma.Staked.handlerWithLoader({
       unstakeAvailableTimestamp: calculateDragmaUnstakeAvailable(timestamp), // 12h cooldown pour Dragma
       lastClaimTimestamp: 0n,
     };
+    // Centralize reveal logic without extra write
+    stakedHero = await ensureHeroRevealed(context, { hero: stakedHero, user: owner, timestamp, contract: 'Dragma', stakingType: getDragmaStakingType(attackZone), persist: false });
     await Promise.all([
       // Stocke l'événement brut
       context.Dragma_Staked.set({
@@ -99,7 +102,8 @@ Dragma.Staked.handlerWithLoader({
           // Met à jour le totalSpent du joueur avec les fees de staking
           await updatePlayerTotalSpent(context, owner, entryFee);
         }
-        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, owner, 'DRAGMA_STAKE', {heroId: heroId.toString(), entryFee: entryFee.toString(), attackZone: attackZone.toString()}, existingHero.id, 'Dragma', getDragmaStakingType(attackZone));
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, owner, 'DRAGMA_STAKE', {heroId: heroId.toString(), entryFee: entryFee.toString(), zone: getDragmaStakingType(attackZone)}, existingHero.id, 'Dragma', getDragmaStakingType(attackZone));
+        await ensureHeroRevealed(context, { hero: stakedHero, user: owner, timestamp, contract: 'Dragma', stakingType: getDragmaStakingType(attackZone), persist: false });
       })()
     ]);
     if (!existingHero.staked) {
@@ -444,7 +448,18 @@ Dragma.HeroDied.handlerWithLoader({
     context.DragmaUserStats.set(userStats);
 
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
-    await createActivity(context, id, timestamp, owner, 'DRAGMA_DEATH', {heroId: heroId.toString()}, existingHero.id, 'DRAGMA', existingHero.stakingType);
+    const zoneEnum = existingHero.stakingType || getDragmaStakingType(BigInt(zone));
+    await createActivity(
+      context,
+      id,
+      timestamp,
+      owner,
+      'DEATH',
+      { heroId: heroId.toString(), zone: zoneEnum },
+      existingHero.id,
+      'DRAGMA',
+      existingHero.stakingType
+    );
   },
 });
 
@@ -535,7 +550,19 @@ Dragma.Revived.handlerWithLoader({
     await updatePlayerTotalSpent(context, owner, fee);
 
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
-    await createActivity(context, id, timestamp, owner, 'DRAGMA_REVIVAL', {heroId: heroId.toString(), fee: fee.toString()}, existingHero.id, 'DRAGMA', existingHero.stakingType);
+    const zoneForActivity = typeof existingHero.lastDeathZone === 'number' ? existingHero.lastDeathZone : getDragmaZoneFromStakingType(existingHero.stakingType);
+    const zoneEnum = typeof zoneForActivity === 'number' ? getDragmaStakingType(BigInt(zoneForActivity)) : (existingHero.stakingType || undefined);
+    await createActivity(
+      context,
+      id,
+      timestamp,
+      owner,
+      'REVIVAL',
+      { heroId: heroId.toString(), fee: fee.toString(), zone: zoneEnum },
+      existingHero.id,
+      'DRAGMA',
+      existingHero.stakingType
+    );
   },
 }); 
 

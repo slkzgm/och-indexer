@@ -2,6 +2,7 @@ import {
   Fishing,
 } from "generated";
 import { setHeroFishingStaked } from "../helpers/entities";
+import { ensureHeroRevealed } from "../helpers/hero";
 import { updatePlayerCounts, updatePlayerTotalSpent } from "../helpers/player";
 import { getOrCreateFishingGlobalStats, getOrCreateFishingUserStats } from "../helpers/stats";
 import { createActivity } from "../helpers/activity";
@@ -44,7 +45,15 @@ Fishing.Staked.handlerWithLoader({
         fee,
       }),
     ]);
-    const stakedHero = await setHeroFishingStaked(context, existingHero, zone, timestamp);
+    let stakedHero = await setHeroFishingStaked(context, existingHero, zone, timestamp, { persist: false });
+    stakedHero = await ensureHeroRevealed(context, {
+      hero: stakedHero,
+      user: owner,
+      timestamp,
+      contract: 'Fishing',
+      stakingType: getFishingStakingType(zone),
+      persist: false
+    });
     if (!existingHero.staked) {
       await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: 1 });
     }
@@ -96,7 +105,7 @@ Fishing.Staked.handlerWithLoader({
 
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
     const stakingType = getFishingStakingType(zone);
-    await createActivity(context, id, timestamp, owner, 'FISHING_STAKE', {fee: fee.toString(), zone: zone.toString()}, existingHero.id, 'Fishing', stakingType);
+    await createActivity(context, id, timestamp, owner, 'FISHING_STAKE', {fee: fee.toString(), zone: stakingType}, existingHero.id, 'Fishing', stakingType);
   },
 });
 
@@ -349,7 +358,7 @@ Fishing.Dead.handlerWithLoader({
 
     // Activité
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
-    await createActivity(context, id, timestamp, owner, 'DEATH', {heroId: heroId.toString()}, existingHero.id, 'Fishing', existingHero.stakingType);
+    await createActivity(context, id, timestamp, owner, 'DEATH', {heroId: heroId.toString(), zone: existingHero.stakingType || getFishingStakingType(BigInt(zone))}, existingHero.id, 'Fishing', existingHero.stakingType);
   },
 });
 
@@ -443,6 +452,8 @@ Fishing.Revived.handlerWithLoader({
 
     // Activité
     const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
-    await createActivity(context, id, timestamp, owner, 'REVIVAL', {heroId: heroId.toString(), cost: cost.toString()}, existingHero.id, 'Fishing', existingHero.stakingType);
+    const zoneForActivity = typeof existingHero.lastDeathZone === 'number' ? existingHero.lastDeathZone : getFishingZoneFromStakingType(existingHero.stakingType);
+    const zoneEnum = typeof zoneForActivity === 'number' ? getFishingStakingType(BigInt(zoneForActivity)) : (existingHero.stakingType || undefined);
+    await createActivity(context, id, timestamp, owner, 'REVIVAL', {heroId: heroId.toString(), cost: cost.toString(), zone: zoneEnum}, existingHero.id, 'Fishing', existingHero.stakingType);
   },
 }); 

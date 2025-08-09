@@ -386,7 +386,8 @@ export async function setHeroFishingStaked(
   context: any,
   hero: any,
   zone: bigint,
-  timestamp: bigint
+  timestamp: bigint,
+  options: { persist?: boolean } = {}
 ) {
   // Import dynamique pour éviter les dépendances circulaires
   const { getFishingStakingType, calculateFishingUnstakeAvailable } = require('./calculations');
@@ -400,10 +401,11 @@ export async function setHeroFishingStaked(
     stakedTimestamp: timestamp,
     unstakeAvailableTimestamp: calculateFishingUnstakeAvailable(timestamp),
     lastClaimTimestamp: timestamp,
-    revealed: true, // Mark as revealed on first staking
   };
   
-  context.Hero.set(updatedHero);
+  if (options.persist !== false) {
+    context.Hero.set(updatedHero);
+  }
   return updatedHero;
 }
 

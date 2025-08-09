@@ -6,6 +6,7 @@ import { updateWeaponAndHeroStats } from "../helpers/entities";
 import { updatePlayerCounts } from "../helpers/player";
 import { getOrCreateDragmaUnderlingsGlobalStats, getOrCreateDragmaUnderlingsUserStats } from "../helpers/stats";
 import { createActivity } from "../helpers/activity";
+import { ensureHeroRevealed } from "../helpers/hero";
 
 /**
  * Handler pour DragmaUnderlings.Staked
@@ -34,15 +35,16 @@ DragmaUnderlings.Staked.handlerWithLoader({
     const existingHero = hero ?? await context.Hero.getOrThrow(heroId.toString(), `Hero ${heroId} non trouvé`);
 
     // Parallélisation : Stockage event + mise à jour Hero
-    const stakedHero = {
+    let stakedHero = {
       ...existingHero,
       staked: true,
       stakingType: "DRAGMA_UNDERLINGS" as const,
       stakedTimestamp: timestamp,
       unstakeAvailableTimestamp: calculateUnstakeAvailable(timestamp),
       lastClaimTimestamp: timestamp,
-      revealed: true, // Mark as revealed on first staking
     };
+    // Centralize reveal logic without extra write
+    stakedHero = await ensureHeroRevealed(context, { hero: stakedHero, user, timestamp, contract: 'DragmaUnderlings', stakingType: 'DRAGMA_UNDERLINGS', persist: false });
     await Promise.all([
       // Stocke l'événement brut
       context.DragmaUnderlings_Staked.set({
@@ -50,7 +52,7 @@ DragmaUnderlings.Staked.handlerWithLoader({
         user,
         heroId,
       }),
-      // Met à jour le héro : staking activé + revealed
+      // Met à jour le héro : staking activé (+ revealed si nécessaire)
       context.Hero.set(stakedHero),
       (async () => {
         if (!existingHero.staked) {

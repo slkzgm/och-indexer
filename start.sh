@@ -3,4 +3,4 @@ set -e
 
 (cd generated && pnpm run db-setup) || true
 
-pnpm start
+pnpm start --tui-off

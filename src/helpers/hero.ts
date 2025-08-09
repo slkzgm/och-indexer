@@ -1,5 +1,6 @@
 import { HERO_STAKING_CONTRACTS, ZERO_ADDRESS, S1_LEVELING_CONTRACT, S1_ENDGAME_CONTRACT } from "../constants/index";
 import { getOrCreatePlayer, createHero } from "./entities";
+import { createActivity } from "./activity";
 import { getOrCreateHeroesGlobalStats } from "./stats";
 
 /**
@@ -130,10 +131,45 @@ export async function handleHeroTransfer(
   if (to_lc === S1_LEVELING_CONTRACT.toLowerCase() || to_lc === S1_ENDGAME_CONTRACT.toLowerCase()) {
     const hero = await context.Hero.get(heroId);
     if (hero && !hero.revealed) {
-      context.Hero.set({
-        ...hero,
-        revealed: true,
-      });
+      await ensureHeroRevealed(context, { hero, user: hero.owner_id, timestamp: blockTimestamp || 0n, contract: 'S1', persist: true });
     }
   }
 } 
+
+/**
+ * Ensures a hero is marked revealed once, and emits a HERO_REVEALED activity.
+ * If persist is false, returns the updated hero object without writing it;
+ * caller is expected to persist the returned hero in the same write batch.
+ */
+export async function ensureHeroRevealed(
+  context: any,
+  params: {
+    hero: any;
+    user: string;
+    timestamp: bigint;
+    contract: string;
+    stakingType?: string;
+    persist?: boolean;
+  }
+) {
+  const { hero, user, timestamp, contract, stakingType, persist = true } = params;
+  if (!hero || hero.revealed === true) return hero;
+
+  const updatedHero = { ...hero, revealed: true };
+  if (persist) {
+    await context.Hero.set(updatedHero);
+  }
+  const id = `${timestamp}_${hero.id}_REVEALED`;
+  await createActivity(
+    context,
+    id,
+    timestamp,
+    user,
+    'HERO_REVEALED',
+    { heroId: hero.id },
+    hero.id,
+    contract,
+    stakingType
+  );
+  return updatedHero;
+}

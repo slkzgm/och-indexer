@@ -730,45 +730,27 @@ The subgraph tracks various event types with detailed information stored as JSON
 }
 ```
 
-#### DRAGMA_DEATH
-**Contract**: `Dragma`  
-**Description**: Hero died in Dragma
-
-```json
-{
-  "heroId": "123"
-}
-```
-
-#### DRAGMA_REVIVAL
-**Contract**: `Dragma`  
-**Description**: Hero revived in Dragma
+#### DEATH
+**Contract**: `Dragma` | `Fishing`  
+**Description**: Hero died during a session
 
 ```json
 {
   "heroId": "123",
-  "cost": "1000000000000000000"
+  "zone": "DRAGMA_TAILS" // or FISHING_* enum
 }
 ```
 
-#### FISHING_DEATH
-**Contract**: `Fishing`  
-**Description**: Hero died in fishing
-
-```json
-{
-  "heroId": "123"
-}
-```
-
-#### FISHING_REVIVAL
-**Contract**: `Fishing`  
-**Description**: Hero revived in fishing
+#### REVIVAL
+**Contract**: `Dragma` | `Fishing`  
+**Description**: Hero revived from death
 
 ```json
 {
   "heroId": "123",
-  "cost": "1000000000000000000"
+  "fee": "1000000000000000000", // Dragma uses "fee"
+  "cost": "1000000000000000000", // Fishing uses "cost"
+  "zone": "DRAGMA_TAILS" // or FISHING_* enum
 }
 ```
 
@@ -779,7 +761,7 @@ The subgraph tracks various event types with detailed information stored as JSON
 ```json
 {
   "fee": "500000000000000000",
-  "zone": "0"
+  "zone": "FISHING_SLIME_BAY" // or another FISHING_* enum
 }
 ```
 
@@ -792,6 +774,16 @@ The subgraph tracks various event types with detailed information stored as JSON
   "amount": "1000000000000000000",
   "weaponShardId": "456",
   "bonusId": "789"
+}
+```
+
+#### HERO_REVEALED
+**Contract**: `Fishing` | `DragmaUnderlings` | `Dragma` | `S1`  
+**Description**: Hero attributes revealed the first time the hero becomes revealed in the system
+
+```json
+{
+  "heroId": "123"
 }
 ```
 
@@ -854,25 +846,9 @@ The subgraph tracks various event types with detailed information stored as JSON
 }
 ```
 
-#### DRAGMA_UNDERLINGS_DURABILITY_UPDATE
-**Contract**: `DragmaUnderlings`  
-**Description**: Weapon durability updated during gameplay (Underlings)
-
-```json
-{
-  "weaponId": "456",
-  "oldDurability": "100",
-  "newDurability": "95"
-}
-```
-
-#### DRAGMA_UNDERLINGS_SHARPNESS_UPDATE
-**Contract**: `DragmaUnderlings`  
-**Description**: Weapon sharpness updated during gameplay (Underlings)
-
 #### DURABILITY_UPDATE
-**Contract**: `Dragma`  
-**Description**: Weapon durability updated during gameplay (Dragma)
+**Contract**: `Dragma` | `DragmaUnderlings`  
+**Description**: Weapon durability updated during gameplay
 
 ```json
 {
@@ -883,8 +859,8 @@ The subgraph tracks various event types with detailed information stored as JSON
 ```
 
 #### SHARPNESS_UPDATE
-**Contract**: `Dragma`  
-**Description**: Weapon sharpness updated during gameplay (Dragma)
+**Contract**: `Dragma` | `DragmaUnderlings`  
+**Description**: Weapon sharpness updated during gameplay
 
 ```json
 {
@@ -1050,18 +1026,15 @@ The subgraph tracks various event types with detailed information stored as JSON
 | `DRAGMA_STAKE` | Dragma | Hero staked for Dragma rewards | ✅ | DRAGMA_* |
 | `DRAGMA_UNSTAKE_REQUEST` | Dragma | Unstake requested | ✅ | DRAGMA_* |
 | `DRAGMA_UNSTAKE` | Dragma | Hero unstaked from Dragma | ✅ | DRAGMA_* |
-| `DRAGMA_DEATH` | Dragma | Hero died in Dragma | ✅ | DRAGMA_* |
-| `DRAGMA_REVIVAL` | Dragma | Hero revived in Dragma | ✅ | DRAGMA_* |
-| `FISHING_DEATH` | Fishing | Hero died in fishing | ✅ | FISHING_* |
-| `FISHING_REVIVAL` | Fishing | Hero revived in fishing | ✅ | FISHING_* |
+| `DEATH` | Dragma/Fishing | Hero died (with zone) | ✅ | DRAGMA_* / FISHING_* |
+| `REVIVAL` | Dragma/Fishing | Hero revived (with fee/cost and zone) | ✅ | DRAGMA_* / FISHING_* |
 | `FISHING_STAKE` | Fishing | Hero staked for fishing | ✅ | FISHING_* |
 | `FISHING_UNSTAKE` | Fishing | Hero unstaked from fishing | ✅ | FISHING_* |
 | `TRAINING_UPGRADE` | Gym | Hero level upgraded | ✅ | - |
 | `REMIX` | WeaponRemixer | Weapons combined | ❌ | - |
-| `DRAGMA_UNDERLINGS_DURABILITY_UPDATE` | DragmaUnderlings | Weapon durability changed | ❌ | - |
-| `DRAGMA_UNDERLINGS_SHARPNESS_UPDATE` | DragmaUnderlings | Weapon sharpness changed | ❌ | - |
-| `DURABILITY_UPDATE` | Dragma | Weapon durability changed | ❌ | - |
-| `SHARPNESS_UPDATE` | Dragma | Weapon sharpness changed | ❌ | - |
+| `DURABILITY_UPDATE` | Dragma/DragmaUnderlings | Weapon durability changed | ❌ | - |
+| `SHARPNESS_UPDATE` | Dragma/DragmaUnderlings | Weapon sharpness changed | ❌ | - |
+| `HERO_REVEALED` | Dragma/DragmaUnderlings/Fishing/S1 | Hero revealed | ✅ | - |
 | `EQUIP_WEAPON` | HeroArmory | Weapon equipped | ✅ | - |
 | `UNEQUIP_WEAPON` | HeroArmory | Weapon unequipped | ✅ | - |
 | `HERO_TRANSFER` | Hero721 | Hero NFT transferred | ✅ | - |
@@ -1410,7 +1383,7 @@ query {
   activities(
     where: {
       user: "0x123...",
-      eventType_in: ["DRAGMA_DEATH", "FISHING_DEATH", "DRAGMA_REVIVAL", "FISHING_REVIVAL"]
+      eventType_in: ["DEATH", "REVIVAL"]
     }
   ) {
     timestamp
