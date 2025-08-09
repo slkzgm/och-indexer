@@ -68,7 +68,7 @@ DragmaUnderlings.Staked.handlerWithLoader({
           userStats.heroesByLevel[existingHero.level] += 1;
           context.DragmaUnderlingsUserStats.set(userStats);
         }
-        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_STAKE', { heroId: heroId.toString() }, heroId.toString(), 'DragmaUnderlings', 'DRAGMA_UNDERLINGS');
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_UNDERLINGS_STAKE', { heroId: heroId.toString() }, heroId.toString(), 'DragmaUnderlings', 'DRAGMA_UNDERLINGS');
       })()
     ]);
     if (!existingHero.staked) {
@@ -146,7 +146,7 @@ DragmaUnderlings.Unstaked.handlerWithLoader({
           userStats.averageStakingDuration = prevCount > 0n ? (userStats.averageStakingDuration * prevTotal + duration) / newTotalUnstakes : duration;
           context.DragmaUnderlingsUserStats.set(userStats);
         }
-        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_UNSTAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_UNDERLINGS_UNSTAKE', { heroId: heroId.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
       })()
     ]);
     if (existingHero.staked) {
@@ -215,7 +215,7 @@ DragmaUnderlings.Claimed.handlerWithLoader({
           totalRewardsClaimed: existingHero.totalRewardsClaimed + amount,
           totalClaims: existingHero.totalClaims + 1,
         });
-        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_CLAIM', { heroId: heroId.toString(), amount: amount.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
+        await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, user, 'DRAGMA_UNDERLINGS_CLAIM', { heroId: heroId.toString(), amount: amount.toString() }, heroId.toString(), 'DRAGMA_UNDERLINGS');
       })()
     ]);
   },

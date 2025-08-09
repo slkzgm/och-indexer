@@ -60,6 +60,7 @@ export async function getOrCreateFishingGlobalStats(context: any) {
       currentActiveStakedPerZone: [0,0,0,0],
       currentDeadHeroes: 0,
       currentDeadHeroesPerZone: [0,0,0,0],
+      currentDeadByLevel: Array(101).fill(0),
       heroesByLevel: Array(101).fill(0),
       totalFeesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
@@ -102,6 +103,7 @@ export async function getOrCreateFishingUserStats(context: any, userId: string) 
       currentActiveStakedPerZone: [0,0,0,0],
       currentDeadHeroes: 0,
       currentDeadHeroesPerZone: [0,0,0,0],
+      currentDeadByLevel: Array(101).fill(0),
       heroesByLevel: Array(101).fill(0),
       totalFees: 0n,
       feesPerZone: [0n,0n,0n,0n],
@@ -209,6 +211,7 @@ export async function getOrCreateDragmaGlobalStats(context: any) {
       currentActiveStakedPerZone: [0,0,0,0],
       currentDeadHeroes: 0,
       currentDeadHeroesPerZone: [0,0,0,0],
+      currentDeadByLevel: Array(101).fill(0),
       heroesByLevel: Array(101).fill(0),
       heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-100]
       totalFeesPerZone: [0n,0n,0n,0n],
@@ -258,6 +261,7 @@ export async function getOrCreateDragmaUserStats(context: any, userId: string) {
       currentActiveStakedPerZone: [0,0,0,0],
       currentDeadHeroes: 0,
       currentDeadHeroesPerZone: [0,0,0,0],
+      currentDeadByLevel: Array(101).fill(0),
       heroesByLevel: Array(101).fill(0),
       heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-100]
       totalFees: 0n,

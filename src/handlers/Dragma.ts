@@ -66,6 +66,10 @@ Dragma.Staked.handlerWithLoader({
           // Totals
           global.totalStakes += 1;
           global.heroesByLevel[existingHero.level] += 1;
+          // Keep current totals by level in sync (active + dead)
+          if (global.currentTotalByLevel) {
+            global.currentTotalByLevel[existingHero.level] += 1;
+          }
           global.heroesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           // Per zone/level counters
           global.stakesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
@@ -80,7 +84,10 @@ Dragma.Staked.handlerWithLoader({
           userStats.currentActiveStaked += 1;
           userStats.currentActiveStakedPerZone[Number(attackZone)] += 1;
           userStats.totalStakes += 1;
-          userStats.heroesByLevel[existingHero.level] += 1;
+           userStats.heroesByLevel[existingHero.level] += 1;
+           if (userStats.currentTotalByLevel) {
+             userStats.currentTotalByLevel[existingHero.level] += 1;
+           }
           userStats.heroesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           userStats.stakesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           userStats.currentActiveByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
@@ -213,6 +220,9 @@ Dragma.Unstaked.handlerWithLoader({
           global.completedSessions += 1;
           global.completedSessionsPerZone[zone] += 1;
           global.heroesByLevel[existingHero.level] -= 1;
+          if (global.currentTotalByLevel) {
+            global.currentTotalByLevel[existingHero.level] -= 1;
+          }
           global.heroesByLevelPerZone[zone][existingHero.level] -= 1;
           global.unstakesByLevelPerZone[zone][existingHero.level] += 1;
           global.completedByLevelPerZone[zone][existingHero.level] += 1;
@@ -246,6 +256,9 @@ Dragma.Unstaked.handlerWithLoader({
           userStats.completedSessions += 1;
           userStats.completedSessionsPerZone[zone] += 1;
           userStats.heroesByLevel[existingHero.level] -= 1;
+          if (userStats.currentTotalByLevel) {
+            userStats.currentTotalByLevel[existingHero.level] -= 1;
+          }
           userStats.heroesByLevelPerZone[zone][existingHero.level] -= 1;
           userStats.unstakesByLevelPerZone[zone][existingHero.level] += 1;
           userStats.completedByLevelPerZone[zone][existingHero.level] += 1;
@@ -392,8 +405,11 @@ Dragma.HeroDied.handlerWithLoader({
       }
       await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: -1 });
     }
-    global.currentDeadHeroes += 1;
+      global.currentDeadHeroes += 1;
     global.currentDeadHeroesPerZone[zone] += 1;
+      if (global.currentDeadByLevel) {
+        global.currentDeadByLevel[existingHero.level] += 1;
+      }
     if (global.currentDeadByLevelPerZone) {
       global.currentDeadByLevelPerZone[zone][existingHero.level] += 1;
     }
@@ -417,6 +433,9 @@ Dragma.HeroDied.handlerWithLoader({
     }
     userStats.currentDeadHeroes += 1;
     userStats.currentDeadHeroesPerZone[zone] += 1;
+    if (userStats.currentDeadByLevel) {
+      userStats.currentDeadByLevel[existingHero.level] += 1;
+    }
     if (userStats.currentDeadByLevelPerZone) {
       userStats.currentDeadByLevelPerZone[zone][existingHero.level] += 1;
     }
@@ -487,6 +506,9 @@ Dragma.Revived.handlerWithLoader({
           global.currentDeadByLevelPerZone[zone][existingHero.level] = Math.max(0, global.currentDeadByLevelPerZone[zone][existingHero.level] - 1);
         }
       }
+      if (global.currentDeadByLevel) {
+        global.currentDeadByLevel[existingHero.level] = Math.max(0, global.currentDeadByLevel[existingHero.level] - 1);
+      }
     }
     global.lastUpdated = timestamp;
     context.DragmaGlobalStats.set(global);
@@ -502,6 +524,9 @@ Dragma.Revived.handlerWithLoader({
         if (userStats.currentDeadByLevelPerZone) {
           userStats.currentDeadByLevelPerZone[zone][existingHero.level] = Math.max(0, userStats.currentDeadByLevelPerZone[zone][existingHero.level] - 1);
         }
+      }
+      if (userStats.currentDeadByLevel) {
+        userStats.currentDeadByLevel[existingHero.level] = Math.max(0, userStats.currentDeadByLevel[existingHero.level] - 1);
       }
     }
     context.DragmaUserStats.set(userStats);

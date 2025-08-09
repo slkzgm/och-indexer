@@ -660,7 +660,7 @@ The subgraph tracks various event types with detailed information stored as JSON
 
 ### Staking Events
 
-#### DRAGMA_STAKE
+#### DRAGMA_UNDERLINGS_STAKE
 **Contract**: `DragmaUnderlings`  
 **Description**: Hero staked for rewards in Dragma Underlings system
 
@@ -670,7 +670,7 @@ The subgraph tracks various event types with detailed information stored as JSON
 }
 ```
 
-#### DRAGMA_UNSTAKE
+#### DRAGMA_UNDERLINGS_UNSTAKE
 **Contract**: `DragmaUnderlings`  
 **Description**: Hero unstaked from Dragma Underlings system
 
@@ -680,7 +680,7 @@ The subgraph tracks various event types with detailed information stored as JSON
 }
 ```
 
-#### DRAGMA_CLAIM
+#### DRAGMA_UNDERLINGS_CLAIM
 **Contract**: `DragmaUnderlings`  
 **Description**: Rewards claimed from staked hero
 
@@ -854,9 +854,25 @@ The subgraph tracks various event types with detailed information stored as JSON
 }
 ```
 
+#### DRAGMA_UNDERLINGS_DURABILITY_UPDATE
+**Contract**: `DragmaUnderlings`  
+**Description**: Weapon durability updated during gameplay (Underlings)
+
+```json
+{
+  "weaponId": "456",
+  "oldDurability": "100",
+  "newDurability": "95"
+}
+```
+
+#### DRAGMA_UNDERLINGS_SHARPNESS_UPDATE
+**Contract**: `DragmaUnderlings`  
+**Description**: Weapon sharpness updated during gameplay (Underlings)
+
 #### DURABILITY_UPDATE
-**Contract**: `DragmaUnderlings` / `Dragma`  
-**Description**: Weapon durability updated during gameplay
+**Contract**: `Dragma`  
+**Description**: Weapon durability updated during gameplay (Dragma)
 
 ```json
 {
@@ -867,8 +883,16 @@ The subgraph tracks various event types with detailed information stored as JSON
 ```
 
 #### SHARPNESS_UPDATE
-**Contract**: `DragmaUnderlings` / `Dragma`  
-**Description**: Weapon sharpness updated during gameplay
+**Contract**: `Dragma`  
+**Description**: Weapon sharpness updated during gameplay (Dragma)
+
+```json
+{
+  "weaponId": "456",
+  "oldSharpness": "50",
+  "newSharpness": "45"
+}
+```
 
 ```json
 {
@@ -1020,9 +1044,9 @@ The subgraph tracks various event types with detailed information stored as JSON
 
 | Event Type | Contract | Description | Hero ID | Staking Type |
 |------------|----------|-------------|---------|--------------|
-| `DRAGMA_STAKE` | DragmaUnderlings | Hero staked for rewards | ✅ | DRAGMA_UNDERLINGS |
-| `DRAGMA_UNSTAKE` | DragmaUnderlings | Hero unstaked from rewards | ✅ | DRAGMA_UNDERLINGS |
-| `DRAGMA_CLAIM` | DragmaUnderlings | Rewards claimed | ✅ | DRAGMA_UNDERLINGS |
+| `DRAGMA_UNDERLINGS_STAKE` | DragmaUnderlings | Hero staked for rewards | ✅ | DRAGMA_UNDERLINGS |
+| `DRAGMA_UNDERLINGS_UNSTAKE` | DragmaUnderlings | Hero unstaked from rewards | ✅ | DRAGMA_UNDERLINGS |
+| `DRAGMA_UNDERLINGS_CLAIM` | DragmaUnderlings | Rewards claimed | ✅ | DRAGMA_UNDERLINGS |
 | `DRAGMA_STAKE` | Dragma | Hero staked for Dragma rewards | ✅ | DRAGMA_* |
 | `DRAGMA_UNSTAKE_REQUEST` | Dragma | Unstake requested | ✅ | DRAGMA_* |
 | `DRAGMA_UNSTAKE` | Dragma | Hero unstaked from Dragma | ✅ | DRAGMA_* |
@@ -1034,8 +1058,10 @@ The subgraph tracks various event types with detailed information stored as JSON
 | `FISHING_UNSTAKE` | Fishing | Hero unstaked from fishing | ✅ | FISHING_* |
 | `TRAINING_UPGRADE` | Gym | Hero level upgraded | ✅ | - |
 | `REMIX` | WeaponRemixer | Weapons combined | ❌ | - |
-| `DURABILITY_UPDATE` | DragmaUnderlings/Dragma | Weapon durability changed | ❌ | - |
-| `SHARPNESS_UPDATE` | DragmaUnderlings/Dragma | Weapon sharpness changed | ❌ | - |
+| `DRAGMA_UNDERLINGS_DURABILITY_UPDATE` | DragmaUnderlings | Weapon durability changed | ❌ | - |
+| `DRAGMA_UNDERLINGS_SHARPNESS_UPDATE` | DragmaUnderlings | Weapon sharpness changed | ❌ | - |
+| `DURABILITY_UPDATE` | Dragma | Weapon durability changed | ❌ | - |
+| `SHARPNESS_UPDATE` | Dragma | Weapon sharpness changed | ❌ | - |
 | `EQUIP_WEAPON` | HeroArmory | Weapon equipped | ✅ | - |
 | `UNEQUIP_WEAPON` | HeroArmory | Weapon unequipped | ✅ | - |
 | `HERO_TRANSFER` | Hero721 | Hero NFT transferred | ✅ | - |

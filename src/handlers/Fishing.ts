@@ -62,6 +62,9 @@ Fishing.Staked.handlerWithLoader({
       global.heroesByLevelPerZone[zoneNum][stakedHero.level] += 1;
       global.stakesByLevelPerZone[zoneNum][stakedHero.level] += 1;
       global.currentActiveByLevelPerZone[zoneNum][stakedHero.level] += 1;
+      if (global.currentTotalByLevel) {
+        global.currentTotalByLevel[stakedHero.level] += 1;
+      }
     }
     global.totalFeesPerZone[zoneNum] += fee;
     global.lastUpdated = timestamp;
@@ -77,6 +80,9 @@ Fishing.Staked.handlerWithLoader({
     userStats.heroesByLevelPerZone[zoneNum][stakedHero.level] += 1;
     userStats.stakesByLevelPerZone[zoneNum][stakedHero.level] += 1;
     userStats.currentActiveByLevelPerZone[zoneNum][stakedHero.level] += 1;
+    if (userStats.currentTotalByLevel) {
+      userStats.currentTotalByLevel[stakedHero.level] += 1;
+    }
     userStats.feesPerZone[zoneNum] += fee;
     userStats.totalFees += fee;
     userStats.totalSessionsPerZone[zoneNum] += 1;
@@ -196,6 +202,9 @@ Fishing.Unstaked.handlerWithLoader({
     global.unstakesByLevelPerZone[zoneNum][existingHero.level] += 1;
     global.completedByLevelPerZone[zoneNum][existingHero.level] += 1;
     global.currentActiveByLevelPerZone[zoneNum][existingHero.level] -= 1;
+    if (global.currentTotalByLevel) {
+      global.currentTotalByLevel[existingHero.level] -= 1;
+    }
     global.rewardsPerZone[zoneNum] += amount;
     global.totalRewardsAmount += amount;
     if (weaponShardId > 0n) {
@@ -222,6 +231,9 @@ Fishing.Unstaked.handlerWithLoader({
     userStats.unstakesByLevelPerZone[zoneNum][existingHero.level] += 1;
     userStats.completedByLevelPerZone[zoneNum][existingHero.level] += 1;
     userStats.currentActiveByLevelPerZone[zoneNum][existingHero.level] -= 1;
+    if (userStats.currentTotalByLevel) {
+      userStats.currentTotalByLevel[existingHero.level] -= 1;
+    }
     userStats.rewardsPerZone[zoneNum] += amount;
     userStats.totalRewardsAmount += amount;
     if (weaponShardId > 0n) {
@@ -304,6 +316,9 @@ Fishing.Dead.handlerWithLoader({
       await updatePlayerCounts(context, existingHero.owner_id, { stakedHeroCount: -1 });
     }
     global.currentDeadByLevelPerZone[zone][existingHero.level] += 1;
+    if (global.currentDeadByLevel) {
+      global.currentDeadByLevel[existingHero.level] += 1;
+    }
     global.currentDeadHeroes += 1;
     global.currentDeadHeroesPerZone[zone] += 1;
     global.totalDeaths += 1;
@@ -323,6 +338,9 @@ Fishing.Dead.handlerWithLoader({
       userStats.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
     }
     userStats.currentDeadByLevelPerZone[zone][existingHero.level] += 1;
+    if (userStats.currentDeadByLevel) {
+      userStats.currentDeadByLevel[existingHero.level] += 1;
+    }
     userStats.currentDeadHeroes += 1;
     userStats.currentDeadHeroesPerZone[zone] += 1;
     userStats.totalDeaths += 1;
@@ -394,6 +412,9 @@ Fishing.Revived.handlerWithLoader({
           global.currentDeadByLevelPerZone[zone][existingHero.level] = Math.max(0, global.currentDeadByLevelPerZone[zone][existingHero.level] - 1);
         }
       }
+      if (global.currentDeadByLevel) {
+        global.currentDeadByLevel[existingHero.level] = Math.max(0, global.currentDeadByLevel[existingHero.level] - 1);
+      }
     }
     global.lastUpdated = timestamp;
     context.FishingGlobalStats.set(global);
@@ -410,6 +431,9 @@ Fishing.Revived.handlerWithLoader({
         if (userStats.currentDeadByLevelPerZone) {
           userStats.currentDeadByLevelPerZone[zone][existingHero.level] = Math.max(0, userStats.currentDeadByLevelPerZone[zone][existingHero.level] - 1);
         }
+      }
+      if (userStats.currentDeadByLevel) {
+        userStats.currentDeadByLevel[existingHero.level] = Math.max(0, userStats.currentDeadByLevel[existingHero.level] - 1);
       }
     }
     context.FishingUserStats.set(userStats);
