@@ -946,8 +946,15 @@ type DragmaGlobalStats @entity {
   # =============================================================================
   # ECONOMY STATISTICS
   # =============================================================================
+  totalFees: BigInt! @default(value: "0") # Total fees paid across all zones
   totalFeesPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Total fees paid per zone
   totalRewardsAmount: BigInt! @default(value: "0") # Total rewards earned
+  # Score tracking: sum of hero.damage for completed (alive) runs
+  totalScore: BigInt! @default(value: "0") # Total accumulated score across all zones
+  scorePerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Score per zone [TAILS, LEGS, TORSO, HEAD]
+  # Score tracking (all outcomes): includes runs that ended by death
+  totalScoreAll: BigInt! @default(value: "0")
+  scorePerZoneAll: [BigInt!]! @default(value: "[0,0,0,0]")
   
   # =============================================================================
   # REWARDS TRACKING
@@ -1014,6 +1021,12 @@ type DragmaUserStats @entity {
   totalFees: BigInt! @default(value: "0") # Total fees paid by this user
   feesPerZone: [BigInt!]! @default(value: "[0,0,0,0]") # Fees paid per zone
   totalRewardsAmount: BigInt! @default(value: "0") # Total rewards earned by this user
+  # Score tracking: sum of hero.damage for completed (alive) runs by this user
+  totalScore: BigInt! @default(value: "0")
+  scorePerZone: [BigInt!]! @default(value: "[0,0,0,0]")
+  # Score tracking (all outcomes): includes runs that ended by death
+  totalScoreAll: BigInt! @default(value: "0")
+  scorePerZoneAll: [BigInt!]! @default(value: "[0,0,0,0]")
   
   # =============================================================================
   # REWARDS TRACKING

@@ -77,7 +77,8 @@ Dragma.Staked.handlerWithLoader({
           // Per zone/level counters
           global.stakesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           global.currentActiveByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
-          global.totalFeesPerZone[Number(attackZone)] += entryFee;
+           global.totalFeesPerZone[Number(attackZone)] += entryFee;
+           global.totalFees = (global.totalFees || 0n) + entryFee;
           global.lastUpdated = timestamp;
           context.DragmaGlobalStats.set(global);
 
@@ -94,7 +95,7 @@ Dragma.Staked.handlerWithLoader({
           userStats.heroesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           userStats.stakesByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
           userStats.currentActiveByLevelPerZone[Number(attackZone)][existingHero.level] += 1;
-          userStats.totalFees += entryFee;
+           userStats.totalFees += entryFee;
           userStats.feesPerZone[Number(attackZone)] += entryFee;
           userStats.totalSessionsPerZone[Number(attackZone)] += 1;
           context.DragmaUserStats.set(userStats);
@@ -232,6 +233,24 @@ Dragma.Unstaked.handlerWithLoader({
           global.completedByLevelPerZone[zone][existingHero.level] += 1;
           global.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
           global.totalRewardsAmount += totalRewardsWithGacha;
+          // Score: accumulate hero damage for successful (alive) runs
+          {
+            const heroDamage: bigint =
+              typeof existingHero.damage === 'bigint'
+                ? existingHero.damage
+                : BigInt((existingHero.damage ?? 0).toString());
+            global.totalScore = (global.totalScore || 0n) + heroDamage;
+            if (Array.isArray(global.scorePerZone)) {
+              const currentZoneScore = global.scorePerZone[zone] || 0n;
+              global.scorePerZone[zone] = currentZoneScore + heroDamage;
+            }
+            // Also increment the all-outcomes counters
+            global.totalScoreAll = (global.totalScoreAll || 0n) + heroDamage;
+            if (Array.isArray(global.scorePerZoneAll)) {
+              const currentZoneScoreAll = global.scorePerZoneAll[zone] || 0n;
+              global.scorePerZoneAll[zone] = currentZoneScoreAll + heroDamage;
+            }
+          }
           global.totalShardsWon += Number(weaponShardQty);
           
           // Met à jour les rewards par zone avec le nouveau système
@@ -268,6 +287,24 @@ Dragma.Unstaked.handlerWithLoader({
           userStats.completedByLevelPerZone[zone][existingHero.level] += 1;
           userStats.currentActiveByLevelPerZone[zone][existingHero.level] -= 1;
           userStats.totalRewardsAmount += totalRewardsWithGacha;
+          // Score: accumulate hero damage for this user's successful (alive) runs
+          {
+            const heroDamage: bigint =
+              typeof existingHero.damage === 'bigint'
+                ? existingHero.damage
+                : BigInt((existingHero.damage ?? 0).toString());
+            userStats.totalScore = (userStats.totalScore || 0n) + heroDamage;
+            if (Array.isArray(userStats.scorePerZone)) {
+              const currentZoneScore = userStats.scorePerZone[zone] || 0n;
+              userStats.scorePerZone[zone] = currentZoneScore + heroDamage;
+            }
+            // Also increment the all-outcomes counters
+            userStats.totalScoreAll = (userStats.totalScoreAll || 0n) + heroDamage;
+            if (Array.isArray(userStats.scorePerZoneAll)) {
+              const currentZoneScoreAll = userStats.scorePerZoneAll[zone] || 0n;
+              userStats.scorePerZoneAll[zone] = currentZoneScoreAll + heroDamage;
+            }
+          }
           userStats.totalShardsWon += Number(weaponShardQty);
           
           // Met à jour les rewards par zone avec le nouveau système
@@ -398,6 +435,18 @@ Dragma.HeroDied.handlerWithLoader({
     context.Hero.set(deadHero);
 
     const global = await getOrCreateDragmaGlobalStats(context);
+    // Score (all outcomes): add damage when a run ends by death
+    {
+      const heroDamage: bigint =
+        typeof existingHero.damage === 'bigint'
+          ? existingHero.damage
+          : BigInt((existingHero.damage ?? 0).toString());
+      global.totalScoreAll = (global.totalScoreAll || 0n) + heroDamage;
+      if (Array.isArray(global.scorePerZoneAll)) {
+        const currentZoneScoreAll = global.scorePerZoneAll[zone] || 0n;
+        global.scorePerZoneAll[zone] = currentZoneScoreAll + heroDamage;
+      }
+    }
     if (existingHero.staked) {
       // Move from active to dead, keep totalHeroes unchanged
       global.currentActiveStaked -= 1;
@@ -423,6 +472,18 @@ Dragma.HeroDied.handlerWithLoader({
     context.DragmaGlobalStats.set(global);
 
     const userStats = await getOrCreateDragmaUserStats(context, owner.toLowerCase());
+    // Score (all outcomes): add damage to user's totals on death completion as well
+    {
+      const heroDamage: bigint =
+        typeof existingHero.damage === 'bigint'
+          ? existingHero.damage
+          : BigInt((existingHero.damage ?? 0).toString());
+      userStats.totalScoreAll = (userStats.totalScoreAll || 0n) + heroDamage;
+      if (Array.isArray(userStats.scorePerZoneAll)) {
+        const currentZoneScoreAll = userStats.scorePerZoneAll[zone] || 0n;
+        userStats.scorePerZoneAll[zone] = currentZoneScoreAll + heroDamage;
+      }
+    }
     if (existingHero.staked) {
       // Move from active to dead for this user, totals unchanged
       userStats.totalHeroes -= 1;

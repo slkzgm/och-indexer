@@ -62,6 +62,7 @@ export async function getOrCreateFishingGlobalStats(context: any) {
       currentDeadHeroesPerZone: [0,0,0,0],
       currentDeadByLevel: Array(101).fill(0),
       heroesByLevel: Array(101).fill(0),
+      totalFees: 0n,
       totalFeesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
       rewardsPerZone: [0n,0n,0n,0n],
@@ -216,6 +217,12 @@ export async function getOrCreateDragmaGlobalStats(context: any) {
       heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-100]
       totalFeesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
+      // Score tracking
+      totalScore: 0n,
+      scorePerZone: [0n,0n,0n,0n],
+      // Score tracking (all outcomes)
+      totalScoreAll: 0n,
+      scorePerZoneAll: [0n,0n,0n,0n],
       rewardsPerZone: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]], // [zone] × [primary, secondary1, secondary2, secondary3, tertiary]
       totalShardsWon: 0,
       shardsPerZone: [0,0,0,0],
@@ -267,6 +274,12 @@ export async function getOrCreateDragmaUserStats(context: any, userId: string) {
       totalFees: 0n,
       feesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
+      // Score tracking
+      totalScore: 0n,
+      scorePerZone: [0n,0n,0n,0n],
+      // Score tracking (all outcomes)
+      totalScoreAll: 0n,
+      scorePerZoneAll: [0n,0n,0n,0n],
       rewardsPerZone: [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]], // [zone] × [primary, secondary1, secondary2, secondary3, tertiary]
       totalShardsWon: 0,
       shardsPerZone: [0,0,0,0],
