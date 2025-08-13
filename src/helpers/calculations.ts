@@ -15,6 +15,19 @@ const FISHING_UNSTAKE_COOLDOWN_SECONDS = 11 * 60 * 60 + 45 * 60; // 11h45
 
 // Constants pour Dragma staking
 const DRAGMA_UNSTAKE_COOLDOWN_SECONDS = 11 * 60 * 60 + 45 * 60; // 11h45
+// Free revive cooldowns (seconds)
+const DRAGMA_FREE_REVIVE_COOLDOWN_SECONDS: Record<number, number> = {
+  0: 1 * 24 * 60 * 60, // TAILS: 1 day
+  1: 2 * 24 * 60 * 60, // LEGS: 2 days
+  2: 3 * 24 * 60 * 60, // TORSO: 3 days
+  3: 4 * 24 * 60 * 60, // HEAD: 4 days
+};
+const FISHING_FREE_REVIVE_COOLDOWN_SECONDS: Record<number, number> = {
+  0: 1 * 24 * 60 * 60, // SLIME_BAY: 1 day
+  1: 1 * 24 * 60 * 60, // SHROOM_GROTTO: 1 day (not specified; defaulting to 1 day unless provided)
+  2: 1 * 24 * 60 * 60, // SKEET_PIER: 1 day (not specified; defaulting to 1 day unless provided)
+  3: 1 * 24 * 60 * 60, // MAGMA_MIRE: 1 day
+};
 
 // Mapping des zones fishing vers les StakingType
 const FISHING_ZONE_TO_STAKING_TYPE: Record<number, string> = {
@@ -275,5 +288,31 @@ export function getFishingZoneFromStakingType(stakingType: string | undefined): 
   };
   
   return zoneMapping[zoneName] || 0;
+}
+
+/**
+ * Calculates when a free revive becomes available for Dragma by zone.
+ * @param deathTimestamp timestamp when the hero died
+ * @param zone zone number (0-3)
+ */
+export function calculateDragmaFreeReviveAvailable(
+  deathTimestamp: bigint,
+  zone: number,
+): bigint {
+  const seconds = DRAGMA_FREE_REVIVE_COOLDOWN_SECONDS[zone] ?? DRAGMA_FREE_REVIVE_COOLDOWN_SECONDS[0];
+  return deathTimestamp + BigInt(seconds);
+}
+
+/**
+ * Calculates when a free revive becomes available for Fishing by zone.
+ * @param deathTimestamp timestamp when the hero died
+ * @param zone zone number (0-3)
+ */
+export function calculateFishingFreeReviveAvailable(
+  deathTimestamp: bigint,
+  zone: number,
+): bigint {
+  const seconds = FISHING_FREE_REVIVE_COOLDOWN_SECONDS[zone] ?? FISHING_FREE_REVIVE_COOLDOWN_SECONDS[0];
+  return deathTimestamp + BigInt(seconds);
 }
 

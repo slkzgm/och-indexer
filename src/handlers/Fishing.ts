@@ -6,7 +6,7 @@ import { ensureHeroRevealed } from "../helpers/hero";
 import { updatePlayerCounts, updatePlayerTotalSpent } from "../helpers/player";
 import { getOrCreateFishingGlobalStats, getOrCreateFishingUserStats } from "../helpers/stats";
 import { createActivity } from "../helpers/activity";
-import { getFishingStakingType, getFishingZoneFromStakingType } from "../helpers/calculations";
+import { getFishingStakingType, getFishingZoneFromStakingType, calculateFishingFreeReviveAvailable } from "../helpers/calculations";
 
 /**
  * Handler pour Fishing.Staked
@@ -310,6 +310,7 @@ Fishing.Dead.handlerWithLoader({
       fishingDeathPerZone: existingHero.fishingDeathPerZone.map((val: number, idx: number) => 
         idx === zone ? val + 1 : val
       ),
+      freeReviveAvailable: calculateFishingFreeReviveAvailable(timestamp, zone),
     };
     context.Hero.set(deadHero);
 
@@ -405,6 +406,7 @@ Fishing.Revived.handlerWithLoader({
       spentOnRevive: existingHero.spentOnRevive + cost,
       fishingRevivalCount: existingHero.fishingRevivalCount + 1,
       fishingReviveSpent: existingHero.fishingReviveSpent + cost,
+      freeReviveAvailable: 0n,
     };
     context.Hero.set(revivedHero);
 

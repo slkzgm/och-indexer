@@ -650,6 +650,8 @@ type Hero @entity {
   deathsCount: Int! @default(value: "0") # Total number of deaths
   revivalCount: Int! @default(value: "0") # Total number of revivals
   spentOnRevive: BigInt! @default(value: "0") # Total cost spent on revivals
+  # Timestamp when a free revive becomes available (0 when not applicable)
+  freeReviveAvailable: BigInt! @default(value: "0")
 
   # Contract-specific death/revival stats
   fishingDeathCount: Int! @default(value: "0") # Deaths in fishing

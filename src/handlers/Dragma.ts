@@ -7,7 +7,7 @@ import { getOrCreateDragmaGlobalStats, getOrCreateDragmaUserStats } from "../hel
 import { createActivity } from "../helpers/activity";
 import { updatePlayerTotalSpent } from "../helpers/player";
 import { updateRewardsPerZone } from "../helpers/dragma";
-import { calculateDragmaUnstakeAvailable, getDragmaStakingType, getDragmaZoneFromStakingType } from "../helpers/calculations";
+import { calculateDragmaUnstakeAvailable, getDragmaStakingType, getDragmaZoneFromStakingType, calculateDragmaFreeReviveAvailable } from "../helpers/calculations";
 import { ensureHeroRevealed } from "../helpers/hero";
 
 /**
@@ -393,6 +393,7 @@ Dragma.HeroDied.handlerWithLoader({
       dragmaDeathPerZone: existingHero.dragmaDeathPerZone.map((val: number, idx: number) => 
         idx === zone ? val + 1 : val
       ),
+      freeReviveAvailable: calculateDragmaFreeReviveAvailable(timestamp, zone),
     };
     context.Hero.set(deadHero);
 
@@ -527,6 +528,7 @@ Dragma.Revived.handlerWithLoader({
       spentOnRevive: existingHero.spentOnRevive + fee,
       dragmaRevivalCount: existingHero.dragmaRevivalCount + 1,
       dragmaReviveSpent: existingHero.dragmaReviveSpent + fee,
+      freeReviveAvailable: 0n,
     };
     context.Hero.set(revivedHero);
 

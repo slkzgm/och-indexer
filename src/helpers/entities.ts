@@ -158,6 +158,7 @@ export function createHero(
     dragmaRevivalCount: 0,
     dragmaReviveSpent: 0n,
     dragmaDeathPerZone: [0,0,0,0], // [TAILS, LEGS, TORSO, HEAD]
+    freeReviveAvailable: 0n,
     
     totalAttemptedTrainings: 0,
     totalSuccessfulTrainings: 0,
