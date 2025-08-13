@@ -1,7 +1,6 @@
 import {
   Dragma,
 } from "generated";
-import { getOrCreatePlayer } from "../helpers/entities";
 import { updateWeaponAndHeroStats } from "../helpers/entities";
 import { updatePlayerCounts } from "../helpers/player";
 import { getOrCreateDragmaGlobalStats, getOrCreateDragmaUserStats } from "../helpers/stats";
@@ -9,7 +8,6 @@ import { createActivity } from "../helpers/activity";
 import { updatePlayerTotalSpent } from "../helpers/player";
 import { updateRewardsPerZone } from "../helpers/dragma";
 import { calculateDragmaUnstakeAvailable, getDragmaStakingType, getDragmaZoneFromStakingType } from "../helpers/calculations";
-import { updateItemsBalance, updateItemsBalancesBatch } from "../helpers/items";
 import { ensureHeroRevealed } from "../helpers/hero";
 
 /**
@@ -324,45 +322,9 @@ Dragma.Unstaked.handlerWithLoader({
           context.DragmaUserStats.set(userStats);
         }
 
-        // Met à jour les balances du joueur - OPTIMISÉ EN BATCH
-        const player = await getOrCreatePlayer(context, owner);
-        let playerUpdated = false;
-        
-        // Préparer tous les updates d'items en batch
-        const itemUpdates: Array<{itemId: bigint, amountChange: bigint}> = [];
-        
-        // Weapon shards (token ID 1)
-        if (weaponShardQty > 0n) {
-          itemUpdates.push({itemId: 1n, amountChange: weaponShardQty});
-          playerUpdated = true;
-        }
-        
-        // Items rewards
-        const allItemRewards = [...primaryRewards, ...secondaryRewards, ...tertiaryRewards];
-        for (const itemId of allItemRewards) {
-          itemUpdates.push({itemId, amountChange: 1n});
-          playerUpdated = true;
-        }
-        
-        // Appliquer tous les updates d'items en une fois
-        if (itemUpdates.length > 0) {
-          const updatedPlayer = await updateItemsBalancesBatch(context, owner, itemUpdates, player);
-          Object.assign(player, updatedPlayer);
-        }
-        
-        // Gacha token - séparé car pas dans itemsBalances
-        if (gachaTokenId > 0n) {
-          const gachaIndex = Number(gachaTokenId) - 1; // 1->0, 2->1, 3->2, 4->3
-          if (gachaIndex >= 0 && gachaIndex < 4) {
-            player.gachaBalances[gachaIndex] += 1n;
-            playerUpdated = true;
-          }
-        }
-        
-        // UN SEUL UPDATE du Player si nécessaire
-        if (playerUpdated) {
-          context.Player.set(player);
-        }
+        // Note: no direct item or gacha balance updates here.
+        // Balances are sourced exclusively from ERC1155 transfer events
+        // handled in `handlers/Items.ts` and `handlers/Gacha1155.ts`.
 
         await createActivity(context, `${event.chainId}_${event.block.number}_${event.logIndex}`, timestamp, owner, 'DRAGMA_UNSTAKE', {
           heroId: heroId.toString(), 
