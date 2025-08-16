@@ -1,5 +1,7 @@
 // src/helpers/stats.ts
 
+const LEVEL_CAPACITY = 151; // Levels 0..150
+
 export async function getOrCreateDragmaUnderlingsGlobalStats(context: any) {
   let stats = await context.DragmaUnderlingsGlobalStats.get('global');
   if (!stats) {
@@ -11,7 +13,7 @@ export async function getOrCreateDragmaUnderlingsGlobalStats(context: any) {
       totalRewardsClaimed: 0n,
       totalClaims: 0,
       averageClaimAmount: 0n,
-      heroesByLevel: Array(101).fill(0),
+      heroesByLevel: Array(LEVEL_CAPACITY).fill(0),
       lastUpdated: 0n,
     };
     await context.DragmaUnderlingsGlobalStats.set(stats);
@@ -31,7 +33,7 @@ export async function getOrCreateDragmaUnderlingsUserStats(context: any, userId:
       totalRewardsClaimed: 0n,
       totalClaims: 0,
       averageStakingDuration: 0n,
-      heroesByLevel: Array(101).fill(0),
+      heroesByLevel: Array(LEVEL_CAPACITY).fill(0),
       player_id: userId, // Relation to Player
     };
     await context.DragmaUnderlingsUserStats.set(stats);
@@ -46,12 +48,12 @@ export async function getOrCreateFishingGlobalStats(context: any) {
       id: 'global',
       totalHeroes: 0,
       totalHeroesPerZone: [0,0,0,0],
-      heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      stakesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      unstakesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      completedByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      currentActiveByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      currentDeadByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
+      heroesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      stakesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      unstakesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      completedByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      currentActiveByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      currentDeadByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
       totalStakes: 0,
       totalUnstakes: 0,
       completedSessions: 0,
@@ -60,8 +62,8 @@ export async function getOrCreateFishingGlobalStats(context: any) {
       currentActiveStakedPerZone: [0,0,0,0],
       currentDeadHeroes: 0,
       currentDeadHeroesPerZone: [0,0,0,0],
-      currentDeadByLevel: Array(101).fill(0),
-      heroesByLevel: Array(101).fill(0),
+      currentDeadByLevel: Array(LEVEL_CAPACITY).fill(0),
+      heroesByLevel: Array(LEVEL_CAPACITY).fill(0),
       totalFees: 0n,
       totalFeesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
@@ -90,12 +92,12 @@ export async function getOrCreateFishingUserStats(context: any, userId: string) 
       id: userId,
       totalHeroes: 0,
       heroesPerZone: [0,0,0,0],
-      heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      stakesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      unstakesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      completedByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      currentActiveByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      currentDeadByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
+      heroesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      stakesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      unstakesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      completedByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      currentActiveByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      currentDeadByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
       totalStakes: 0,
       totalUnstakes: 0,
       completedSessions: 0,
@@ -104,8 +106,8 @@ export async function getOrCreateFishingUserStats(context: any, userId: string) 
       currentActiveStakedPerZone: [0,0,0,0],
       currentDeadHeroes: 0,
       currentDeadHeroesPerZone: [0,0,0,0],
-      currentDeadByLevel: Array(101).fill(0),
-      heroesByLevel: Array(101).fill(0),
+      currentDeadByLevel: Array(LEVEL_CAPACITY).fill(0),
+      heroesByLevel: Array(LEVEL_CAPACITY).fill(0),
       totalFees: 0n,
       feesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
@@ -137,7 +139,7 @@ export async function getOrCreateHeroesGlobalStats(context: any) {
       totalHeroes: 0,
       totalMinted: 0,
       totalBurned: 0,
-      heroesByLevel: Array(101).fill(0),
+      heroesByLevel: Array(LEVEL_CAPACITY).fill(0),
       lastUpdated: 0n,
     };
     await context.HeroesGlobalStats.set(stats);
@@ -199,11 +201,11 @@ export async function getOrCreateDragmaGlobalStats(context: any) {
       id: 'global',
       totalHeroes: 0,
       totalHeroesPerZone: [0,0,0,0],
-      stakesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      unstakesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      completedByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      currentActiveByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      currentDeadByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
+      stakesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      unstakesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      completedByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      currentActiveByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      currentDeadByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
       totalStakes: 0,
       totalUnstakes: 0,
       completedSessions: 0,
@@ -212,9 +214,9 @@ export async function getOrCreateDragmaGlobalStats(context: any) {
       currentActiveStakedPerZone: [0,0,0,0],
       currentDeadHeroes: 0,
       currentDeadHeroesPerZone: [0,0,0,0],
-      currentDeadByLevel: Array(101).fill(0),
-      heroesByLevel: Array(101).fill(0),
-      heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-100]
+      currentDeadByLevel: Array(LEVEL_CAPACITY).fill(0),
+      heroesByLevel: Array(LEVEL_CAPACITY).fill(0),
+      heroesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-150]
       totalFeesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,
       // Score tracking
@@ -245,6 +247,7 @@ export async function getOrCreateDragmaGlobalStats(context: any) {
     };
     await context.DragmaGlobalStats.set(stats);
   }
+  // Initialized with 151 length at creation; no runtime expansion needed
   return stats;
 }
 
@@ -255,11 +258,11 @@ export async function getOrCreateDragmaUserStats(context: any, userId: string) {
       id: userId,
       totalHeroes: 0,
       heroesPerZone: [0,0,0,0],
-      stakesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      unstakesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      completedByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      currentActiveByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
-      currentDeadByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)],
+      stakesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      unstakesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      completedByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      currentActiveByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
+      currentDeadByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)],
       totalStakes: 0,
       totalUnstakes: 0,
       completedSessions: 0,
@@ -268,9 +271,9 @@ export async function getOrCreateDragmaUserStats(context: any, userId: string) {
       currentActiveStakedPerZone: [0,0,0,0],
       currentDeadHeroes: 0,
       currentDeadHeroesPerZone: [0,0,0,0],
-      currentDeadByLevel: Array(101).fill(0),
-      heroesByLevel: Array(101).fill(0),
-      heroesByLevelPerZone: [Array(101).fill(0), Array(101).fill(0), Array(101).fill(0), Array(101).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-100]
+      currentDeadByLevel: Array(LEVEL_CAPACITY).fill(0),
+      heroesByLevel: Array(LEVEL_CAPACITY).fill(0),
+      heroesByLevelPerZone: [Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0), Array(LEVEL_CAPACITY).fill(0)], // [zone][level] - [TAILS, LEGS, TORSO, HEAD] × [0-150]
       totalFees: 0n,
       feesPerZone: [0n,0n,0n,0n],
       totalRewardsAmount: 0n,

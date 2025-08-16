@@ -31,7 +31,7 @@ export async function getOrCreatePlayerOptimized(
     heroCount: 0,
     weaponCount: 0,
     stakedHeroCount: 0,
-    heroesByLevel: Array(101).fill(0),
+    heroesByLevel: Array(151).fill(0),
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
     itemsBalances: Array(100).fill(0n), // [tokenId1, tokenId2, ..., tokenId100]
     totalSpent: 0n, // Total spent across all game activities
@@ -67,7 +67,7 @@ export async function getOrCreatePlayer(
     heroCount: 0,
     weaponCount: 0,
     stakedHeroCount: 0,
-    heroesByLevel: Array(101).fill(0),
+    heroesByLevel: Array(151).fill(0),
     gachaBalances: [0n, 0n, 0n, 0n], // [bronze, silver, gold, rainbow]
     itemsBalances: Array(100).fill(0n), // [tokenId1, tokenId2, ..., tokenId100]
     totalSpent: 0n, // Total spent across all game activities
