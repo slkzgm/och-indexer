@@ -1,6 +1,9 @@
 // Adresse à partir de laquelle les NFT sont émis (mint).
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+export const V2_HEROES_STAKING_CONTRACT = "0xca4A7c4A191DE94af2C91487D0bE34a0205B89Ab";
+export const V2_ITEMS_STAKING_CONTRACT = "0x219260d8470D8211Ad66eB69206BDF72A4218B65";
+
 // Address of the s2 contracts
 export const ARMORY_CONTRACT = "0x036A2598A6752b4986a629964F428680F737DECD"; 
 export const DRAGMA_UNDERLINGS_CONTRACT = "0xd6C4268BC7252eAd69Da0d801CbAD9508Fc58F85"
@@ -18,11 +21,13 @@ export const HERO_STAKING_CONTRACTS: string[] = (
     DRAGMA_CONTRACT,
     S1_ENDGAME_CONTRACT,
     S1_LEVELING_CONTRACT,
+    V2_HEROES_STAKING_CONTRACT,
   ] as string[]
 ).map((addr) => addr.toLowerCase());
 
 export const WEAPON_STAKING_CONTRACTS: string[] = (
   [
     ARMORY_CONTRACT,
+    V2_ITEMS_STAKING_CONTRACT,
   ] as string[]
 ).map((addr) => addr.toLowerCase());
