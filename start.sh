@@ -3,4 +3,4 @@ set -e
 
 (cd generated && pnpm run db-setup) || true
 
-pnpm start --tui-off
+TUI_OFF=true pnpm start
