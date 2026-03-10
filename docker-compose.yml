@@ -14,8 +14,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - my-proxy-net
 
   graphql-engine:
     image: hasura/graphql-engine:v2.23.0
@@ -39,8 +37,6 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
-    networks:
-      - my-proxy-net
 
   envio-indexer:
     container_name: envio-indexer
@@ -64,12 +60,6 @@ services:
       HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET}
       CONFIG_FILE: ${CONFIG_FILE:-config.yaml}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-    networks:
-      - my-proxy-net
 
 volumes:
   db_data:
-
-networks:
-  my-proxy-net:
-    name: local_test_network
