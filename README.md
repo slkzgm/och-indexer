@@ -1,5 +1,33 @@
 # OCH Season 2 Indexer Documentation
 
+## Self-Hosted Runtime
+
+This repo can be self-hosted with the same operational flow as the MOG and Amigo indexers:
+
+- `docker-compose.yml`: Postgres + Hasura + Envio indexer
+- `Dockerfile` + `start.sh`: container boot
+- `.env.example`: runtime variables for Docker deployment
+- `pnpm docker:up`, `pnpm docker:logs`, `pnpm docker:down`
+- `pnpm setup-public`: grant public `select` permissions on tracked tables
+
+Recommended boot sequence:
+
+```bash
+cp .env.example .env
+# edit .env
+
+pnpm docker:up
+pnpm docker:logs
+```
+
+If you want public read-only GraphQL access without the admin secret:
+
+```bash
+HASURA_ENDPOINT=http://127.0.0.1:${HASURA_EXTERNAL_PORT:-8080}/v1/metadata \
+HASURA_ADMIN_SECRET=<YOUR_SECRET> \
+pnpm setup-public
+```
+
 ## Overview
 
 This subgraph indexes events from the OnChain Heroes Season 2 game, tracking heroes, weapons, staking, training, fishing, and remix mechanics. It provides comprehensive analytics and activity tracking for the game ecosystem.

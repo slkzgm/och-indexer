@@ -13,7 +13,11 @@
     "setup-hasura": "node src/scripts/hasura/setup-hasura.js",
     "setup-relations": "node src/scripts/hasura/setup-relations.js",
     "setup-public-tables": "node src/scripts/hasura/public-tables.js",
-    "delete-relations": "node src/scripts/hasura/delete-relations.js"
+    "delete-relations": "node src/scripts/hasura/delete-relations.js",
+    "setup-public": "node src/scripts/hasura/public-tables.js",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
   },
   "devDependencies": {
     "@types/chai": "^4.3.11",

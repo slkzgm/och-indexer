@@ -1,7 +1,27 @@
-// File path: scripts/delete-relations.js
+const endpointCandidates = [
+  process.env.HASURA_ENDPOINT,
+  process.env.HASURA_METADATA_ENDPOINT,
+  process.env.HASURA_GRAPHQL_URL
+    ? process.env.HASURA_GRAPHQL_URL.replace(/\/v1\/graphql\/?$/, '/v1/metadata')
+    : undefined,
+  'http://127.0.0.1:8080/v1/metadata',
+].filter(Boolean);
 
-const HASURA_ENDPOINT = 'https://graph.onchainsuperheroes.xyz/v1/metadata';
-const HASURA_ADMIN_SECRET = 'hasura_admin_JTlvlXn4qkkdmVwpTIpgzqkiTj2w7reRaIl';
+const HASURA_ENDPOINT = endpointCandidates[0];
+const HASURA_ADMIN_SECRET =
+  process.env.HASURA_ADMIN_SECRET || process.env.HASURA_GRAPHQL_ADMIN_SECRET;
+
+if (!HASURA_ENDPOINT) {
+  console.error('Missing HASURA endpoint. Set HASURA_ENDPOINT.');
+  process.exit(1);
+}
+
+if (!HASURA_ADMIN_SECRET) {
+  console.error(
+    'Missing HASURA admin secret. Set HASURA_ADMIN_SECRET (or HASURA_GRAPHQL_ADMIN_SECRET).'
+  );
+  process.exit(1);
+}
 
 const fetchJson = async (body) => {
   const res = await fetch(HASURA_ENDPOINT, {
